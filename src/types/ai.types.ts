@@ -51,26 +51,19 @@ export interface PestAnalysisResponse {
     name: string;
     scientificName: string;
     confidence: number;
-    severity: 'low' | 'moderate' | 'high';
+    severity: 'low' | 'medium' | 'high';
     description: string;
-    affectedArea: {
-      coordinates: number[][];
-      percentage: number;
-    };
   }>;
   detectedDiseases?: Array<{
     name: string;
     scientificName: string;
     confidence: number;
-    severity: 'low' | 'moderate' | 'high';
+    severity: 'low' | 'medium' | 'high';
     description: string;
-    affectedArea: {
-      coordinates: number[][];
-      percentage: number;
-    };
+    treatment?: string;
   }>;
   detectedIssues?: DetectedIssue[];
-  overallHealth?: 'good' | 'poor';
+  overallHealth?: 'excellent' | 'good' | 'fair' | 'poor';
   riskFactors?: string[];
   recommendations?: string[];
   generalRecommendations?: string[];
@@ -85,6 +78,7 @@ export interface PestAnalysisResponse {
     processingTime: number;
     imageSize: { width: number; height: number; size: number };
     modelVersion: string;
+    rawPlantIdResponse?: any; // Include raw Plant.id response for debugging
   };
   aiModelVersion?: string;
   createdAt?: Date;
