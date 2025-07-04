@@ -1,5 +1,4 @@
-import { DataTypes, Model, Optional, Op } from 'sequelize';
-import { sequelize } from '../config/database';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 import { User as UserInterface } from '../types/auth.types';
 
 // Define creation attributes (optional id and timestamps)
@@ -20,6 +19,7 @@ export class UserModel extends Model<UserInterface, UserCreationAttributes> impl
   public subscriptionExpiresAt?: Date;
   public emailVerified!: boolean;
   public phoneVerified!: boolean;
+  public role!: 'user' | 'admin';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -63,162 +63,163 @@ export class UserModel extends Model<UserInterface, UserCreationAttributes> impl
   }
 }
 
-UserModel.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    fullName: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-        len: [2, 255],
+// Initialize model function - called after database connection
+export function initializeUserModel(sequelize: Sequelize) {
+  UserModel.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
       },
-    },
-    email: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
-    phoneNumber: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
-      unique: true,
-      validate: {
-        is: /^\+?[1-9]\d{1,14}$/, // International phone number format
-      },
-    },
-    passwordHash: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      field: 'password_hash',
-    },
-    county: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-      },
-    },
-    subCounty: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      field: 'sub_county',
-      validate: {
-        notEmpty: true,
-      },
-    },
-    profilePictureUrl: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      field: 'profile_picture_url',
-      validate: {
-        isUrl: true,
-      },
-    },
-    locationLat: {
-      type: DataTypes.DECIMAL(10, 8),
-      allowNull: true,
-      field: 'location_lat',
-      validate: {
-        min: -90,
-        max: 90,
-      },
-    },
-    locationLng: {
-      type: DataTypes.DECIMAL(11, 8),
-      allowNull: true,
-      field: 'location_lng',
-      validate: {
-        min: -180,
-        max: 180,
-      },
-    },
-    subscriptionType: {
-      type: DataTypes.ENUM('free', 'premium'),
-      allowNull: false,
-      defaultValue: 'free',
-      field: 'subscription_type',
-    },
-    subscriptionExpiresAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'subscription_expires_at',
-    },
-    emailVerified: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      field: 'email_verified',
-    },
-    phoneVerified: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      field: 'phone_verified',
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-      field: 'created_at',
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-      field: 'updated_at',
-    },
-  },
-  {
-    sequelize,
-    tableName: 'users',
-    underscored: true,
-    timestamps: true,
-    indexes: [
-      {
-        name: 'users_email_idx',
-        unique: true,
-        fields: ['email'],
-        where: {
-          email: {
-            [Op.ne]: null,
-          },
+      fullName: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+          len: [2, 255],
         },
       },
-      {
-        name: 'users_phone_number_idx',
+      email: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
         unique: true,
-        fields: ['phone_number'],
-        where: {
-          phone_number: {
-            [Op.ne]: null,
-          },
+        validate: {
+          isEmail: true,
         },
       },
-      {
-        name: 'users_subscription_idx',
-        fields: ['subscription_type', 'subscription_expires_at'],
+      phoneNumber: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        unique: true,
+        validate: {
+          is: /^\+?[1-9]\d{1,14}$/, // International phone number format
+        },
       },
-      {
-        name: 'users_location_idx',
-        fields: ['location_lat', 'location_lng'],
+      passwordHash: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        field: 'password_hash',
       },
-    ],
-    validate: {
-      eitherEmailOrPhone() {
-        if (!this.email && !this.phoneNumber) {
-          throw new Error('Either email or phone number must be provided');
-        }
+      county: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      subCounty: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        field: 'sub_county',
+        validate: {
+          notEmpty: true,
+        },
+      },
+      profilePictureUrl: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: 'profile_picture_url',
+        validate: {
+          isUrl: true,
+        },
+      },
+      locationLat: {
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: true,
+        field: 'location_lat',
+        validate: {
+          min: -90,
+          max: 90,
+        },
+      },
+      locationLng: {
+        type: DataTypes.DECIMAL(11, 8),
+        allowNull: true,
+        field: 'location_lng',
+        validate: {
+          min: -180,
+          max: 180,
+        },
+      },
+      subscriptionType: {
+        type: DataTypes.ENUM('free', 'premium'),
+        allowNull: false,
+        defaultValue: 'free',
+        field: 'subscription_type',
+      },
+      subscriptionExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'subscription_expires_at',
+      },
+      emailVerified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'email_verified',
+      },
+      phoneVerified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'phone_verified',
+      },
+      role: {
+        type: DataTypes.ENUM('user', 'admin'),
+        allowNull: false,
+        defaultValue: 'user',
+        validate: {
+          isIn: [['user', 'admin']],
+        },
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+        field: 'created_at',
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+        field: 'updated_at',
       },
     },
-  }
-);
+    {
+      sequelize,
+      tableName: 'users',
+      underscored: true,
+      timestamps: true,
+      indexes: [
+        {
+          name: 'users_email_idx',
+          unique: true,
+          fields: ['email'],
+        },
+        {
+          name: 'users_phone_number_idx',
+          unique: true,
+          fields: ['phone_number'],
+        },
+        {
+          name: 'users_subscription_idx',
+          fields: ['subscription_type', 'subscription_expires_at'],
+        },
+        {
+          name: 'users_location_idx',
+          fields: ['location_lat', 'location_lng'],
+        },
+      ],
+      validate: {
+        eitherEmailOrPhone() {
+          if (!this.email && !this.phoneNumber) {
+            throw new Error('Either email or phone number must be provided');
+          }
+        },
+      },
+    }
+  );
+}
 
 export default UserModel; 

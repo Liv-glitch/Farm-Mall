@@ -76,7 +76,7 @@ CropVarietyModel.init(
       field: 'crop_type',
       validate: {
         notEmpty: true,
-        isIn: [['potato', 'maize', 'beans', 'tomato']], // Extensible for other crops
+        isIn: [['potato', 'maize', 'beans', 'tomato', 'onion', 'cabbage', 'carrot', 'spinach', 'kale', 'lettuce', 'pepper', 'cucumber', 'squash']], // Extensible for other crops
       },
     },
     maturityPeriodDays: {
