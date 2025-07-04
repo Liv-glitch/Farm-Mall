@@ -115,7 +115,7 @@ export const updateActivitySchema = Joi.object({
 
 // Calculator validation schemas
 export const costCalculationSchema = Joi.object({
-  cropVariety: Joi.string().min(2).max(100).required(),
+  cropVarietyId: Joi.string().uuid().required(),
   landSizeAcres: Joi.number().min(0.1).max(10000).precision(2).required(),
   seedSize: Joi.number().valid(1, 2).required(),
   location: Joi.object({
@@ -125,7 +125,7 @@ export const costCalculationSchema = Joi.object({
 });
 
 export const harvestPredictionSchema = Joi.object({
-  cropVariety: Joi.string().min(2).max(100).required(),
+  cropVarietyId: Joi.string().uuid().required(),
   plantingDate: Joi.date().required(),
   landSizeAcres: Joi.number().min(0.1).max(10000).precision(2).required(),
   location: locationSchema.optional(),
@@ -137,6 +137,42 @@ export const pestAnalysisSchema = Joi.object({
   location: locationSchema.required(),
   farmingStage: Joi.string().max(100).optional(),
   symptoms: Joi.array().items(Joi.string().max(255)).optional(),
+});
+
+// Form-data specific schema for multipart uploads
+export const pestAnalysisFormDataSchema = Joi.object({
+  cropType: Joi.string().min(2).max(100).required(),
+  location: Joi.string().custom((value, helpers) => {
+    try {
+      const parsed = JSON.parse(value);
+      const { error, value: validatedLocation } = locationSchema.validate(parsed);
+      if (error) {
+        return helpers.error('location.invalid');
+      }
+      return validatedLocation;
+    } catch (parseError) {
+      return helpers.error('location.parse');
+    }
+  }).required().messages({
+    'location.invalid': 'Location must be a valid object with latitude and longitude',
+    'location.parse': 'Location must be a valid JSON string'
+  }),
+  farmingStage: Joi.string().max(100).optional(),
+  symptoms: Joi.string().custom((value, helpers) => {
+    try {
+      const parsed = JSON.parse(value);
+      const { error, value: validatedSymptoms } = Joi.array().items(Joi.string().max(255)).validate(parsed);
+      if (error) {
+        return helpers.error('symptoms.invalid');
+      }
+      return validatedSymptoms;
+    } catch (parseError) {
+      return helpers.error('symptoms.parse');
+    }
+  }).optional().messages({
+    'symptoms.invalid': 'Symptoms must be an array of strings',
+    'symptoms.parse': 'Symptoms must be a valid JSON array string'
+  }),
 });
 
 export const weatherRequestSchema = Joi.object({
@@ -197,6 +233,51 @@ export const validateKenyaPhoneNumber = (phoneNumber: string): boolean => {
 export const validateCoordinatesInKenya = (lat: number, lng: number): boolean => {
   // Kenya is approximately between -4.7°N to 5.0°N and 33.9°E to 41.9°E
   return lat >= -4.7 && lat <= 5.0 && lng >= 33.9 && lng <= 41.9;
+};
+
+// Validation result interface
+export interface ValidationResult {
+  isValid: boolean;
+  errors?: string[];
+}
+
+// Helper function to validate with Joi schema
+export const validateWithSchema = (schema: Joi.ObjectSchema, data: any): ValidationResult => {
+  const { error } = schema.validate(data, { abortEarly: false });
+  
+  if (error) {
+    return {
+      isValid: false,
+      errors: error.details.map(detail => detail.message),
+    };
+  }
+  
+  return { isValid: true };
+};
+
+// Specific validation functions expected by the controller
+export const validateRegisterRequest = (data: any): ValidationResult => {
+  return validateWithSchema(registerSchema, data);
+};
+
+export const validateLoginRequest = (data: any): ValidationResult => {
+  return validateWithSchema(loginSchema, data);
+};
+
+export const validateChangePasswordRequest = (data: any): ValidationResult => {
+  return validateWithSchema(changePasswordSchema, data);
+};
+
+export const validatePasswordResetRequest = (data: any): ValidationResult => {
+  return validateWithSchema(resetPasswordSchema, data);
+};
+
+export const validateVerifyEmailRequest = (data: any): ValidationResult => {
+  return validateWithSchema(verifyEmailSchema, data);
+};
+
+export const validateVerifyPhoneRequest = (data: any): ValidationResult => {
+  return validateWithSchema(verifyPhoneSchema, data);
 };
 
 // Validation helper function
@@ -266,10 +347,17 @@ export default {
   costCalculationSchema,
   harvestPredictionSchema,
   pestAnalysisSchema,
+  pestAnalysisFormDataSchema,
   weatherRequestSchema,
   imageUploadSchema,
   paginationSchema,
   queryParamsSchema,
   validate,
   validateSchema,
+  validateRegisterRequest,
+  validateLoginRequest,
+  validateChangePasswordRequest,
+  validatePasswordResetRequest,
+  validateVerifyEmailRequest,
+  validateVerifyPhoneRequest,
 }; 

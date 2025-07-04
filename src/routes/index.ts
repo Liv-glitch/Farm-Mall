@@ -3,13 +3,13 @@ import authRoutes from './auth.routes';
 import calculatorRoutes from './calculator.routes';
 import productionRoutes from './production.routes';
 import aiRoutes from './ai.routes';
+import simplePlantIdRoutes from './simple-plantid.routes';
+import plantIdHealthRoutes from './plantid-health.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
-// API version prefix
-const API_VERSION = '/v1';
-
-// Health check route (without API version prefix)
+// Health check route
 router.get('/health', (_, res) => {
   res.json({
     status: 'healthy',
@@ -19,14 +19,17 @@ router.get('/health', (_, res) => {
   });
 });
 
-// Mount API routes with version prefix
-router.use(`${API_VERSION}/auth`, authRoutes);
-router.use(`${API_VERSION}/calculator`, calculatorRoutes);
-router.use(`${API_VERSION}/production`, productionRoutes);
-router.use(`${API_VERSION}/ai`, aiRoutes);
+// Mount API routes (version prefix is already handled in app.ts)
+router.use('/auth', authRoutes);
+router.use('/calculator', calculatorRoutes);
+router.use('/production', productionRoutes);
+router.use('/ai', aiRoutes);
+router.use('/simple-plantid', simplePlantIdRoutes);
+router.use('/v3', plantIdHealthRoutes);
+router.use('/admin', adminRoutes);
 
 // API info route
-router.get(`${API_VERSION}`, (_, res) => {
+router.get('/', (_, res) => {
   res.json({
     name: 'Agriculture Management API',
     version: '1.0.0',
@@ -41,10 +44,12 @@ router.get(`${API_VERSION}`, (_, res) => {
     ],
     documentation: '/api-docs',
     endpoints: {
-      auth: `${API_VERSION}/auth`,
-      calculator: `${API_VERSION}/calculator`,
-      production: `${API_VERSION}/production`,
-      ai: `${API_VERSION}/ai`,
+      auth: '/auth',
+      calculator: '/calculator',
+      production: '/production',
+      ai: '/ai',
+      'simple-plantid': '/simple-plantid',
+      'v3': '/v3',
     }
   });
 });

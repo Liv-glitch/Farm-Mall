@@ -2,6 +2,8 @@ import { WeatherRequest, WeatherResponse } from '../types/ai.types';
 import { redisClient } from '../config/redis';
 import { ERROR_CODES, CACHE_KEYS } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
+import { env } from '../config/environment';
+import axios from 'axios';
 
 interface WeatherApiResponse {
   current: {
@@ -39,6 +41,7 @@ interface ForecastApiResponse {
 export class WeatherService {
   private readonly CACHE_DURATION = 30 * 60; // 30 minutes
   private readonly FORECAST_CACHE_DURATION = 6 * 60 * 60; // 6 hours
+  private readonly WEATHER_API_BASE_URL = 'http://api.weatherapi.com/v1';
 
   // Get current weather
   async getCurrentWeather(request: WeatherRequest): Promise<WeatherResponse> {
@@ -250,56 +253,131 @@ export class WeatherService {
   }
 
   // Private methods for API integration
-  private async fetchCurrentWeatherFromApi(_latitude: number, _longitude: number): Promise<WeatherApiResponse> {
-    // TODO: Integrate with actual weather API (OpenWeatherMap, WeatherAPI, etc.)
-    // For now, return mock data
-    return {
-      current: {
-        temperature: 25 + Math.random() * 10,
-        humidity: 60 + Math.random() * 20,
-        pressure: 1013 + Math.random() * 20,
-        windSpeed: 5 + Math.random() * 10,
-        windDirection: Math.random() * 360,
-        condition: 'Partly Cloudy',
-        icon: '02d',
-      },
-      location: {
-        name: 'Nakuru',
-        region: 'Nakuru County',
-        country: 'Kenya',
-        lat: _latitude,
-        lon: _longitude,
-      },
-    };
+  private async fetchCurrentWeatherFromApi(latitude: number, longitude: number): Promise<WeatherApiResponse> {
+    try {
+      if (!env.WEATHER_API_KEY) {
+        throw new Error('WeatherAPI.com API key not configured');
+      }
+
+      const response = await axios.get(`${this.WEATHER_API_BASE_URL}/current.json`, {
+        params: {
+          key: env.WEATHER_API_KEY,
+          q: `${latitude},${longitude}`,
+          aqi: 'no',
+        },
+        timeout: 10000, // 10 second timeout
+      });
+
+      const data = response.data;
+      
+      return {
+        current: {
+          temperature: data.current.temp_c,
+          humidity: data.current.humidity,
+          pressure: data.current.pressure_mb,
+          windSpeed: data.current.wind_kph,
+          windDirection: data.current.wind_degree,
+          condition: data.current.condition.text,
+          icon: data.current.condition.icon,
+        },
+        location: {
+          name: data.location.name,
+          region: data.location.region,
+          country: data.location.country,
+          lat: data.location.lat,
+          lon: data.location.lon,
+        },
+      };
+    } catch (error: any) {
+      logError('WeatherAPI.com current weather fetch failed', error, { latitude, longitude });
+      
+      // Fallback to mock data if API fails
+      logInfo('Falling back to mock weather data', { latitude, longitude });
+      return {
+        current: {
+          temperature: 25 + Math.random() * 10,
+          humidity: 60 + Math.random() * 20,
+          pressure: 1013 + Math.random() * 20,
+          windSpeed: 5 + Math.random() * 10,
+          windDirection: Math.random() * 360,
+          condition: 'Partly Cloudy',
+          icon: '02d',
+        },
+        location: {
+          name: 'Nakuru',
+          region: 'Nakuru County',
+          country: 'Kenya',
+          lat: latitude,
+          lon: longitude,
+        },
+      };
+    }
   }
 
   private async fetchForecastFromApi(
-    _latitude: number, 
-    _longitude: number, 
+    latitude: number, 
+    longitude: number, 
     days: number
   ): Promise<ForecastApiResponse> {
-    // TODO: Integrate with actual weather API
-    // For now, return mock data
-    const forecast = [];
-    
-    for (let i = 0; i < days; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      
-      forecast.push({
-        date: date.toISOString().split('T')[0],
-        temperature: {
-          min: 18 + Math.random() * 5,
-          max: 28 + Math.random() * 7,
-        },
-        humidity: 50 + Math.random() * 30,
-        condition: Math.random() > 0.3 ? 'Sunny' : 'Cloudy',
-        chanceOfRain: Math.random() * 100,
-        windSpeed: 3 + Math.random() * 8,
-      });
-    }
+    try {
+      if (!env.WEATHER_API_KEY) {
+        throw new Error('WeatherAPI.com API key not configured');
+      }
 
-    return { forecast };
+      // WeatherAPI.com supports up to 10 days forecast on free tier
+      const forecastDays = Math.min(days, 10);
+
+      const response = await axios.get(`${this.WEATHER_API_BASE_URL}/forecast.json`, {
+        params: {
+          key: env.WEATHER_API_KEY,
+          q: `${latitude},${longitude}`,
+          days: forecastDays,
+          aqi: 'no',
+          alerts: 'no',
+        },
+        timeout: 10000, // 10 second timeout
+      });
+
+      const data = response.data;
+      const forecast = data.forecast.forecastday.map((day: any) => ({
+        date: day.date,
+        temperature: {
+          min: day.day.mintemp_c,
+          max: day.day.maxtemp_c,
+        },
+        humidity: day.day.avghumidity,
+        condition: day.day.condition.text,
+        chanceOfRain: day.day.daily_chance_of_rain || 0,
+        windSpeed: day.day.maxwind_kph,
+      }));
+
+      return { forecast };
+    } catch (error: any) {
+      logError('WeatherAPI.com forecast fetch failed', error, { latitude, longitude, days });
+      
+      // Fallback to mock data if API fails
+      logInfo('Falling back to mock forecast data', { latitude, longitude, days });
+      const forecast = [];
+      
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        
+        forecast.push({
+          date: date.toISOString().split('T')[0],
+          temperature: {
+            min: 18 + Math.random() * 5,
+            max: 28 + Math.random() * 7,
+          },
+          humidity: 50 + Math.random() * 30,
+          condition: Math.random() > 0.3 ? 'Sunny' : 'Cloudy',
+          chanceOfRain: Math.random() * 100,
+          windSpeed: 3 + Math.random() * 8,
+        });
+      }
+
+      return { forecast };
+    }
   }
 
   // Agricultural analysis methods (disabled to avoid unused method warning)

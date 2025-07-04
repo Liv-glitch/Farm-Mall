@@ -80,10 +80,28 @@ class Application {
 
     // CORS configuration
     this.app.use(cors({
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Allow configured origin
+        if (origin === env.CORS_ORIGIN) return callback(null, true);
+        
+        // Allow ngrok URLs in development
+        if (isDevelopment && origin.includes('ngrok')) return callback(null, true);
+        
+        // Allow localhost variants in development
+        if (isDevelopment && origin.includes('localhost')) return callback(null, true);
+        
+        // In development, allow all origins for debugging
+        if (isDevelopment) return callback(null, true);
+        
+        // In production, reject other origins (don't throw error, just return false)
+        callback(null, false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'ngrok-skip-browser-warning'],
     }));
 
     // Compression middleware
@@ -92,6 +110,9 @@ class Application {
     // Body parsing middleware
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // Serve static files from uploads directory
+    this.app.use('/uploads', express.static('uploads'));
 
     // Logging middleware
     if (isDevelopment) {
@@ -138,18 +159,6 @@ class Application {
         health: '/health',
       });
     });
-
-    // Handle 404 for undefined routes
-    this.app.use('*', (req, res) => {
-      res.status(404).json({
-        success: false,
-        error: {
-          code: 'ROUTE_NOT_FOUND',
-          message: `Route ${req.method} ${req.originalUrl} not found`,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    });
   }
 
   private initializeSwagger(): void {
@@ -168,6 +177,18 @@ class Application {
   }
 
   private initializeErrorHandling(): void {
+    // Handle 404 for undefined routes (before global error handler)
+    this.app.use('*', (req, res) => {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'ROUTE_NOT_FOUND',
+          message: `Route ${req.method} ${req.originalUrl} not found`,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    });
+
     // Global error handler (must be last)
     this.app.use(errorMiddleware);
   }

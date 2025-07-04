@@ -40,9 +40,28 @@ const consoleFormat = winston.format.combine(
     format: 'YYYY-MM-DD HH:mm:ss',
   }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}${info.stack ? '\n' + info.stack : ''}`
-  )
+  winston.format.printf((info) => {
+    const { timestamp, level, message, stack, ...meta } = info;
+    
+    // Format the main log message
+    let logMessage = `${timestamp} ${level}: ${message}`;
+    
+    // Add metadata if it exists
+    const metaKeys = Object.keys(meta);
+    if (metaKeys.length > 0) {
+      const formattedMeta = metaKeys
+        .map(key => `${key}=${meta[key]}`)
+        .join(', ');
+      logMessage += ` (${formattedMeta})`;
+    }
+    
+    // Add stack trace if it exists
+    if (stack) {
+      logMessage += '\n' + stack;
+    }
+    
+    return logMessage;
+  })
 );
 
 // Create transports array

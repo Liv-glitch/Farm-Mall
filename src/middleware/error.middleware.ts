@@ -3,7 +3,6 @@ import { ValidationError as SequelizeValidationError } from 'sequelize';
 import { ERROR_CODES, HTTP_STATUS } from '../utils/constants';
 import { logError } from '../utils/logger';
 import { isDevelopment } from '../config/environment';
-import '../types/express'; // Import our Express type extensions
 
 // Custom error class
 export class APIError extends Error {
