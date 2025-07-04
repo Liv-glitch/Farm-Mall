@@ -1,14 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { authService } from '../services/auth.service';
-import { SUBSCRIPTION_FEATURES } from '../types/auth.types';
+import { AuthService } from '../services/auth.service';
+import { SUBSCRIPTION_FEATURES, User } from '../types/auth.types';
 import { ERROR_CODES, HTTP_STATUS } from '../utils/constants';
 import { logError } from '../utils/logger';
+
+// Create auth service instance
+const authService = new AuthService();
 
 // Extend Request interface to include user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: User;
       token?: string;
     }
   }
@@ -374,6 +377,23 @@ export const checkSubscriptionLimits = (limitType: 'production_cycles' | 'pest_a
   };
 };
 
+// Admin access middleware
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(HTTP_STATUS.FORBIDDEN).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+        message: 'Admin access required',
+      },
+      timestamp: new Date().toISOString(),
+      path: req.path,
+    });
+    return;
+  }
+  next();
+};
+
 export default {
   authenticate,
   optionalAuthenticate,
@@ -383,4 +403,5 @@ export default {
   requirePhoneVerification,
   requireOwnership,
   checkSubscriptionLimits,
+  requireAdmin,
 }; 

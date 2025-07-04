@@ -13,6 +13,7 @@ export interface User {
   subscriptionExpiresAt?: Date;
   emailVerified: boolean;
   phoneVerified: boolean;
+  role: 'user' | 'admin';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +27,7 @@ export interface RegisterRequest {
   subCounty: string;
   locationLat?: number;
   locationLng?: number;
+  role?: 'user' | 'admin';
 }
 
 export interface LoginRequest {

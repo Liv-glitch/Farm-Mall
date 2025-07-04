@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/environment';
 import { redisClient } from '../config/redis';
-import UserModel from '../models/User.model';
+import { UserModel } from '../models';
 import {
   RegisterRequest,
   LoginRequest,
@@ -43,6 +43,7 @@ export class AuthService {
       // Create user
       const user = await UserModel.create({
         ...userData,
+        role: userData.role ?? 'user',
         passwordHash,
         subscriptionType: 'free',
         emailVerified: false,

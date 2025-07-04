@@ -1,4 +1,4 @@
-import { UserModel } from '../models/User.model';
+import { UserModel } from '../models';
 import { User, ChangePasswordRequest } from '../types/auth.types';
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
