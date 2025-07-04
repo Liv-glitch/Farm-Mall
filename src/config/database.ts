@@ -40,10 +40,13 @@ export const connectDatabase = async (): Promise<void> => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    if (env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('📊 Database synchronized successfully.');
-    }
+    // Initialize all models after connection is established
+    const { initializeModels } = await import('../models');
+    initializeModels(sequelize);
+    
+    // Note: Schema creation now handled by migrations
+    // Run 'npm run migrate' to create/update database schema
+    console.log('💡 Use "npm run migrate" to run database migrations');
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error);
     process.exit(1);

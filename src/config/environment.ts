@@ -32,6 +32,7 @@ interface EnvironmentConfig {
   GOOGLE_CLOUD_VISION_API_KEY?: string;
   OPENWEATHER_API_KEY?: string;
   WEATHER_API_KEY?: string;
+  PLANTID_API_KEY?: string;
 
   // AWS S3
   AWS_S3_BUCKET?: string;
@@ -91,6 +92,7 @@ const validateEnvironment = (): EnvironmentConfig => {
     GOOGLE_CLOUD_VISION_API_KEY: process.env.GOOGLE_CLOUD_VISION_API_KEY,
     OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
     WEATHER_API_KEY: process.env.WEATHER_API_KEY,
+    PLANTID_API_KEY: process.env.PLANTID_API_KEY,
 
     // AWS S3
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
