@@ -137,7 +137,7 @@ export interface UpdateActivityRequest {
 
 // Cost calculator types
 export interface CostCalculationRequest {
-  cropVariety: string;
+  cropVarietyId: string;
   landSizeAcres: number;
   seedSize: 1 | 2;
   location?: {
@@ -147,7 +147,8 @@ export interface CostCalculationRequest {
 }
 
 export interface CostCalculationResponse {
-  cropVariety: string;
+  cropVarietyId: string;
+  cropVarietyName: string;
   landSizeAcres: number;
   seedSize: 1 | 2;
   seedRequirement: {
@@ -167,7 +168,7 @@ export interface CostCalculationResponse {
 
 // Harvest prediction types
 export interface HarvestPredictionRequest {
-  cropVariety: string;
+  cropVarietyId: string;
   plantingDate: Date;
   landSizeAcres: number;
   location?: {
@@ -177,7 +178,8 @@ export interface HarvestPredictionRequest {
 }
 
 export interface HarvestPredictionResponse {
-  cropVariety: string;
+  cropVarietyId: string;
+  cropVarietyName: string;
   plantingDate: Date;
   estimatedHarvestDate: Date;
   harvestWindow: {

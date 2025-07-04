@@ -1,6 +1,7 @@
 import { ProductionCycleModel } from '../models/ProductionCycle.model';
 import { CropVarietyModel } from '../models/CropVariety.model';
 import { ActivityModel } from '../models/Activity.model';
+import { UserModel } from '../models/User.model';
 import { 
   ProductionCycle, 
   Activity, 
@@ -76,7 +77,7 @@ export class ProductionService {
           {
             model: CropVarietyModel,
             as: 'cropVariety',
-            attributes: ['id', 'name', 'variety', 'maturityDays']
+            attributes: ['id', 'name', 'cropType', 'maturityPeriodDays']
           },
           {
             model: ActivityModel,
@@ -237,6 +238,91 @@ export class ProductionService {
     }
   }
 
+  // Get all user activities
+  async getUserActivities(
+    userId: string,
+    filters: {
+      status?: string;
+      type?: string;
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<{
+    activities: Activity[];
+    total: number;
+  }> {
+    try {
+      const { status, type, limit = 20, offset = 0 } = filters;
+      const whereClause: any = { userId };
+
+      if (status) {
+        whereClause.status = status;
+      }
+      if (type) {
+        whereClause.type = type;
+      }
+
+      const { count, rows } = await ActivityModel.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: ProductionCycleModel,
+            as: 'productionCycle',
+            attributes: ['id', 'farmLocation', 'status'],
+            include: [
+              {
+                model: CropVarietyModel,
+                as: 'cropVariety',
+                attributes: ['id', 'name', 'cropType']
+              }
+            ]
+          }
+        ],
+        limit,
+        offset,
+        order: [['scheduledDate', 'DESC']]
+      });
+
+      const activities = rows.map(activity => activity.toJSON());
+
+      logInfo('User activities retrieved', { userId, count, filters });
+
+      return {
+        activities,
+        total: count,
+      };
+    } catch (error) {
+      logError('Failed to get user activities', error as Error, { userId, filters });
+      throw error;
+    }
+  }
+
+  // Get activities for specific production cycle
+  async getCycleActivities(userId: string, cycleId: string): Promise<Activity[]> {
+    try {
+      // Verify cycle belongs to user
+      const cycle = await ProductionCycleModel.findOne({
+        where: { id: cycleId, userId }
+      });
+
+      if (!cycle) {
+        throw new Error(ERROR_CODES.PRODUCTION_CYCLE_NOT_FOUND);
+      }
+
+      const activities = await ActivityModel.findAll({
+        where: { productionCycleId: cycleId },
+        order: [['scheduledDate', 'ASC']]
+      });
+
+      logInfo('Cycle activities retrieved', { userId, cycleId, count: activities.length });
+
+      return activities.map(activity => activity.toJSON());
+    } catch (error) {
+      logError('Failed to get cycle activities', error as Error, { userId, cycleId });
+      throw error;
+    }
+  }
+
   // Add activity to production cycle
   async addActivity(
     userId: string,
@@ -328,40 +414,97 @@ export class ProductionService {
   }
 
   // Get dashboard statistics
-  async getDashboardStats(userId: string): Promise<{
+  async getDashboardStats(userId?: string, isAdmin = false): Promise<{
     activeCycles: number;
     totalCycles: number;
     totalExpectedRevenue: number;
     totalActualCost: number;
     upcomingActivities: number;
+    totalUsers?: number;
+    activeUsers?: number;
+    totalActualRevenue?: number;
   }> {
     try {
-      const [activeCycles, totalCycles] = await Promise.all([
-        ProductionCycleModel.count({
-          where: { userId, status: 'active' }
-        }),
-        ProductionCycleModel.count({
-          where: { userId }
-        })
-      ]);
+      // User-specific stats
+      let activeCycles = 0, totalCycles = 0, upcomingActivities = 0;
+      if (userId) {
+        // user-specific
+        [activeCycles, totalCycles] = await Promise.all([
+          ProductionCycleModel.count({ where: { userId, status: 'active' } }),
+          ProductionCycleModel.count({ where: { userId } })
+        ]);
+        console.log('DEBUG: Raw activeCycles count:', activeCycles);
+        console.log('DEBUG: Raw totalCycles count:', totalCycles);
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        upcomingActivities = await ActivityModel.count({
+          where: {
+            userId,
+            scheduledDate: {
+              [require('sequelize').Op.between]: [new Date(), nextWeek]
+            },
+            status: { [require('sequelize').Op.ne]: 'completed' }
+          }
+        });
+        console.log('DEBUG: Raw upcomingActivities count:', upcomingActivities);
+      } else if (isAdmin) {
+        // global stats for admin
+        [activeCycles, totalCycles] = await Promise.all([
+          ProductionCycleModel.count({ where: { status: 'active' } }),
+          ProductionCycleModel.count()
+        ]);
+        console.log('DEBUG: Raw global activeCycles count:', activeCycles);
+        console.log('DEBUG: Raw global totalCycles count:', totalCycles);
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        upcomingActivities = await ActivityModel.count({
+          where: {
+            scheduledDate: {
+              [require('sequelize').Op.between]: [new Date(), nextWeek]
+            },
+            status: { [require('sequelize').Op.ne]: 'completed' }
+          }
+        });
+        console.log('DEBUG: Raw global upcomingActivities count:', upcomingActivities);
+      }
+
+      // Admin/global stats
+      let totalUsers, activeUsers, totalActualRevenue;
+      if (isAdmin) {
+        totalUsers = await UserModel.count();
+        console.log('DEBUG: Raw totalUsers count:', totalUsers);
+        // Users with at least one active production cycle
+        const activeUserIds = await ProductionCycleModel.findAll({
+          attributes: ['userId'],
+          where: { status: 'active' },
+          group: ['userId'],
+          raw: true
+        });
+        console.log('DEBUG: Raw activeUserIds:', activeUserIds);
+        activeUsers = activeUserIds.length;
+        // Total actual revenue: sum of totalYieldKg * default price (30) for harvested cycles
+        const harvestedCycles = await ProductionCycleModel.findAll({
+          where: { status: 'harvested' },
+          attributes: ['totalYieldKg'],
+          raw: true
+        });
+        console.log('DEBUG: Raw harvestedCycles:', harvestedCycles);
+        totalActualRevenue = harvestedCycles.reduce((sum, c) => {
+          let yieldKg = 0;
+          if (typeof c.totalYieldKg === 'string') {
+            yieldKg = parseFloat(c.totalYieldKg);
+          } else if (typeof c.totalYieldKg === 'number') {
+            yieldKg = c.totalYieldKg;
+          }
+          const price = 30; // Default price per kg
+          return sum + (yieldKg * price);
+        }, 0);
+        console.log('DEBUG: Calculated totalActualRevenue:', totalActualRevenue);
+      }
 
       // TODO: Calculate revenue and costs when model fields are properly set up
       const totalExpectedRevenue = 0;
       const totalActualCost = 0;
-
-      // Count upcoming activities (next 7 days)
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-
-      const upcomingActivities = await ActivityModel.count({
-        where: {
-          userId,
-          scheduledDate: {
-            [require('sequelize').Op.between]: [new Date(), nextWeek]
-          },
-          status: { [require('sequelize').Op.ne]: 'completed' }
-        }
-      });
 
       const stats = {
         activeCycles,
@@ -369,16 +512,12 @@ export class ProductionService {
         totalExpectedRevenue,
         totalActualCost,
         upcomingActivities,
+        ...(isAdmin ? { totalUsers, activeUsers, totalActualRevenue } : {})
       };
+      console.log('DEBUG: dashboard stats object:', stats);
 
       logInfo('Dashboard statistics retrieved', { userId, stats });
-      return {
-        activeCycles: stats.activeCycles,
-        totalCycles: stats.totalCycles,
-        totalExpectedRevenue: stats.totalExpectedRevenue,
-        totalActualCost: stats.totalActualCost,
-        upcomingActivities: upcomingActivities
-      };
+      return stats;
     } catch (error) {
       logError('Failed to get dashboard stats', error as Error, { userId });
       throw error;

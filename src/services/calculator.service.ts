@@ -12,10 +12,8 @@ export class CalculatorService {
   // Calculate production costs
   async calculateCost(request: CostCalculationRequest): Promise<CostCalculationResponse> {
     try {
-      // Find crop variety
-      const cropVariety = await CropVarietyModel.findOne({
-        where: { name: request.cropVariety },
-      });
+      // Find crop variety by ID
+      const cropVariety = await CropVarietyModel.findByPk(request.cropVarietyId);
 
       if (!cropVariety) {
         throw new Error('Crop variety not found');
@@ -58,7 +56,8 @@ export class CalculatorService {
       );
 
       const response: CostCalculationResponse = {
-        cropVariety: request.cropVariety,
+        cropVarietyId: request.cropVarietyId,
+        cropVarietyName: cropVariety.name,
         landSizeAcres: request.landSizeAcres,
         seedSize: request.seedSize,
         seedRequirement,
@@ -68,7 +67,8 @@ export class CalculatorService {
       };
 
       logInfo('Cost calculation completed', {
-        cropVariety: request.cropVariety,
+        cropVarietyId: request.cropVarietyId,
+        cropVarietyName: cropVariety.name,
         landSize: request.landSizeAcres,
         totalCost: estimatedTotalCost,
       });
@@ -83,17 +83,29 @@ export class CalculatorService {
   // Predict harvest
   async predictHarvest(request: HarvestPredictionRequest): Promise<HarvestPredictionResponse> {
     try {
-      // Find crop variety
-      const cropVariety = await CropVarietyModel.findOne({
-        where: { name: request.cropVariety },
-      });
+      // Find crop variety by ID
+      const cropVariety = await CropVarietyModel.findByPk(request.cropVarietyId);
 
       if (!cropVariety) {
         throw new Error('Crop variety not found');
       }
 
+      // Ensure plantingDate is a proper Date object (Joi should have converted it)
+      let plantingDate: Date;
+      if (request.plantingDate instanceof Date) {
+        plantingDate = request.plantingDate;
+      } else {
+        // Fallback conversion if somehow still a string
+        plantingDate = new Date(request.plantingDate);
+      }
+      
+      // Validate the date
+      if (isNaN(plantingDate.getTime())) {
+        throw new Error('Invalid planting date format. Use YYYY-MM-DD format.');
+      }
+
       // Calculate harvest dates
-      const estimatedHarvestDate = cropVariety.getHarvestDate(request.plantingDate);
+      const estimatedHarvestDate = cropVariety.getHarvestDate(plantingDate);
       
       // Calculate harvest window (±7 days)
       const harvestWindow = {
@@ -111,20 +123,21 @@ export class CalculatorService {
       // Get climate conditions (simplified for now)
       const climateConditions = await this.getClimateConditions(
         request.location,
-        request.plantingDate,
+        plantingDate,
         estimatedHarvestDate
       );
 
       // Generate recommendations
       const recommendations = this.generateHarvestRecommendations(
-        request,
         cropVariety,
-        climateConditions
+        climateConditions,
+        plantingDate
       );
 
       const response: HarvestPredictionResponse = {
-        cropVariety: request.cropVariety,
-        plantingDate: request.plantingDate,
+        cropVarietyId: request.cropVarietyId,
+        cropVarietyName: cropVariety.name,
+        plantingDate: plantingDate,
         estimatedHarvestDate,
         harvestWindow,
         estimatedYield,
@@ -133,8 +146,9 @@ export class CalculatorService {
       };
 
       logInfo('Harvest prediction completed', {
-        cropVariety: request.cropVariety,
-        plantingDate: request.plantingDate,
+        cropVarietyId: request.cropVarietyId,
+        cropVarietyName: cropVariety.name,
+        plantingDate: plantingDate,
         estimatedHarvestDate,
         estimatedYield: estimatedYield.totalKg,
       });
@@ -333,14 +347,14 @@ export class CalculatorService {
 
   // Generate harvest recommendations
   private generateHarvestRecommendations(
-    request: HarvestPredictionRequest,
     cropVariety: CropVarietyModel,
-    _climateConditions: any
+    _climateConditions: any,
+    plantingDate: Date
   ): string[] {
     const recommendations: string[] = [];
 
     // Season-based recommendations
-    const plantingMonth = request.plantingDate.getMonth();
+    const plantingMonth = plantingDate.getMonth();
     if (plantingMonth >= 2 && plantingMonth <= 4) { // March-May
       recommendations.push('Planted during long rains - expect good yields');
     } else if (plantingMonth >= 9 && plantingMonth <= 11) { // Oct-Dec
