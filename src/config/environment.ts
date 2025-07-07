@@ -128,10 +128,7 @@ const validateEnvironment = (): EnvironmentConfig => {
   if (config.NODE_ENV === 'production') {
     requiredVars.push(
       'DATABASE_URL',
-      'REDIS_URL',
-      'AWS_S3_BUCKET',
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY'
+      'REDIS_URL'
     );
   }
 

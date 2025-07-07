@@ -6,11 +6,13 @@ class RedisClient {
   private isConnected: boolean = false;
 
   constructor() {
+    const isProduction = env.NODE_ENV === 'production';
+
     this.client = createClient({
       url: env.REDIS_URL,
       socket: {
         reconnectStrategy: (retries) => Math.min(retries * 50, 500),
-        tls: env.NODE_ENV === 'production',
+        tls: isProduction,
         rejectUnauthorized: false // Required for Render Redis
       },
     });
@@ -20,7 +22,7 @@ class RedisClient {
 
   private setupEventListeners(): void {
     this.client.on('connect', () => {
-      console.log('🔗 Connecting to Redis...');
+      console.log('🔗 Connecting to Redis...', { env: env.NODE_ENV });
     });
 
     this.client.on('ready', () => {

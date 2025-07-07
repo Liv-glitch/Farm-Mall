@@ -25,8 +25,15 @@ RUN npm ci --ignore-scripts
 # Copy source code
 COPY . .
 
-# Now run the build
+# List contents to verify source files
+RUN ls -la src/
+
+# Build TypeScript code
 RUN npm run build
+
+# Verify the build output
+RUN ls -la dist/ && \
+    test -f dist/index.js || (echo "dist/index.js not found!" && exit 1)
 
 # Remove dev dependencies
 RUN npm prune --production
@@ -36,6 +43,9 @@ FROM node:18-alpine AS production
 
 # Install only production system dependencies
 RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
     postgresql-client \
     curl \
     dumb-init
@@ -51,9 +61,18 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package*.json ./
 
+# Verify the production stage files
+RUN ls -la dist/ && \
+    test -f dist/index.js || (echo "dist/index.js not found in production stage!" && exit 1)
+
+# Rebuild bcrypt for Alpine
+RUN npm rebuild bcrypt --build-from-source
+
 # Create necessary directories
 RUN mkdir -p uploads/original uploads/processed uploads/thumbnails logs && \
-    chown -R agriculture:nodejs uploads logs
+    chown -R agriculture:nodejs uploads logs && \
+    chown -R agriculture:nodejs dist && \
+    chown -R agriculture:nodejs node_modules
 
 # Switch to non-root user
 USER agriculture
@@ -71,4 +90,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "dist/app.js"] 
+CMD ["node", "dist/index.js"] 
