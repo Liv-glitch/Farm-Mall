@@ -31,12 +31,14 @@ const swaggerOptions = {
       description: 'Comprehensive API for potato farming management in Kenya',
       contact: {
         name: 'API Support',
-        email: 'support@agriculture-api.com',
+        email: 'support@farmmall.onrender.com',
       },
     },
     servers: [
       {
-        url: isDevelopment ? `http://localhost:${env.PORT}` : 'https://api.agriculture.com',
+        url: isDevelopment 
+          ? `http://localhost:${env.PORT}` 
+          : 'https://farmmall.onrender.com',
         description: isDevelopment ? 'Development server' : 'Production server',
       },
     ],
@@ -199,12 +201,17 @@ class Application {
       await connectDatabase();
       await connectRedis();
 
-      // Start server
-      this.server = this.app.listen(env.PORT, () => {
+      const port = env.PORT || 3000;
+      const isProduction = env.NODE_ENV === 'production';
+      const host = isProduction ? 'farmmall.onrender.com' : 'localhost';
+      const protocol = isProduction ? 'https' : 'http';
+
+      this.server = this.app.listen(port, '0.0.0.0', () => {
         logger.info(`🚀 Agriculture API server started`, {
-          port: env.PORT,
+          port,
           environment: env.NODE_ENV,
-          documentation: `http://localhost:${env.PORT}/api-docs`,
+          documentation: `${protocol}://${host}/api-docs`,
+          host: '0.0.0.0'
         });
       });
 

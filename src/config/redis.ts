@@ -4,6 +4,7 @@ import { env } from './environment';
 class RedisClient {
   private client: RedisClientType;
   private isConnected: boolean = false;
+  private readonly maxRetries = 20;
 
   constructor() {
     const isProduction = env.NODE_ENV === 'production';
@@ -13,18 +14,25 @@ class RedisClient {
       socket: {
         // More aggressive reconnection for Render's environment
         reconnectStrategy: (retries) => {
-          if (retries > 50) {
-            console.error('❌ Redis max retries reached, giving up');
+          if (retries > this.maxRetries) {
+            console.error(`❌ Redis max retries (${this.maxRetries}) reached, giving up`);
             return new Error('Redis max retries reached');
           }
-          const delay = Math.min(retries * 100, 3000);
-          console.log(`Reconnecting to Redis in ${delay}ms... (attempt ${retries})`);
+          const delay = Math.min(retries * 200, 5000); // Increased delay between retries
+          console.log(`Reconnecting to Redis in ${delay}ms... (attempt ${retries}/${this.maxRetries})`);
           return delay;
         },
-        connectTimeout: 20000, // Increased timeout for Render's environment
+        connectTimeout: 30000, // 30 seconds
+        keepAlive: 30000, // Send keepalive every 30 seconds
+        noDelay: true, // Disable Nagle's algorithm
+        timeout: 30000, // Socket timeout
         tls: isProduction,
         rejectUnauthorized: false // Required for Render Redis
-      }
+      },
+      // Add command timeout
+      commandsQueueMaxLength: 100,
+      readonly: false, // Ensure we're not in readonly mode
+      legacyMode: false // Ensure we're using the new API
     });
 
     this.setupEventListeners();
@@ -32,24 +40,27 @@ class RedisClient {
 
   private setupEventListeners(): void {
     this.client.on('connect', () => {
+      const redisUrl = env.REDIS_URL.replace(/\/\/.*@/, '//***:***@');
       console.log('🔗 Connecting to Redis...', { 
         env: env.NODE_ENV,
-        url: env.REDIS_URL.replace(/\/\/.*@/, '//***:***@') // Hide credentials in logs
+        url: redisUrl,
+        tls: env.NODE_ENV === 'production'
       });
     });
 
     this.client.on('ready', () => {
-      console.log('✅ Redis client ready');
+      console.log('✅ Redis client ready and connected');
       this.isConnected = true;
     });
 
     this.client.on('error', (error: Error) => {
-      console.error('❌ Redis client error:', error);
+      const errorMessage = error.message || 'Unknown error';
+      console.error('❌ Redis client error:', {
+        message: errorMessage,
+        stack: error.stack,
+        isConnected: this.isConnected
+      });
       this.isConnected = false;
-      // Don't throw on connection errors, let the retry strategy handle it
-      if (!error.message.includes('ECONNREFUSED') && !error.message.includes('Connection timeout')) {
-        throw error;
-      }
     });
 
     this.client.on('end', () => {
@@ -58,17 +69,26 @@ class RedisClient {
     });
 
     this.client.on('reconnecting', () => {
-      console.log('🔄 Redis client reconnecting...');
+      console.log('🔄 Redis client reconnecting...', {
+        isConnected: this.isConnected,
+        env: env.NODE_ENV
+      });
     });
   }
 
   async connect(): Promise<void> {
     try {
       if (!this.isConnected) {
+        console.log('📝 Attempting Redis connection...');
         await this.client.connect();
+        console.log('✅ Redis connection successful');
       }
     } catch (error) {
-      console.error('❌ Failed to connect to Redis:', error);
+      console.error('❌ Failed to connect to Redis:', {
+        error,
+        isConnected: this.isConnected,
+        env: env.NODE_ENV
+      });
       // Don't throw connection errors in production
       if (env.NODE_ENV !== 'production') {
         throw error;
