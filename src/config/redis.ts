@@ -8,9 +8,10 @@ class RedisClient {
   constructor() {
     this.client = createClient({
       url: env.REDIS_URL,
-      password: env.REDIS_PASSWORD,
       socket: {
         reconnectStrategy: (retries) => Math.min(retries * 50, 500),
+        tls: env.NODE_ENV === 'production',
+        rejectUnauthorized: false // Required for Render Redis
       },
     });
 

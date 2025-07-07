@@ -12,12 +12,12 @@ RUN apk add --no-cache \
     postgresql-client \
     curl
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
-
 # Development stage
 FROM base AS development
+
+# Copy package files first
+COPY package*.json ./
+COPY tsconfig.json ./
 
 # Install all dependencies (including dev dependencies)
 RUN npm ci
@@ -41,14 +41,15 @@ CMD ["npm", "run", "dev"]
 # Build stage
 FROM base AS build
 
-# Install all dependencies
-RUN npm ci
+# Copy package files first
+COPY package*.json ./
+COPY tsconfig.json ./
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Install dependencies and build
+RUN npm ci && npm run build
 
 # Remove dev dependencies
 RUN npm prune --production
