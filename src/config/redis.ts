@@ -11,10 +11,20 @@ class RedisClient {
     this.client = createClient({
       url: env.REDIS_URL,
       socket: {
-        reconnectStrategy: (retries) => Math.min(retries * 50, 500),
+        // More aggressive reconnection for Render's environment
+        reconnectStrategy: (retries) => {
+          if (retries > 50) {
+            console.error('❌ Redis max retries reached, giving up');
+            return new Error('Redis max retries reached');
+          }
+          const delay = Math.min(retries * 100, 3000);
+          console.log(`Reconnecting to Redis in ${delay}ms... (attempt ${retries})`);
+          return delay;
+        },
+        connectTimeout: 20000, // Increased timeout for Render's environment
         tls: isProduction,
         rejectUnauthorized: false // Required for Render Redis
-      },
+      }
     });
 
     this.setupEventListeners();
@@ -22,7 +32,10 @@ class RedisClient {
 
   private setupEventListeners(): void {
     this.client.on('connect', () => {
-      console.log('🔗 Connecting to Redis...', { env: env.NODE_ENV });
+      console.log('🔗 Connecting to Redis...', { 
+        env: env.NODE_ENV,
+        url: env.REDIS_URL.replace(/\/\/.*@/, '//***:***@') // Hide credentials in logs
+      });
     });
 
     this.client.on('ready', () => {
@@ -30,9 +43,13 @@ class RedisClient {
       this.isConnected = true;
     });
 
-    this.client.on('error', (error) => {
+    this.client.on('error', (error: Error) => {
       console.error('❌ Redis client error:', error);
       this.isConnected = false;
+      // Don't throw on connection errors, let the retry strategy handle it
+      if (!error.message.includes('ECONNREFUSED') && !error.message.includes('Connection timeout')) {
+        throw error;
+      }
     });
 
     this.client.on('end', () => {
@@ -52,7 +69,10 @@ class RedisClient {
       }
     } catch (error) {
       console.error('❌ Failed to connect to Redis:', error);
-      throw error;
+      // Don't throw connection errors in production
+      if (env.NODE_ENV !== 'production') {
+        throw error;
+      }
     }
   }
 
