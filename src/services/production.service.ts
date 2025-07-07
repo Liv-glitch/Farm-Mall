@@ -250,15 +250,34 @@ export class ProductionService {
   ): Promise<ProductionCycle> {
     try {
       const cycle = await ProductionCycleModel.findOne({
-        where: { id: cycleId, userId }
+        where: { id: cycleId },
+        include: [{
+          model: FarmModel,
+          as: 'farm',
+          include: [{
+            model: FarmCollaboratorModel,
+            as: 'collaborators',
+            where: {
+              collaboratorId: userId,
+              status: 'active'
+            },
+            required: false
+          }]
+        }]
       });
 
       if (!cycle) {
         throw new Error(ERROR_CODES.PRODUCTION_CYCLE_NOT_FOUND);
       }
 
-      // Validate status transitions
-      if (updateData.status) {
+      // Check if user has access to this cycle's farm
+      const farm = cycle.get('farm') as any;
+      if (farm.ownerId !== userId && !farm.collaborators?.length) {
+        throw new Error(ERROR_CODES.UNAUTHORIZED);
+      }
+
+      // Validate status transitions only if status is being updated
+      if (updateData.status && updateData.status !== cycle.status) {
         const validTransitions: Record<string, string[]> = {
           'planning': ['active', 'archived'],
           'active': ['harvested', 'archived'],
