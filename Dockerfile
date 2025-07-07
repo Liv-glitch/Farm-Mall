@@ -19,14 +19,14 @@ FROM base AS build
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install all dependencies
-RUN npm ci
+# Install dependencies without running scripts
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
 
-# Build TypeScript code
-RUN npm run build && ls -la dist/
+# Now run the build
+RUN npm run build
 
 # Remove dev dependencies
 RUN npm prune --production
@@ -50,9 +50,6 @@ WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package*.json ./
-
-# Verify dist directory contents
-RUN ls -la dist/
 
 # Create necessary directories
 RUN mkdir -p uploads/original uploads/processed uploads/thumbnails logs && \

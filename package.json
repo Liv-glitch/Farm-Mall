@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-    "postinstall": "npm run build",
+    "prepare": "npm run build",
     "dev": "nodemon src/app.ts",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
