@@ -21,7 +21,7 @@ export class PestAnalysisService {
       }
 
       const plantIdResponse = await this.callPlantIdAPI(request.imageUrl, request.cropType);
-      
+
       // Convert Plant.id response to our format
       const response: PestAnalysisResponse = {
         confidence: plantIdResponse.result?.classification?.suggestions?.[0]?.probability || 0.5,
@@ -160,7 +160,7 @@ export class PestAnalysisService {
         }
       });
     }
-
+    
     return pests;
   }
 
@@ -177,7 +177,7 @@ export class PestAnalysisService {
     
     if (plantIdResponse.result?.disease?.suggestions) {
       plantIdResponse.result.disease.suggestions.forEach((disease: any) => {
-        diseases.push({
+          diseases.push({
           name: disease.details?.common_names?.[0] || disease.name,
           scientificName: disease.name,
           confidence: disease.probability,
@@ -187,22 +187,22 @@ export class PestAnalysisService {
         });
       });
     }
-
+    
     return diseases;
   }
 
   // Extract risk factors from Plant.id response
   private extractRiskFactors(plantIdResponse: any): string[] {
     const risks: string[] = [];
-
+    
     if (plantIdResponse.result?.is_healthy_probability < 0.5) {
       risks.push('Plant shows signs of poor health');
     }
-
+    
     if (plantIdResponse.result?.disease?.suggestions?.length > 0) {
       risks.push('Disease symptoms detected');
     }
-
+    
     return risks;
   }
 
@@ -214,10 +214,10 @@ export class PestAnalysisService {
       plantIdResponse.result.disease.suggestions.forEach((disease: any) => {
         if (disease.details?.treatment?.chemical) {
           recommendations.push(`Chemical treatment: ${disease.details.treatment.chemical}`);
-        }
+    }
         if (disease.details?.treatment?.biological) {
           recommendations.push(`Biological treatment: ${disease.details.treatment.biological}`);
-        }
+    }
         if (disease.details?.treatment?.prevention) {
           recommendations.push(`Prevention: ${disease.details.treatment.prevention}`);
         }

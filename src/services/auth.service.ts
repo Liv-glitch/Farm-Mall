@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/environment';
 import { redisClient } from '../config/redis';
 import { UserModel } from '../models';
+import { FarmModel } from '../models/Farm.model';
 import {
   RegisterRequest,
   LoginRequest,
@@ -15,6 +16,7 @@ import {
 } from '../types/auth.types';
 import { ERROR_CODES } from '../utils/constants';
 import logger, { logError, logInfo } from '../utils/logger';
+import { Op } from 'sequelize';
 
 export class AuthService {
   // Register new user
@@ -48,6 +50,13 @@ export class AuthService {
         subscriptionType: 'free',
         emailVerified: false,
         phoneVerified: false,
+      });
+
+      // Create default farm for the user
+      await FarmModel.create({
+        ownerId: user.id,
+        name: `${userData.fullName}'s Farm`,
+        location: `${userData.county}, ${userData.subCounty}`,
       });
 
       // Generate tokens
@@ -481,6 +490,68 @@ export class AuthService {
     } catch (error) {
       logError('Failed to get user by ID', error as Error, { userId });
       return null;
+    }
+  }
+
+  /**
+   * Get the current usage count for a specific feature
+   * @param userId The ID of the user
+   * @param featureType The type of feature to check usage for
+   * @returns The current usage count
+   */
+  async getFeatureUsage(userId: string, featureType: 'production_cycles' | 'pest_analyses' | 'weather_requests'): Promise<number> {
+    try {
+      const user = await UserModel.findByPk(userId);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      // Get current date range
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      // Different features have different time windows for limits
+      let count = 0;
+      switch (featureType) {
+        case 'production_cycles':
+          // Count active production cycles
+          count = await user.countProductionCycles({
+            where: {
+              status: {
+                [Op.ne]: 'completed'
+              }
+            }
+          });
+          break;
+
+        case 'pest_analyses':
+          // Count pest analyses for current month
+          count = await user.countPestAnalyses({
+            where: {
+              createdAt: {
+                [Op.gte]: startOfMonth
+              }
+            }
+          });
+          break;
+
+        case 'weather_requests':
+          // Count weather requests for current day
+          count = await user.countWeatherRequests({
+            where: {
+              createdAt: {
+                [Op.gte]: startOfDay
+              }
+            }
+          });
+          break;
+      }
+
+      return count;
+    } catch (error) {
+      logError('Failed to get feature usage', error as Error);
+      throw error;
     }
   }
 }

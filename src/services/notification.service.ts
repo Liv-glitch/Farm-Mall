@@ -1,15 +1,40 @@
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
 
-export interface NotificationRequest {
-  userId: string;
+export interface BaseNotificationRequest {
   type: 'email' | 'sms' | 'whatsapp' | 'push';
-  recipient: string; // email address or phone number
-  subject?: string;
+  recipient?: string; // email address, phone number, or device token
   message: string;
-  templateId?: string;
-  data?: any; // Template variables
+  data?: any; // Additional data
+  userId?: string; // Optional user ID for all notification types
 }
+
+export interface EmailNotificationRequest extends BaseNotificationRequest {
+  type: 'email';
+  recipient: string; // Required for email
+  subject: string;
+}
+
+export interface SMSNotificationRequest extends BaseNotificationRequest {
+  type: 'sms';
+  recipient: string; // Required for SMS
+}
+
+export interface PushNotificationRequest extends BaseNotificationRequest {
+  type: 'push';
+  recipient: string; // Required for push
+}
+
+export interface WhatsAppNotificationRequest extends BaseNotificationRequest {
+  type: 'whatsapp';
+  recipient: string; // Required for WhatsApp
+}
+
+export type NotificationRequest = 
+  | EmailNotificationRequest 
+  | SMSNotificationRequest 
+  | PushNotificationRequest 
+  | WhatsAppNotificationRequest;
 
 export interface WhatsAppMessage {
   to: string;
@@ -123,6 +148,10 @@ export class NotificationService {
   // Send notification (unified method)
   async sendNotification(request: NotificationRequest): Promise<{ messageId: string; status: string }> {
     try {
+      if (!request.recipient) {
+        throw new Error(ERROR_CODES.MISSING_REQUIRED_FIELD);
+      }
+
       switch (request.type) {
         case 'whatsapp':
           return await this.sendWhatsAppMessage({
@@ -200,23 +229,52 @@ export class NotificationService {
       };
 
       const message = messages[alertType];
-      const preferredMethod = urgency === 'high' ? 'whatsapp' : 'sms';
+      const urgencyEmoji = {
+        low: '⚪',
+        medium: '🟡',
+        high: '🔴',
+      }[urgency];
 
-      await this.sendNotification({
+      // Send push notification
+      const pushNotification: PushNotificationRequest = {
         userId,
-        type: preferredMethod,
+        type: 'push',
         recipient,
-        message,
-        subject: `Weather Alert - ${alertType.toUpperCase()}`,
-      });
+        message: `${urgencyEmoji} ${message}`,
+        data: { alertType, location, urgency }
+      };
+      await this.sendNotification(pushNotification);
 
-      logInfo('Weather alert sent', { userId, alertType, location, urgency });
+      // Send email if recipient is an email address
+      if (recipient.includes('@')) {
+        const emailNotification: EmailNotificationRequest = {
+          type: 'email',
+          recipient,
+          subject: `Weather Alert - ${alertType.toUpperCase()}`,
+          message: `
+            <h2>Weather Alert</h2>
+            <p><strong>Type:</strong> ${alertType}</p>
+            <p><strong>Location:</strong> ${location}</p>
+            <p><strong>Urgency:</strong> ${urgency}</p>
+            <p>${message}</p>
+          `
+        };
+        await this.sendNotification(emailNotification);
+      }
+      // Send SMS if recipient is a phone number
+      else if (/^\+?\d+$/.test(recipient)) {
+        const smsNotification: SMSNotificationRequest = {
+          type: 'sms',
+          recipient,
+          message: `${urgencyEmoji} ${message}`
+        };
+        await this.sendNotification(smsNotification);
+      }
+
+      logInfo('Weather alert sent successfully', { alertType, location, urgency });
     } catch (error) {
-      logError('Weather alert sending failed', error as Error, { 
-        userId, 
-        alertType, 
-        location 
-      });
+      logError('Failed to send weather alert', error as Error);
+      throw error;
     }
   }
 
@@ -229,27 +287,54 @@ export class NotificationService {
     location: string
   ): Promise<void> {
     try {
-      const severityEmojis = { low: '🟡', medium: '🟠', high: '🔴' };
-      const emoji = severityEmojis[severity];
+      const severityEmoji = {
+        low: '⚪',
+        medium: '🟡',
+        high: '🔴',
+      }[severity];
 
-      const message = `${emoji} Pest Alert: ${pestName} detected in ${location}. ` +
-        `Severity: ${severity.toUpperCase()}. Check your crops and consider appropriate treatment measures.`;
+      const message = `🐛 Pest Alert: ${pestName} detected in ${location}. Severity: ${severity}. Take appropriate control measures.`;
 
-      await this.sendNotification({
+      // Send push notification
+      const pushNotification: PushNotificationRequest = {
         userId,
-        type: 'whatsapp',
+        type: 'push',
         recipient,
-        message,
-        subject: `Pest Alert - ${pestName}`,
-      });
+        message: `${severityEmoji} ${message}`,
+        data: { pestName, location, severity }
+      };
+      await this.sendNotification(pushNotification);
 
-      logInfo('Pest alert sent', { userId, pestName, severity, location });
+      // Send email if recipient is an email address
+      if (recipient.includes('@')) {
+        const emailNotification: EmailNotificationRequest = {
+          type: 'email',
+          recipient,
+          subject: `Pest Alert - ${pestName}`,
+          message: `
+            <h2>Pest Alert</h2>
+            <p><strong>Pest:</strong> ${pestName}</p>
+            <p><strong>Location:</strong> ${location}</p>
+            <p><strong>Severity:</strong> ${severity}</p>
+            <p>Please take appropriate control measures.</p>
+          `
+        };
+        await this.sendNotification(emailNotification);
+      }
+      // Send SMS if recipient is a phone number
+      else if (/^\+?\d+$/.test(recipient)) {
+        const smsNotification: SMSNotificationRequest = {
+          type: 'sms',
+          recipient,
+          message: `${severityEmoji} ${message}`
+        };
+        await this.sendNotification(smsNotification);
+      }
+
+      logInfo('Pest alert sent successfully', { pestName, location, severity });
     } catch (error) {
-      logError('Pest alert sending failed', error as Error, { 
-        userId, 
-        pestName, 
-        severity 
-      });
+      logError('Failed to send pest alert', error as Error);
+      throw error;
     }
   }
 
@@ -262,23 +347,48 @@ export class NotificationService {
     daysLeft: number
   ): Promise<void> {
     try {
-      const message = `🌱 Harvest Reminder: Your ${cropVariety} crop is expected to be ready for harvest ` +
-        `in ${daysLeft} days (${expectedDate.toLocaleDateString()}). Start preparing for harvest activities.`;
+      const message = `🌾 Harvest Reminder: ${cropVariety} is due for harvest in ${daysLeft} days (${expectedDate.toLocaleDateString()}).`;
 
-      await this.sendNotification({
+      // Send push notification
+      const pushNotification: PushNotificationRequest = {
         userId,
-        type: 'whatsapp',
+        type: 'push',
         recipient,
         message,
-        subject: 'Harvest Reminder',
-      });
+        data: { cropVariety, expectedDate, daysLeft }
+      };
+      await this.sendNotification(pushNotification);
 
-      logInfo('Harvest reminder sent', { userId, cropVariety, daysLeft });
+      // Send email if recipient is an email address
+      if (recipient.includes('@')) {
+        const emailNotification: EmailNotificationRequest = {
+          type: 'email',
+          recipient,
+          subject: `Harvest Reminder - ${cropVariety}`,
+          message: `
+            <h2>Harvest Reminder</h2>
+            <p><strong>Crop:</strong> ${cropVariety}</p>
+            <p><strong>Expected Harvest Date:</strong> ${expectedDate.toLocaleDateString()}</p>
+            <p><strong>Days Left:</strong> ${daysLeft}</p>
+            <p>Start preparing your harvest equipment and storage facilities.</p>
+          `
+        };
+        await this.sendNotification(emailNotification);
+      }
+      // Send SMS if recipient is a phone number
+      else if (/^\+?\d+$/.test(recipient)) {
+        const smsNotification: SMSNotificationRequest = {
+          type: 'sms',
+          recipient,
+          message
+        };
+        await this.sendNotification(smsNotification);
+      }
+
+      logInfo('Harvest reminder sent successfully', { cropVariety, expectedDate, daysLeft });
     } catch (error) {
-      logError('Harvest reminder sending failed', error as Error, { 
-        userId, 
-        cropVariety 
-      });
+      logError('Failed to send harvest reminder', error as Error);
+      throw error;
     }
   }
 
@@ -291,41 +401,66 @@ export class NotificationService {
     cropInfo?: string
   ): Promise<void> {
     try {
-      const crop = cropInfo ? ` for your ${cropInfo} crop` : '';
-      const message = `📅 Activity Reminder: ${activityType}${crop} is scheduled for ` +
-        `${dueDate.toLocaleDateString()}. Don't forget to complete this important farming activity.`;
+      const message = `📝 Activity Reminder: ${activityType}${cropInfo ? ` for ${cropInfo}` : ''} is due on ${dueDate.toLocaleDateString()}.`;
 
-      await this.sendNotification({
+      // Send push notification
+      const pushNotification: PushNotificationRequest = {
         userId,
-        type: 'sms',
+        type: 'push',
         recipient,
         message,
-        subject: 'Farming Activity Reminder',
-      });
+        data: { activityType, dueDate, cropInfo }
+      };
+      await this.sendNotification(pushNotification);
 
-      logInfo('Activity reminder sent', { userId, activityType, dueDate });
+      // Send email if recipient is an email address
+      if (recipient.includes('@')) {
+        const emailNotification: EmailNotificationRequest = {
+          type: 'email',
+          recipient,
+          subject: `Activity Reminder - ${activityType}`,
+          message: `
+            <h2>Activity Reminder</h2>
+            <p><strong>Activity:</strong> ${activityType}</p>
+            ${cropInfo ? `<p><strong>Crop:</strong> ${cropInfo}</p>` : ''}
+            <p><strong>Due Date:</strong> ${dueDate.toLocaleDateString()}</p>
+            <p>Please ensure this activity is completed on time.</p>
+          `
+        };
+        await this.sendNotification(emailNotification);
+      }
+      // Send SMS if recipient is a phone number
+      else if (/^\+?\d+$/.test(recipient)) {
+        const smsNotification: SMSNotificationRequest = {
+          type: 'sms',
+          recipient,
+          message
+        };
+        await this.sendNotification(smsNotification);
+      }
+
+      logInfo('Activity reminder sent successfully', { activityType, dueDate, cropInfo });
     } catch (error) {
-      logError('Activity reminder sending failed', error as Error, { 
-        userId, 
-        activityType 
-      });
+      logError('Failed to send activity reminder', error as Error);
+      throw error;
     }
   }
 
-  // Private methods
+  // Send push notification
   private async sendPushNotification(
     deviceToken: string,
-    _message: string,
-    _data?: any
+    message: string,
+    data?: any
   ): Promise<{ messageId: string; status: string }> {
     try {
       // TODO: Integrate with push notification service
-      // - Firebase Cloud Messaging (FCM)
-      // - Apple Push Notification Service (APNS)
+      // - Firebase Cloud Messaging
+      // - OneSignal
+      // - AWS SNS Mobile Push
       
       logInfo('Push notification sending started', { deviceToken });
 
-      // Simulate push notification
+      // Simulate push notification sending
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const result = {
@@ -340,8 +475,8 @@ export class NotificationService {
 
       return result;
     } catch (error) {
-      logError('Push notification sending failed', error as Error, { deviceToken });
-      throw new Error('Push notification failed');
+      logError('Push notification sending failed', error as Error, { deviceToken, message, data });
+      throw new Error(ERROR_CODES.PUSH_NOTIFICATION_FAILED);
     }
   }
 } 

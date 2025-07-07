@@ -2,6 +2,8 @@ import { ProductionCycleModel } from '../models/ProductionCycle.model';
 import { CropVarietyModel } from '../models/CropVariety.model';
 import { ActivityModel } from '../models/Activity.model';
 import { UserModel } from '../models/User.model';
+import { FarmModel } from '../models/Farm.model';
+import { FarmCollaboratorModel } from '../models/FarmCollaborator.model';
 import { 
   ProductionCycle, 
   Activity, 
@@ -12,6 +14,7 @@ import {
 } from '../types/production.types';
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
+import { Op } from 'sequelize';
 
 export interface ProductionCycleWithStats extends ProductionCycle {
   totalCost: number;
@@ -33,18 +36,42 @@ export class ProductionService {
         throw new Error(ERROR_CODES.CROP_VARIETY_NOT_FOUND);
       }
 
+      // Verify farm exists and user has access
+      const farm = await FarmModel.findOne({
+        where: { id: cycleData.farmId },
+        include: [{
+          model: FarmCollaboratorModel,
+          as: 'collaborators',
+          where: {
+            collaboratorId: userId,
+            status: 'active'
+          },
+          required: false
+        }]
+      });
+
+      if (!farm) {
+        throw new Error(ERROR_CODES.FARM_NOT_FOUND);
+      }
+
+      if (farm.ownerId !== userId && !farm.collaborators?.length) {
+        throw new Error(ERROR_CODES.UNAUTHORIZED);
+      }
+
       // TODO: Check subscription limits based on user type
       
       const cycle = await ProductionCycleModel.create({
         ...cycleData,
         userId,
+        farmId: cycleData.farmId,
         status: 'planning',
         totalCost: 0,
       });
 
       logInfo('Production cycle created', { 
         userId, 
-        cycleId: cycle.id, 
+        cycleId: cycle.id,
+        farmId: cycleData.farmId,
         cropVarietyId: cycleData.cropVarietyId 
       });
 
@@ -66,7 +93,27 @@ export class ProductionService {
     total: number;
   }> {
     try {
-      const whereClause: any = { userId };
+      // Get all farms where user is owner or collaborator
+      const farms = await FarmModel.findAll({
+        where: {
+          [Op.or]: [
+            { ownerId: userId },
+            {
+              '$collaborators.collaborator_id$': userId,
+              '$collaborators.status$': 'active'
+            }
+          ]
+        },
+        include: [{
+          model: FarmCollaboratorModel,
+          as: 'collaborators',
+          required: false
+        }]
+      });
+
+      const farmIds = farms.map(farm => farm.id);
+
+      const whereClause: any = { farmId: farmIds };
       if (status) {
         whereClause.status = status;
       }
@@ -83,6 +130,11 @@ export class ProductionService {
             model: ActivityModel,
             as: 'activities',
             attributes: ['id', 'type', 'cost', 'scheduledDate', 'completedDate']
+          },
+          {
+            model: FarmModel,
+            as: 'farm',
+            attributes: ['id', 'name', 'location']
           }
         ],
         limit,
@@ -127,7 +179,7 @@ export class ProductionService {
   async getProductionCycle(userId: string, cycleId: string): Promise<ProductionCycleWithStats> {
     try {
       const cycle = await ProductionCycleModel.findOne({
-        where: { id: cycleId, userId },
+        where: { id: cycleId },
         include: [
           {
             model: CropVarietyModel,
@@ -137,12 +189,31 @@ export class ProductionService {
             model: ActivityModel,
             as: 'activities',
             order: [['scheduledDate', 'ASC']]
+          },
+          {
+            model: FarmModel,
+            as: 'farm',
+            include: [{
+              model: FarmCollaboratorModel,
+              as: 'collaborators',
+              where: {
+                collaboratorId: userId,
+                status: 'active'
+              },
+              required: false
+            }]
           }
         ]
       });
 
       if (!cycle) {
         throw new Error(ERROR_CODES.PRODUCTION_CYCLE_NOT_FOUND);
+      }
+
+      // Check if user has access to this cycle's farm
+      const farm = cycle.get('farm') as any;
+      if (farm.ownerId !== userId && !farm.collaborators?.length) {
+        throw new Error(ERROR_CODES.UNAUTHORIZED);
       }
 
       const cycleData = cycle.toJSON() as any;
@@ -432,20 +503,20 @@ export class ProductionService {
         [activeCycles, totalCycles] = await Promise.all([
           ProductionCycleModel.count({ where: { userId, status: 'active' } }),
           ProductionCycleModel.count({ where: { userId } })
-        ]);
+      ]);
         console.log('DEBUG: Raw activeCycles count:', activeCycles);
         console.log('DEBUG: Raw totalCycles count:', totalCycles);
-        const nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
         upcomingActivities = await ActivityModel.count({
-          where: {
-            userId,
-            scheduledDate: {
-              [require('sequelize').Op.between]: [new Date(), nextWeek]
-            },
-            status: { [require('sequelize').Op.ne]: 'completed' }
-          }
-        });
+        where: {
+          userId,
+          scheduledDate: {
+            [require('sequelize').Op.between]: [new Date(), nextWeek]
+          },
+          status: { [require('sequelize').Op.ne]: 'completed' }
+        }
+      });
         console.log('DEBUG: Raw upcomingActivities count:', upcomingActivities);
       } else if (isAdmin) {
         // global stats for admin
