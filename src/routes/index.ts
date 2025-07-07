@@ -6,6 +6,7 @@ import aiRoutes from './ai.routes';
 import simplePlantIdRoutes from './simple-plantid.routes';
 import plantIdHealthRoutes from './plantid-health.routes';
 import adminRoutes from './admin.routes';
+import collaborationRoutes from './collaboration.routes';
 
 const router = Router();
 
@@ -25,8 +26,9 @@ router.use('/calculator', calculatorRoutes);
 router.use('/production', productionRoutes);
 router.use('/ai', aiRoutes);
 router.use('/simple-plantid', simplePlantIdRoutes);
-router.use('/v3', plantIdHealthRoutes);
+router.use('/plantid-health', plantIdHealthRoutes);
 router.use('/admin', adminRoutes);
+router.use('/collaboration', collaborationRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -40,7 +42,8 @@ router.get('/', (_, res) => {
       'Weather integration and forecasting',
       'Production cycle management',
       'WhatsApp integration',
-      'Premium subscription features'
+      'Premium subscription features',
+      'Farm collaboration and team management'
     ],
     documentation: '/api-docs',
     endpoints: {
@@ -49,7 +52,9 @@ router.get('/', (_, res) => {
       production: '/production',
       ai: '/ai',
       'simple-plantid': '/simple-plantid',
-      'v3': '/v3',
+      'plantid-health': '/plantid-health',
+      admin: '/admin',
+      collaboration: '/collaboration'
     }
   });
 });
