@@ -12,6 +12,7 @@ export interface CropVariety {
 export interface ProductionCycle {
   id: string;
   userId: string;
+  farmId: string;
   cropVarietyId: string;
   landSizeAcres: number;
   farmLocation?: string;
@@ -23,8 +24,8 @@ export interface ProductionCycle {
   status: 'planning' | 'active' | 'harvested' | 'archived';
   totalCost: number;
   totalYieldKg?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
   cropVariety?: CropVariety;
   activities?: Activity[];
 }
@@ -74,11 +75,15 @@ export interface ActivityInput {
 
 export interface CreateProductionCycleRequest {
   cropVarietyId: string;
+  farmId: string;
   landSizeAcres: number;
   farmLocation?: string;
   farmLocationLat?: number;
   farmLocationLng?: number;
   plantingDate?: Date;
+  estimatedHarvestDate?: Date;
+  expectedYield?: number;
+  expectedPricePerKg?: number;
 }
 
 export interface UpdateProductionCycleRequest {

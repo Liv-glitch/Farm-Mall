@@ -96,8 +96,9 @@ export interface SubscriptionFeatures {
   canExportData: boolean;
   canAccessAdvancedAnalytics: boolean;
   canAccessSoilRecommendations: boolean;
-  maxProductionCycles: number;
-  maxPestAnalysesPerMonth: number;
+  production_cycles_limit: number;
+  pest_analyses_limit: number;
+  weather_requests_limit: number;
   canAccessMarketplace: boolean;
 }
 
@@ -107,8 +108,9 @@ export const SUBSCRIPTION_FEATURES: Record<'free' | 'premium', SubscriptionFeatu
     canExportData: false,
     canAccessAdvancedAnalytics: false,
     canAccessSoilRecommendations: false,
-    maxProductionCycles: 3,
-    maxPestAnalysesPerMonth: 5,
+    production_cycles_limit: 3,
+    pest_analyses_limit: 5,
+    weather_requests_limit: 10,
     canAccessMarketplace: false,
   },
   premium: {
@@ -116,8 +118,9 @@ export const SUBSCRIPTION_FEATURES: Record<'free' | 'premium', SubscriptionFeatu
     canExportData: true,
     canAccessAdvancedAnalytics: true,
     canAccessSoilRecommendations: true,
-    maxProductionCycles: -1, // unlimited
-    maxPestAnalysesPerMonth: -1, // unlimited
+    production_cycles_limit: 999999, // effectively unlimited
+    pest_analyses_limit: 999999, // effectively unlimited
+    weather_requests_limit: 999999, // effectively unlimited
     canAccessMarketplace: true,
   },
 }; 
