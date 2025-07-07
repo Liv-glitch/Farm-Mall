@@ -39,6 +39,7 @@ export const existingUserData: Omit<User, 'passwordHash'> = {
   phoneVerified: true,
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
+  role: 'user'
 };
 
 export const premiumUserData: Omit<User, 'passwordHash'> = {
@@ -54,6 +55,7 @@ export const premiumUserData: Omit<User, 'passwordHash'> = {
   phoneVerified: true,
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
+  role: 'user'
 };
 
 export const invalidUserData = {
