@@ -12,32 +12,6 @@ RUN apk add --no-cache \
     postgresql-client \
     curl
 
-# Development stage
-FROM base AS development
-
-# Copy package files first
-COPY package*.json ./
-COPY tsconfig.json ./
-
-# Install all dependencies (including dev dependencies)
-RUN npm ci
-
-# Copy source code
-COPY . .
-
-# Create uploads directory
-RUN mkdir -p uploads/original uploads/processed uploads/thumbnails
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-# Default command
-CMD ["npm", "run", "dev"]
-
 # Build stage
 FROM base AS build
 
@@ -45,11 +19,14 @@ FROM base AS build
 COPY package*.json ./
 COPY tsconfig.json ./
 
+# Install all dependencies
+RUN npm ci
+
 # Copy source code
 COPY . .
 
-# Install dependencies and build
-RUN npm ci && npm run build
+# Build TypeScript code
+RUN npm run build && ls -la dist/
 
 # Remove dev dependencies
 RUN npm prune --production
@@ -70,9 +47,12 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy built application and production dependencies
-COPY --from=build --chown=agriculture:nodejs /app/dist ./dist
-COPY --from=build --chown=agriculture:nodejs /app/node_modules ./node_modules
-COPY --from=build --chown=agriculture:nodejs /app/package*.json ./
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package*.json ./
+
+# Verify dist directory contents
+RUN ls -la dist/
 
 # Create necessary directories
 RUN mkdir -p uploads/original uploads/processed uploads/thumbnails logs && \
@@ -84,9 +64,11 @@ USER agriculture
 # Expose port
 EXPOSE 3000
 
-# Health check
+# Health check - try multiple endpoints
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://0.0.0.0:${PORT:-3000}/health || \
+      curl -f http://0.0.0.0:${PORT:-3000}/api/v1/health || \
+      exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
