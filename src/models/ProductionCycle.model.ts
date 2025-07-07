@@ -8,6 +8,7 @@ interface ProductionCycleCreationAttributes extends Optional<ProductionCycleInte
 export class ProductionCycleModel extends Model<ProductionCycleInterface, ProductionCycleCreationAttributes> implements ProductionCycleInterface {
   public id!: string;
   public userId!: string;
+  public farmId!: string;
   public cropVarietyId!: string;
   public landSizeAcres!: number;
   public farmLocation?: string;
@@ -25,12 +26,18 @@ export class ProductionCycleModel extends Model<ProductionCycleInterface, Produc
   // Virtual attributes
   public readonly cropVariety?: any;
   public readonly activities?: any[];
+  public readonly farm?: any;
 
   // Model associations
   public static associate(models: any): void {
     ProductionCycleModel.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'user',
+    });
+
+    ProductionCycleModel.belongsTo(models.Farm, {
+      foreignKey: 'farmId',
+      as: 'farm',
     });
 
     ProductionCycleModel.belongsTo(models.CropVariety, {
@@ -122,6 +129,17 @@ ProductionCycleModel.init(
       field: 'user_id',
       references: {
         model: 'users',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    farmId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'farm_id',
+      references: {
+        model: 'farms',
         key: 'id',
       },
       onUpdate: 'CASCADE',

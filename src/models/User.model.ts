@@ -34,6 +34,11 @@ export class UserModel extends Model<UserInterface, UserCreationAttributes> impl
       foreignKey: 'userId',
       as: 'pestAnalyses',
     });
+
+    UserModel.hasMany(models.WeatherRequest, {
+      foreignKey: 'userId',
+      as: 'weatherRequests',
+    });
   }
 
   // Instance methods
@@ -60,6 +65,19 @@ export class UserModel extends Model<UserInterface, UserCreationAttributes> impl
     if (this.subscriptionType === 'free') return 'free';
     if (!this.subscriptionExpiresAt || this.subscriptionExpiresAt > new Date()) return 'active';
     return 'expired';
+  }
+
+  // Feature usage methods
+  public async countProductionCycles(options?: any): Promise<number> {
+    return (this as any).countProductionCycles(options);
+  }
+
+  public async countPestAnalyses(options?: any): Promise<number> {
+    return (this as any).countPestAnalyses(options);
+  }
+
+  public async countWeatherRequests(options?: any): Promise<number> {
+    return (this as any).countWeatherRequests(options);
   }
 }
 
@@ -203,12 +221,12 @@ export function initializeUserModel(sequelize: Sequelize) {
           fields: ['phone_number'],
         },
         {
-          name: 'users_subscription_idx',
-          fields: ['subscription_type', 'subscription_expires_at'],
+          name: 'users_county_idx',
+          fields: ['county'],
         },
         {
-          name: 'users_location_idx',
-          fields: ['location_lat', 'location_lng'],
+          name: 'users_sub_county_idx',
+          fields: ['sub_county'],
         },
       ],
       validate: {

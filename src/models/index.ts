@@ -3,6 +3,10 @@ import { UserModel, initializeUserModel } from './User.model';
 import { ProductionCycleModel } from './ProductionCycle.model';
 import { CropVarietyModel } from './CropVariety.model';
 import { ActivityModel } from './Activity.model';
+import { FarmCollaboratorModel } from './FarmCollaborator.model';
+import { PestAnalysisModel } from './PestAnalysis.model';
+import { WeatherRequestModel } from './WeatherRequest.model';
+import { FarmModel } from './Farm.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -18,53 +22,51 @@ export function initializeModels(sequelize: Sequelize): void {
   console.log('📋 All database models initialized with associations successfully.');
 }
 
-// Set up all model associations
+// Set up model associations
 function setupAssociations(): void {
-  // User associations
-  UserModel.hasMany(ProductionCycleModel, {
-    foreignKey: 'userId',
-    as: 'productionCycles',
+  UserModel.associate({
+    ProductionCycle: ProductionCycleModel,
+    PestAnalysis: PestAnalysisModel,
+    WeatherRequest: WeatherRequestModel,
+    Farm: FarmModel,
   });
 
-  UserModel.hasMany(ActivityModel, {
-    foreignKey: 'userId', 
-    as: 'activities',
+  ProductionCycleModel.associate({
+    User: UserModel,
+    CropVariety: CropVarietyModel,
+    Activity: ActivityModel,
+    PestAnalysis: PestAnalysisModel,
+    Farm: FarmModel
   });
 
-  // ProductionCycle associations
-  ProductionCycleModel.belongsTo(UserModel, {
-    foreignKey: 'userId',
-    as: 'user',
+  CropVarietyModel.associate({
+    ProductionCycle: ProductionCycleModel,
   });
 
-  ProductionCycleModel.belongsTo(CropVarietyModel, {
-    foreignKey: 'cropVarietyId',
-    as: 'cropVariety',
+  ActivityModel.associate({
+    User: UserModel,
+    ProductionCycle: ProductionCycleModel,
   });
 
-  ProductionCycleModel.hasMany(ActivityModel, {
-    foreignKey: 'productionCycleId',
-    as: 'activities',
+  FarmCollaboratorModel.associate({
+    User: UserModel,
+    Farm: FarmModel,
   });
 
-  // CropVariety associations
-  CropVarietyModel.hasMany(ProductionCycleModel, {
-    foreignKey: 'cropVarietyId',
-    as: 'productionCycles',
+  PestAnalysisModel.associate({
+    User: UserModel,
+    ProductionCycle: ProductionCycleModel,
   });
 
-  // Activity associations
-  ActivityModel.belongsTo(UserModel, {
-    foreignKey: 'userId',
-    as: 'user',
+  WeatherRequestModel.associate({
+    User: UserModel,
   });
 
-  ActivityModel.belongsTo(ProductionCycleModel, {
-    foreignKey: 'productionCycleId',
-    as: 'productionCycle',
+  FarmModel.associate({
+    User: UserModel,
+    ProductionCycle: ProductionCycleModel,
+    FarmCollaborator: FarmCollaboratorModel,
   });
-
-  console.log('🔗 Model associations configured successfully.');
 }
 
 // Export models for use throughout the application
@@ -73,6 +75,10 @@ export {
   ProductionCycleModel,
   CropVarietyModel,
   ActivityModel,
+  FarmCollaboratorModel,
+  PestAnalysisModel,
+  WeatherRequestModel,
+  FarmModel,
 };
 
 // Export types

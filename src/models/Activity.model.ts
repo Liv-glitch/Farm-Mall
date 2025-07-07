@@ -35,9 +35,17 @@ export class ActivityModel extends Model<Activity, ActivityCreationAttributes> i
   public readonly updatedAt!: Date;
 
   // Define associations
-  public static override associations: {
-    // Define association types here if needed
-  };
+  public static associate(models: any): void {
+    ActivityModel.belongsTo(models.User, {
+      foreignKey: 'userId',
+      as: 'user'
+    });
+
+    ActivityModel.belongsTo(models.ProductionCycle, {
+      foreignKey: 'productionCycleId',
+      as: 'productionCycle'
+    });
+  }
 
   // Instance methods
   public isCompleted(): boolean {
