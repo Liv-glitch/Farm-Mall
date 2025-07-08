@@ -51,14 +51,8 @@ services:
       target: development
     container_name: agriculture-api
     restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: postgresql://agriculture_user:agriculture_pass123@postgres:5432/agriculture_db
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-this-in-production
-      BCRYPT_SALT_ROUNDS: 12
+     env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
