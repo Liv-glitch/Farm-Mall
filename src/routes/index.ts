@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import simplePlantIdRoutes from './simple-plantid.routes';
+import plantIdHealthRoutes from './plantid-health.routes';
 import calculatorRoutes from './calculator.routes';
 import productionRoutes from './production.routes';
 import aiRoutes from './ai.routes';
-import simplePlantIdRoutes from './simple-plantid.routes';
-import plantIdHealthRoutes from './plantid-health.routes';
 import adminRoutes from './admin.routes';
 import collaborationRoutes from './collaboration.routes';
+import redisClient from '../config/redis';
 
 const router = Router();
 
@@ -18,6 +19,19 @@ router.get('/health', (_, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
   });
+});
+
+// Quick Redis test
+router.get('/redis-test', async (_, res) => {
+  try {
+    await redisClient.set('test', 'Redis is working!', 60);
+    const value = await redisClient.get('test');
+    console.log('Redis test result:', value);
+    res.json({ value });
+  } catch (err) {
+    console.error('Redis test error:', err);
+    res.status(500).json({ error: 'Redis test failed' });
+  }
 });
 
 // Mount API routes (version prefix is already handled in app.ts)
