@@ -86,8 +86,8 @@ class Application {
         // Allow requests with no origin (mobile apps, etc.)
         if (!origin) return callback(null, true);
         
-        // Allow configured origin
-        if (origin === env.CORS_ORIGIN) return callback(null, true);
+        // Allow configured origin and its subdomains
+        if (origin === env.CORS_ORIGIN || origin.endsWith('.vercel.app')) return callback(null, true);
         
         // Allow ngrok URLs in development
         if (isDevelopment && origin.includes('ngrok')) return callback(null, true);
@@ -197,11 +197,17 @@ class Application {
 
   public async start(): Promise<void> {
     try {
-      // Connect to databases
-      await connectDatabase();
+      // Connect to Redis first
+      logger.info('Connecting to Redis...');
       await connectRedis();
+      logger.info('Redis connection successful');
 
-      const port = env.PORT || 3000;
+      // Then connect to database
+      logger.info('Connecting to database...');
+      await connectDatabase();
+      logger.info('Database connection successful');
+
+      const port = parseInt(process.env.PORT || '3000', 10);
       const isProduction = env.NODE_ENV === 'production';
       const host = isProduction ? 'farmmall.onrender.com' : 'localhost';
       const protocol = isProduction ? 'https' : 'http';
@@ -211,9 +217,13 @@ class Application {
           port,
           environment: env.NODE_ENV,
           documentation: `${protocol}://${host}/api-docs`,
-          host: '0.0.0.0'
+          host: '0.0.0.0',
+          redis_url: env.REDIS_URL.replace(/\/\/.*@/, '//***:***@')  // Log Redis URL with credentials masked
         });
       });
+
+      // Log that we're attempting to listen
+      logger.info(`Attempting to listen on port ${port}`);
 
       // Graceful shutdown handling
       this.setupGracefulShutdown();

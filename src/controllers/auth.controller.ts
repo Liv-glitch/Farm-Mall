@@ -49,7 +49,12 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      logError('Registration failed', error, req.body);
+      console.error('Detailed registration error:', error);
+      logError('Registration failed', error, {
+        ...req.body,
+        error: error.message,
+        stack: error.stack
+      });
 
       if (error.message === ERROR_CODES.EMAIL_ALREADY_EXISTS) {
         res.status(HTTP_STATUS.CONFLICT).json({
@@ -71,7 +76,7 @@ export class AuthController {
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error',
+        message: error.message || 'Internal server error',
         code: ERROR_CODES.INTERNAL_SERVER_ERROR,
       });
     }
