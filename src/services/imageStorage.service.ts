@@ -61,13 +61,12 @@ export class ImageStorageService {
         })
         .toFile(thumbnailPath);
       
-      // Construct URLs (in production these would be CDN URLs)
+      // Construct URLs
       const baseUrl = env.NODE_ENV === 'production' 
-        ? env.CDN_URL || `https://${env.HOST}/uploads`
+        ? `https://farmmall.onrender.com/uploads`
         : `http://localhost:${env.PORT}/uploads`;
       
       const imageUrl = `${baseUrl}/images/${filename}`;
-      const thumbnailUrl = `${baseUrl}/thumbnails/${filename}`;
       
       const fullMetadata: ImageMetadata = {
         originalName: metadata.originalName || filename,
@@ -122,7 +121,7 @@ export class ImageStorageService {
       try {
         await fs.access(thumbnailPath);
         const baseUrl = env.NODE_ENV === 'production'
-          ? env.CDN_URL || `https://${env.HOST}/uploads`
+          ? `https://farmmall.onrender.com/uploads`
           : `http://localhost:${env.PORT}/uploads`;
         return `${baseUrl}/thumbnails/${filename}`;
       } catch {
@@ -142,7 +141,7 @@ export class ImageStorageService {
         .toFile(thumbnailPath);
       
       const baseUrl = env.NODE_ENV === 'production'
-        ? env.CDN_URL || `https://${env.HOST}/uploads`
+        ? `https://farmmall.onrender.com/uploads`
         : `http://localhost:${env.PORT}/uploads`;
       
       return `${baseUrl}/thumbnails/${filename}`;
