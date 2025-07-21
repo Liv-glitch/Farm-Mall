@@ -40,6 +40,11 @@ interface EnvironmentConfig {
   AWS_SECRET_ACCESS_KEY?: string;
   AWS_REGION: string;
 
+  // Supabase
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_STORAGE_BUCKET: string;
+
   // WhatsApp
   WHATSAPP_WEBHOOK_TOKEN?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
@@ -100,6 +105,11 @@ const validateEnvironment = (): EnvironmentConfig => {
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION || 'us-east-1',
 
+    // Supabase
+    SUPABASE_URL: process.env.SUPABASE_URL || '',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'farm-documents',
+
     // WhatsApp
     WHATSAPP_WEBHOOK_TOKEN: process.env.WHATSAPP_WEBHOOK_TOKEN,
     WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
@@ -128,7 +138,9 @@ const validateEnvironment = (): EnvironmentConfig => {
   if (config.NODE_ENV === 'production') {
     requiredVars.push(
       'DATABASE_URL',
-      'REDIS_URL'
+      'REDIS_URL',
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
     );
   }
 

@@ -51,7 +51,7 @@ services:
       target: development
     container_name: agriculture-api
     restart: unless-stopped
-     env_file:
+    env_file:
       - .env
     ports:
       - "3000:3000"
@@ -84,6 +84,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       BCRYPT_SALT_ROUNDS: 12
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET}
     ports:
       - "3001:3000"
     depends_on:

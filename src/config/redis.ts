@@ -2,6 +2,22 @@ import { createClient, RedisClientType } from 'redis';
 import { env } from './environment';
 import { logError, logInfo } from '../utils/logger';
 
+// Cache TTL values (in seconds)
+const CACHE_TTL = {
+  IDENTIFICATION: 7 * 24 * 60 * 60, // 7 days
+  HEALTH: 7 * 24 * 60 * 60,        // 7 days
+  HISTORY: 30 * 24 * 60 * 60,      // 30 days
+  RECENT: 24 * 60 * 60             // 1 day
+};
+
+// Redis key patterns
+const REDIS_KEYS = {
+  PLANT_ID: (userId: string, imageHash: string) => `plant_id:${userId}:${imageHash}`,
+  HEALTH_ASSESSMENT: (userId: string, imageHash: string) => `health:${userId}:${imageHash}`,
+  USER_HISTORY: (userId: string) => `history:${userId}`,
+  RECENT_SEARCHES: 'recent_searches'
+};
+
 class RedisClient {
   private client: RedisClientType;
   private isConnected: boolean = false;
@@ -228,6 +244,106 @@ class RedisClient {
     const result = count ? parseInt(count, 10) : 0;
     logInfo('Rate limit count retrieved', { identifier, count: result });
     return result;
+  }
+
+  // Cache plant identification result
+  async cachePlantIdentification(userId: string, imageHash: string, result: any): Promise<void> {
+    const key = REDIS_KEYS.PLANT_ID(userId, imageHash);
+    await this.client.setEx(key, CACHE_TTL.IDENTIFICATION, JSON.stringify(result));
+    
+    // Add to user's history
+    const historyKey = REDIS_KEYS.USER_HISTORY(userId);
+    await this.client.zAdd(historyKey, {
+      score: Date.now(),
+      value: JSON.stringify({
+        type: 'identification',
+        imageHash,
+        timestamp: new Date().toISOString(),
+        result: {
+          scientificName: result.result?.classification?.suggestions?.[0]?.name,
+          confidence: result.result?.classification?.suggestions?.[0]?.probability
+        }
+      })
+    });
+    
+    // Trim history to last 100 entries
+    await this.client.zRemRangeByRank(historyKey, 0, -101);
+    
+    // Set history expiry
+    await this.client.expire(historyKey, CACHE_TTL.HISTORY);
+  }
+
+  // Get cached plant identification
+  async getCachedPlantIdentification(userId: string, imageHash: string): Promise<any | null> {
+    const key = REDIS_KEYS.PLANT_ID(userId, imageHash);
+    const cached = await this.client.get(key);
+    return cached ? JSON.parse(cached) : null;
+  }
+
+  // Cache health assessment result
+  async cacheHealthAssessment(userId: string, imageHash: string, result: any): Promise<void> {
+    const key = REDIS_KEYS.HEALTH_ASSESSMENT(userId, imageHash);
+    await this.client.setEx(key, CACHE_TTL.HEALTH, JSON.stringify(result));
+    
+    // Add to user's history
+    const historyKey = REDIS_KEYS.USER_HISTORY(userId);
+    await this.client.zAdd(historyKey, {
+      score: Date.now(),
+      value: JSON.stringify({
+        type: 'health',
+        imageHash,
+        timestamp: new Date().toISOString(),
+        result: {
+          isHealthy: result.result?.health_assessment?.is_healthy?.binary,
+          diseases: result.result?.health_assessment?.diseases?.map((d: any) => d.name)
+        }
+      })
+    });
+    
+    // Trim history to last 100 entries
+    await this.client.zRemRangeByRank(historyKey, 0, -101);
+    
+    // Set history expiry
+    await this.client.expire(historyKey, CACHE_TTL.HISTORY);
+  }
+
+  // Get cached health assessment
+  async getCachedHealthAssessment(userId: string, imageHash: string): Promise<any | null> {
+    const key = REDIS_KEYS.HEALTH_ASSESSMENT(userId, imageHash);
+    const cached = await this.client.get(key);
+    return cached ? JSON.parse(cached) : null;
+  }
+
+  // Get user's search history
+  async getUserHistory(userId: string, page: number = 1, limit: number = 10): Promise<any[]> {
+    const historyKey = REDIS_KEYS.USER_HISTORY(userId);
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+    
+    const results = await this.client.zRange(historyKey, start, end, { REV: true });
+    return results.map((result: string) => JSON.parse(result));
+  }
+
+  // Add to recent global searches
+  async addToRecentSearches(searchData: any): Promise<void> {
+    const key = REDIS_KEYS.RECENT_SEARCHES;
+    await this.client.zAdd(key, {
+      score: Date.now(),
+      value: JSON.stringify(searchData)
+    });
+    
+    // Keep only last 1000 searches
+    await this.client.zRemRangeByRank(key, 0, -1001);
+    
+    // Set expiry
+    await this.client.expire(key, CACHE_TTL.RECENT);
+  }
+
+  // Get recent global searches
+  async getRecentSearches(limit: number = 10): Promise<any[]> {
+    const key = REDIS_KEYS.RECENT_SEARCHES;
+    const results = await this.client.zRange(key, 0, limit - 1, { REV: true });
+    return results.map((result: string) => JSON.parse(result));
   }
 }
 
