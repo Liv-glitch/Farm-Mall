@@ -7,11 +7,15 @@ import { FarmCollaboratorModel } from './FarmCollaborator.model';
 import { PestAnalysisModel } from './PestAnalysis.model';
 import { WeatherRequestModel } from './WeatherRequest.model';
 import { FarmModel } from './Farm.model';
+import { SoilTestModel, initializeSoilTestModel } from './SoilTest.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
   // Initialize User model
   initializeUserModel(sequelize);
+  
+  // Initialize SoilTest model
+  initializeSoilTestModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -29,6 +33,7 @@ function setupAssociations(): void {
     PestAnalysis: PestAnalysisModel,
     WeatherRequest: WeatherRequestModel,
     Farm: FarmModel,
+    SoilTest: SoilTestModel,
   });
 
   ProductionCycleModel.associate({
@@ -66,6 +71,12 @@ function setupAssociations(): void {
     User: UserModel,
     ProductionCycle: ProductionCycleModel,
     FarmCollaborator: FarmCollaboratorModel,
+    SoilTest: SoilTestModel,
+  });
+
+  SoilTestModel.associate({
+    User: UserModel,
+    Farm: FarmModel,
   });
 }
 
@@ -79,6 +90,7 @@ export {
   PestAnalysisModel,
   WeatherRequestModel,
   FarmModel,
+  SoilTestModel,
 };
 
 // Export types
@@ -86,3 +98,4 @@ export * from './User.model';
 export * from './ProductionCycle.model';
 export * from './CropVariety.model';
 export * from './Activity.model';
+export * from './SoilTest.model';
