@@ -22,15 +22,30 @@ export class AuthService {
   // Register new user
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      // Check if user already exists
+      // Check if user already exists (optimized single query)
       const existingUser = await UserModel.findOne({
         where: {
-          ...(userData.email ? { email: userData.email } : {}),
-          ...(userData.phoneNumber ? { phoneNumber: userData.phoneNumber } : {}),
-        },
+          [Op.or]: [
+            ...(userData.email ? [{ email: userData.email }] : []),
+            ...(userData.phoneNumber ? [{ phoneNumber: userData.phoneNumber }] : [])
+          ]
+        }
       });
-
+      
       if (existingUser) {
+        console.error('User already exists:', {
+          existingUser: {
+            id: existingUser.id,
+            email: existingUser.email,
+            phoneNumber: existingUser.phoneNumber
+          },
+          newUserData: {
+            email: userData.email,
+            phoneNumber: userData.phoneNumber
+          }
+        });
+        
+        // Check which field conflicts and throw appropriate error
         if (existingUser.email === userData.email) {
           throw new Error(ERROR_CODES.EMAIL_ALREADY_EXISTS);
         }
@@ -74,8 +89,45 @@ export class AuthService {
         user: userResponse,
         tokens,
       };
-    } catch (error) {
-      logError('Registration failed', error as Error, userData);
+    } catch (error: any) {
+      console.error('Detailed registration error:', {
+        error: error.message,
+        stack: error.stack,
+        errorType: error.constructor.name,
+        userData: { ...userData, password: '[REDACTED]' }
+      });
+      
+      // Handle Sequelize unique constraint violations
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        const fields = error.fields || {};
+        
+        if (fields.email) {
+          throw new Error(ERROR_CODES.EMAIL_ALREADY_EXISTS);
+        }
+        if (fields.phone_number) {
+          throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
+        }
+        if (fields.phoneNumber) {
+          throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
+        }
+        
+        // Generic unique constraint error
+        throw new Error('A user with this information already exists');
+      }
+      
+      // Handle other Sequelize validation errors
+      if (error.name === 'SequelizeValidationError') {
+        const validationErrors = error.errors?.map((err: any) => err.message) || [];
+        throw new Error(`Validation error: ${validationErrors.join(', ')}`);
+      }
+      
+      logError('Registration failed', error as Error, {
+        ...userData,
+        password: '[REDACTED]',
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorType: error.constructor.name
+      });
       throw error;
     }
   }
@@ -121,8 +173,20 @@ export class AuthService {
         user: userResponse,
         tokens,
       };
-    } catch (error) {
-      logError('Login failed', error as Error, { identifier: loginData.identifier });
+    } catch (error: any) {
+      console.error('Auth service login error:', {
+        error: error.message,
+        stack: error.stack,
+        identifier: loginData.identifier,
+        errorType: error.constructor.name
+      });
+      
+      logError('Login failed', error as Error, { 
+        identifier: loginData.identifier,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorType: error.constructor.name
+      });
       throw error;
     }
   }

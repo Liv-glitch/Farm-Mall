@@ -30,6 +30,20 @@ export class AuthController {
     try {
       const validationResult = validateRegisterRequest(req.body);
       if (!validationResult.isValid) {
+        console.error('Registration validation failed:', {
+          errors: validationResult.errors,
+          requestBody: req.body,
+          endpoint: '/api/v1/auth/register'
+        });
+        
+        logError('Registration validation failed', new Error('Validation failed'), {
+          errors: validationResult.errors,
+          requestBody: req.body,
+          endpoint: '/api/v1/auth/register',
+          userAgent: req.get('User-Agent'),
+          ip: req.ip
+        });
+        
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Validation failed',
@@ -87,6 +101,20 @@ export class AuthController {
     try {
       const validationResult = validateLoginRequest(req.body);
       if (!validationResult.isValid) {
+        console.error('Login validation failed:', {
+          errors: validationResult.errors,
+          requestBody: req.body,
+          endpoint: '/api/v1/auth/login'
+        });
+        
+        logError('Login validation failed', new Error('Validation failed'), {
+          errors: validationResult.errors,
+          requestBody: req.body,
+          endpoint: '/api/v1/auth/login',
+          userAgent: req.get('User-Agent'),
+          ip: req.ip
+        });
+        
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Validation failed',
@@ -106,7 +134,24 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      logError('Login failed', error, { identifier: req.body.identifier });
+      console.error('Detailed login error:', {
+        error: error.message,
+        stack: error.stack,
+        identifier: req.body.identifier,
+        errorType: error.constructor.name
+      });
+      
+      logError('Login failed', error, { 
+        identifier: req.body.identifier,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorType: error.constructor.name,
+        errorDetails: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      });
 
       if (error.message === ERROR_CODES.INVALID_CREDENTIALS) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -119,7 +164,7 @@ export class AuthController {
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error',
+        message: error.message || 'Internal server error',
         code: ERROR_CODES.INTERNAL_SERVER_ERROR,
       });
     }

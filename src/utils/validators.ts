@@ -235,6 +235,23 @@ export const validateCoordinatesInKenya = (lat: number, lng: number): boolean =>
   return lat >= -4.7 && lat <= 5.0 && lng >= 33.9 && lng <= 41.9;
 };
 
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  // Remove all non-digit characters except +
+  let cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  
+  // If it starts with 0, replace with +254 (Kenya)
+  if (cleaned.startsWith('0')) {
+    cleaned = '+254' + cleaned.substring(1);
+  }
+  
+  // If it doesn't start with +, add it
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  
+  return cleaned;
+};
+
 // Validation result interface
 export interface ValidationResult {
   isValid: boolean;
@@ -257,7 +274,28 @@ export const validateWithSchema = (schema: Joi.ObjectSchema, data: any): Validat
 
 // Specific validation functions expected by the controller
 export const validateRegisterRequest = (data: any): ValidationResult => {
-  return validateWithSchema(registerSchema, data);
+  // Format phone number if provided
+  if (data.phoneNumber) {
+    try {
+      data.phoneNumber = formatPhoneNumber(data.phoneNumber);
+    } catch (error) {
+      // If formatting fails, keep original for validation
+    }
+  }
+  
+  const result = validateWithSchema(registerSchema, data);
+  
+  // Add custom error messages for phone number validation
+  if (!result.isValid && result.errors) {
+    result.errors = result.errors.map(error => {
+      if (error.includes('phoneNumber') && error.includes('pattern')) {
+        return 'Phone number must be in international format (e.g., +254712345678 for Kenya, +1234567890 for US)';
+      }
+      return error;
+    });
+  }
+  
+  return result;
 };
 
 export const validateLoginRequest = (data: any): ValidationResult => {
