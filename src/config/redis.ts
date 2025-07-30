@@ -94,7 +94,13 @@ class RedisClient {
     try {
       if (!this.isConnected) {
         logInfo('Attempting Redis connection');
-        await this.client.connect();
+        // Add timeout to connection attempt
+        const connectPromise = this.client.connect();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Redis connection timeout after 10s')), 10000);
+        });
+        
+        await Promise.race([connectPromise, timeoutPromise]);
         logInfo('Redis connection successful');
       }
     } catch (error) {
@@ -102,10 +108,8 @@ class RedisClient {
         isConnected: this.isConnected,
         env: env.NODE_ENV
       });
-      // Don't throw connection errors in production
-      if (env.NODE_ENV !== 'production') {
-        throw error;
-      }
+      // Always throw error to let caller handle it
+      throw error;
     }
   }
 

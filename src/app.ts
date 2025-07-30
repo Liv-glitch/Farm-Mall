@@ -197,15 +197,24 @@ class Application {
 
   public async start(): Promise<void> {
     try {
-      // Connect to Redis first
+      // Try to connect to Redis (optional)
       logger.info('Connecting to Redis...');
-      await connectRedis();
-      logger.info('Redis connection successful');
+      try {
+        await connectRedis();
+        logger.info('Redis connection successful');
+      } catch (redisError) {
+        logger.warn('Redis connection failed, continuing without Redis', redisError);
+      }
 
-      // Then connect to database
+      // Try to connect to database (required for full functionality)
       logger.info('Connecting to database...');
-      await connectDatabase();
-      logger.info('Database connection successful');
+      try {
+        await connectDatabase();
+        logger.info('Database connection successful');
+      } catch (dbError) {
+        logger.warn('Database connection failed, some features will be limited', dbError);
+        // Continue without database for basic API testing
+      }
 
       const port = parseInt(process.env.PORT || '3000', 10);
       const isProduction = env.NODE_ENV === 'production';
