@@ -8,7 +8,7 @@ import aiRoutes from './ai.routes';
 import adminRoutes from './admin.routes';
 import collaborationRoutes from './collaboration.routes';
 import soilAnalysisRoutes from './soilAnalysis.routes';
-import storageRoutes from './storage.routes';
+import enterpriseMediaRoutes from './enterprise-media.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -46,7 +46,7 @@ router.use('/plantid-health', plantIdHealthRoutes);
 router.use('/admin', adminRoutes);
 router.use('/collaboration', collaborationRoutes);
 router.use('/soil-analysis', soilAnalysisRoutes);
-router.use('/storage', storageRoutes);
+router.use('/media', enterpriseMediaRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -62,7 +62,8 @@ router.get('/', (_, res) => {
       'WhatsApp integration',
       'Premium subscription features',
       'Farm collaboration and team management',
-      'Soil test analysis and recommendations'
+      'Soil test analysis and recommendations',
+      'Enterprise media management with variants and AI analysis'
     ],
     documentation: '/api-docs',
     endpoints: {
@@ -74,7 +75,8 @@ router.get('/', (_, res) => {
       'plantid-health': '/plantid-health',
       admin: '/admin',
       collaboration: '/collaboration',
-      'soil-analysis': '/soil-analysis'
+      'soil-analysis': '/soil-analysis',
+      media: '/media'
     }
   });
 });
