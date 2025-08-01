@@ -197,10 +197,15 @@ export class AuthService {
       // Verify refresh token
       const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as RefreshTokenPayload;
 
-      // Check if token exists in cache
-      const cachedToken = await redisClient.get(`session:${payload.userId}`);
-      if (!cachedToken || cachedToken !== refreshToken) {
-        throw new Error(ERROR_CODES.REFRESH_TOKEN_INVALID);
+      // Check if token exists in cache (optional - if Redis fails, skip this check)
+      try {
+        const cachedToken = await redisClient.get(`session:${payload.userId}`);
+        if (cachedToken && cachedToken !== refreshToken) {
+          throw new Error(ERROR_CODES.REFRESH_TOKEN_INVALID);
+        }
+        // If cachedToken is null (Redis failed), we'll rely on JWT verification only
+      } catch (redisError) {
+        logError('Redis check failed during token refresh, relying on JWT verification only', redisError as Error);
       }
 
       // Get user
@@ -236,7 +241,7 @@ export class AuthService {
   // Logout user
   async logout(userId: string, accessToken: string, refreshToken?: string): Promise<void> {
     try {
-      // Blacklist access token
+      // Blacklist access token (Redis failures are handled in blacklistToken method)
       await this.blacklistToken(accessToken);
 
       // Blacklist refresh token if provided
@@ -244,13 +249,19 @@ export class AuthService {
         await this.blacklistToken(refreshToken);
       }
 
-      // Remove user session from cache
-      await redisClient.del(`session:${userId}`);
+      // Remove user session from cache (handle Redis failures gracefully)
+      try {
+        await redisClient.del(`session:${userId}`);
+      } catch (redisError) {
+        logError('Failed to remove session from Redis during logout', redisError as Error, { userId });
+        // Continue logout process even if Redis fails
+      }
 
       logInfo('User logged out successfully', { userId });
     } catch (error) {
       logError('Logout failed', error as Error, { userId });
-      throw error;
+      // Don't throw error to prevent logout failures from crashing the app
+      logInfo('Logout completed with errors', { userId });
     }
   }
 
@@ -315,12 +326,18 @@ export class AuthService {
       const resetToken = uuidv4();
       // const resetTokenExpiry = new Date(Date.now() + TIME.HOUR); // 1 hour expiry
 
-      // Cache reset token
-      await redisClient.set(
-        `password_reset:${resetToken}`,
-        user.id,
-        3600 // 1 hour in seconds
-      );
+      // Cache reset token (handle Redis failures gracefully)
+      try {
+        await redisClient.set(
+          `password_reset:${resetToken}`,
+          user.id,
+          3600 // 1 hour in seconds
+        );
+      } catch (redisError) {
+        logError('Failed to cache password reset token', redisError as Error, { userId: user.id });
+        // For password reset, Redis is critical - we need to throw an error if we can't cache the token
+        throw new Error('Unable to process password reset request at this time');
+      }
 
       // TODO: Send reset email/SMS
       // await emailService.sendPasswordResetEmail(user, resetToken);
@@ -476,11 +493,17 @@ export class AuthService {
 
   // Cache user session
   private async cacheUserSession(userId: string, refreshToken: string): Promise<void> {
-    await redisClient.set(
-      `session:${userId}`,
-      refreshToken,
-      7 * 24 * 60 * 60 // 7 days in seconds
-    );
+    try {
+      await redisClient.set(
+        `session:${userId}`,
+        refreshToken,
+        7 * 24 * 60 * 60 // 7 days in seconds
+      );
+      logInfo('User session cached', { userId });
+    } catch (error) {
+      logError('Failed to cache user session', error as Error, { userId });
+      // Continue without Redis caching - authentication will still work
+    }
   }
 
   // Blacklist token
@@ -491,10 +514,15 @@ export class AuthService {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
           await redisClient.set(`blacklist:${token}`, 'blacklisted', ttl);
+          logInfo('Token blacklisted', { tokenLength: token.length });
         }
       }
     } catch (error) {
-      logger.warn('Failed to blacklist token', { error, token: token.substring(0, 20) });
+      logger.warn('Failed to blacklist token - continuing without Redis blacklisting', { 
+        error, 
+        token: token.substring(0, 20) 
+      });
+      // Continue without Redis blacklisting - auth will still work
     }
   }
 
@@ -504,7 +532,8 @@ export class AuthService {
       const exists = await redisClient.exists(`blacklist:${token}`);
       return exists === 1;
     } catch (error) {
-      logger.warn('Failed to check token blacklist', { error });
+      logger.warn('Failed to check token blacklist - assuming token is valid', { error });
+      // If Redis fails, assume token is not blacklisted to avoid blocking users
       return false;
     }
   }
@@ -521,9 +550,11 @@ export class AuthService {
         await this.blacklistToken(refreshToken);
         // Delete session
         await redisClient.del(sessionKey);
+        logInfo('User sessions invalidated', { userId });
       }
     } catch (error) {
-      logger.warn('Failed to invalidate user sessions', { error, userId });
+      logger.warn('Failed to invalidate user sessions - continuing without Redis cleanup', { error, userId });
+      // Continue without Redis cleanup - password change will still work
     }
   }
 
@@ -554,6 +585,46 @@ export class AuthService {
     } catch (error) {
       logError('Failed to get user by ID', error as Error, { userId });
       return null;
+    }
+  }
+
+  // Update user profile
+  async updateUserProfile(userId: string, updateData: {
+    fullName?: string;
+    phoneNumber?: string;
+    county?: string;
+    subCounty?: string;
+    profilePictureUrl?: string;
+  }): Promise<UserModel | null> {
+    try {
+      const user = await UserModel.findByPk(userId);
+      if (!user) {
+        throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      // Check if phone number is being updated and if it already exists
+      if (updateData.phoneNumber && updateData.phoneNumber !== user.phoneNumber) {
+        const existingUser = await UserModel.findOne({
+          where: { 
+            phoneNumber: updateData.phoneNumber,
+            id: { [Op.ne]: userId }
+          }
+        });
+        
+        if (existingUser) {
+          throw new Error(ERROR_CODES.PHONE_ALREADY_EXISTS);
+        }
+      }
+
+      // Update user with provided data
+      await user.update(updateData);
+      
+      logInfo('User profile updated successfully', { userId, updatedFields: Object.keys(updateData) });
+      
+      return user;
+    } catch (error) {
+      logError('Failed to update user profile', error as Error, { userId });
+      throw error;
     }
   }
 

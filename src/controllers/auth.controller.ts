@@ -482,4 +482,45 @@ export class AuthController {
       });
     }
   }
+
+  // Update user profile
+  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user.id;
+      const { fullName, phoneNumber, county, subCounty, profilePictureUrl } = req.body;
+
+      const updatedUser = await this.authService.updateUserProfile(userId, {
+        fullName,
+        phoneNumber,
+        county,
+        subCounty,
+        profilePictureUrl,
+      });
+
+      if (!updatedUser) {
+        res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'User not found',
+          code: ERROR_CODES.USER_NOT_FOUND,
+        });
+        return;
+      }
+
+      logInfo('Profile updated successfully', { userId });
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: { user: updatedUser.toJSON() },
+      });
+    } catch (error: any) {
+      logError('Update profile failed', error, { userId: req.user?.id });
+
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error',
+        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
 } 

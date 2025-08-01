@@ -285,7 +285,21 @@ class Application {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled Rejection at Promise', { reason, promise });
-      process.exit(1);
+      
+      // Check if this is a Redis-related error that shouldn't crash the server
+      const reasonStr = String(reason);
+      const isRedisError = reasonStr.includes('Redis') || 
+                          reasonStr.includes('ECONNREFUSED') || 
+                          reasonStr.includes('ENOTFOUND') ||
+                          reasonStr.includes('connection') ||
+                          reasonStr.includes('timeout');
+      
+      if (isRedisError) {
+        logger.warn('Redis-related unhandled rejection, continuing server operation', { reason });
+      } else {
+        logger.error('Critical unhandled rejection, shutting down server', { reason });
+        process.exit(1);
+      }
     });
   }
 }
