@@ -468,7 +468,7 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       subscriptionType: user.subscriptionType,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 15 * 60, // 15 minutes
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
     };
 
     // Refresh token payload
@@ -486,7 +486,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 15 * 60, // 15 minutes in seconds
+      expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
       tokenType: 'Bearer',
     };
   }
