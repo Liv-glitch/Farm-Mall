@@ -57,36 +57,61 @@ class RedisClient {
 
   private setupEventListeners(): void {
     this.client.on('connect', () => {
-      const redisUrl = env.REDIS_URL.replace(/\/\/.*@/, '//***:***@');
-      logInfo('Redis connecting', { 
-        env: env.NODE_ENV,
-        url: redisUrl,
-        tls: env.NODE_ENV === 'production'
-      });
+      try {
+        const redisUrl = env.REDIS_URL.replace(/\/\/.*@/, '//***:***@');
+        logInfo('Redis connecting', { 
+          env: env.NODE_ENV,
+          url: redisUrl,
+          tls: env.NODE_ENV === 'production'
+        });
+      } catch (error) {
+        // Prevent any errors in event handler from crashing the app
+        console.error('Error in Redis connect handler:', error);
+      }
     });
 
     this.client.on('ready', () => {
-      logInfo('Redis ready and connected');
-      this.isConnected = true;
+      try {
+        logInfo('Redis ready and connected');
+        this.isConnected = true;
+      } catch (error) {
+        console.error('Error in Redis ready handler:', error);
+      }
     });
 
     this.client.on('error', (error: Error) => {
-      logError('Redis error', error, {
-        isConnected: this.isConnected
-      });
-      this.isConnected = false;
+      try {
+        logError('Redis error', error, {
+          isConnected: this.isConnected
+        });
+        this.isConnected = false;
+      } catch (handlerError) {
+        // Fallback to console if logger fails
+        console.error('Redis error:', error);
+        console.error('Error in Redis error handler:', handlerError);
+        this.isConnected = false;
+      }
     });
 
     this.client.on('end', () => {
-      logInfo('Redis disconnected');
-      this.isConnected = false;
+      try {
+        logInfo('Redis disconnected');
+        this.isConnected = false;
+      } catch (error) {
+        console.error('Error in Redis end handler:', error);
+        this.isConnected = false;
+      }
     });
 
     this.client.on('reconnecting', () => {
-      logInfo('Redis reconnecting', {
-        isConnected: this.isConnected,
-        env: env.NODE_ENV
-      });
+      try {
+        logInfo('Redis reconnecting', {
+          isConnected: this.isConnected,
+          env: env.NODE_ENV
+        });
+      } catch (error) {
+        console.error('Error in Redis reconnecting handler:', error);
+      }
     });
   }
 
@@ -94,7 +119,13 @@ class RedisClient {
     try {
       if (!this.isConnected) {
         logInfo('Attempting Redis connection');
-        await this.client.connect();
+        // Add timeout to connection attempt
+        const connectPromise = this.client.connect();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Redis connection timeout after 10s')), 10000);
+        });
+        
+        await Promise.race([connectPromise, timeoutPromise]);
         logInfo('Redis connection successful');
       }
     } catch (error) {
@@ -102,10 +133,8 @@ class RedisClient {
         isConnected: this.isConnected,
         env: env.NODE_ENV
       });
-      // Don't throw connection errors in production
-      if (env.NODE_ENV !== 'production') {
-        throw error;
-      }
+      // Always throw error to let caller handle it
+      throw error;
     }
   }
 
@@ -134,6 +163,11 @@ class RedisClient {
   // Cache methods
   async set(key: string, value: string, expireInSeconds?: number): Promise<void> {
     try {
+      if (!this.isConnected) {
+        logInfo('Redis not connected, skipping SET operation', { key });
+        return;
+      }
+      
       if (expireInSeconds) {
         await this.client.setEx(key, expireInSeconds, value);
         logInfo('Redis SET with expiry', { key, expireInSeconds });
@@ -143,51 +177,76 @@ class RedisClient {
       }
     } catch (error) {
       logError('Redis SET error', error as Error, { key });
-      throw error;
+      // Don't throw error, just log it to prevent server crashes
+      this.isConnected = false;
     }
   }
 
   async get(key: string): Promise<string | null> {
     try {
+      if (!this.isConnected) {
+        logInfo('Redis not connected, returning null for GET operation', { key });
+        return null;
+      }
+      
       const value = await this.client.get(key);
       logInfo('Redis GET', { key, exists: value !== null });
       return value;
     } catch (error) {
       logError('Redis GET error', error as Error, { key });
-      throw error;
+      this.isConnected = false;
+      return null; // Return null instead of throwing
     }
   }
 
   async del(key: string): Promise<number> {
     try {
+      if (!this.isConnected) {
+        logInfo('Redis not connected, skipping DEL operation', { key });
+        return 0;
+      }
+      
       const result = await this.client.del(key);
       logInfo('Redis DEL', { key, deleted: result > 0 });
       return result;
     } catch (error) {
       logError('Redis DEL error', error as Error, { key });
-      throw error;
+      this.isConnected = false;
+      return 0; // Return 0 instead of throwing
     }
   }
 
   async exists(key: string): Promise<number> {
     try {
+      if (!this.isConnected) {
+        logInfo('Redis not connected, returning 0 for EXISTS operation', { key });
+        return 0;
+      }
+      
       const result = await this.client.exists(key);
       logInfo('Redis EXISTS', { key, exists: result > 0 });
       return result;
     } catch (error) {
       logError('Redis EXISTS error', error as Error, { key });
-      throw error;
+      this.isConnected = false;
+      return 0; // Return 0 instead of throwing
     }
   }
 
   async expire(key: string, seconds: number): Promise<boolean> {
     try {
+      if (!this.isConnected) {
+        logInfo('Redis not connected, skipping EXPIRE operation', { key, seconds });
+        return false;
+      }
+      
       const result = await this.client.expire(key, seconds);
       logInfo('Redis EXPIRE', { key, seconds, success: result });
       return result;
     } catch (error) {
       logError('Redis EXPIRE error', error as Error, { key, seconds });
-      throw error;
+      this.isConnected = false;
+      return false; // Return false instead of throwing
     }
   }
 

@@ -8,6 +8,8 @@ import { PestAnalysisModel } from './PestAnalysis.model';
 import { WeatherRequestModel } from './WeatherRequest.model';
 import { FarmModel } from './Farm.model';
 import { SoilTestModel, initializeSoilTestModel } from './SoilTest.model';
+import { Media } from './Media.model';
+import { MediaAssociation } from './MediaAssociation.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -16,6 +18,10 @@ export function initializeModels(sequelize: Sequelize): void {
   
   // Initialize SoilTest model
   initializeSoilTestModel(sequelize);
+  
+  // Initialize Media models
+  Media.initModel(sequelize);
+  MediaAssociation.initModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -78,6 +84,11 @@ function setupAssociations(): void {
     User: UserModel,
     Farm: FarmModel,
   });
+
+  // Media associations
+  Media.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
+  MediaAssociation.belongsTo(Media, { foreignKey: 'mediaId', as: 'Media' });
+  Media.hasMany(MediaAssociation, { foreignKey: 'mediaId', as: 'associations' });
 }
 
 // Export models for use throughout the application
@@ -91,6 +102,8 @@ export {
   WeatherRequestModel,
   FarmModel,
   SoilTestModel,
+  Media,
+  MediaAssociation,
 };
 
 // Export types
@@ -99,3 +112,5 @@ export * from './ProductionCycle.model';
 export * from './CropVariety.model';
 export * from './Activity.model';
 export * from './SoilTest.model';
+export * from './Media.model';
+export * from './MediaAssociation.model';

@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuid } from 'uuid';
 import sharp from 'sharp';
 import { env } from '../config/environment';
+import { MediaContext } from '../models/Media.model';
 
 export class FileStorageService {
   private supabase: SupabaseClient<any, 'public', any>;
@@ -59,19 +60,32 @@ export class FileStorageService {
     }
   }
 
+  /**
+   * Dynamic hierarchical file upload
+   * Path format: {category}/{subcategory?}/{contextId}/{entityId?}/{filename}
+   */
   async uploadFile(
-    userId: string, 
     file: Express.Multer.File, 
-    type: 'soil-test' | 'production-record' | 'plant-image' | 'document',
+    context: MediaContext,
     options?: {
       generateThumbnail?: boolean;
       metadata?: Record<string, any>;
       isPublic?: boolean;
+      customFileName?: string;
     }
   ) {
     try {
       const fileExt = file.originalname.split('.').pop();
-      const fileName = `${type}/${userId}/${uuid()}.${fileExt}`;
+      const customFileName = options?.customFileName || `${uuid()}.${fileExt}`;
+      
+      // Build hierarchical path
+      const pathParts = [context.category];
+      if (context.subcategory) pathParts.push(context.subcategory);
+      pathParts.push(context.contextId);
+      if (context.entityId) pathParts.push(context.entityId);
+      pathParts.push(customFileName);
+      
+      const fileName = pathParts.join('/');
       let thumbnailUrl: string | undefined;
 
       // Generate thumbnail for images if requested
@@ -80,7 +94,7 @@ export class FileStorageService {
           .resize(300, 300, { fit: 'inside' })
           .toBuffer();
         
-        const thumbnailName = `thumbnails/${fileName}`;
+        const thumbnailName = `processed/thumbnails/${fileName}`;
         const { error: thumbnailError } = await this.supabase.storage
           .from(this.bucketName)
           .upload(thumbnailName, thumbnailBuffer, {
@@ -222,6 +236,60 @@ export class FileStorageService {
       console.error('Error getting public URL:', error);
       throw new Error('Failed to get public URL');
     }
+  }
+
+  // Helper methods for creating media contexts
+  static createUserProfileContext(userId: string): MediaContext {
+    return {
+      category: 'users',
+      subcategory: 'profiles',
+      contextId: userId,
+    };
+  }
+
+  static createLivestockContext(farmId: string, animalType: string, recordId: string): MediaContext {
+    return {
+      category: 'livestock',
+      subcategory: animalType, // cattle, poultry, swine, etc.
+      contextId: farmId,
+      entityId: recordId,
+    };
+  }
+
+  static createCropContext(farmId: string, purpose: string, fieldId: string, entityId?: string): MediaContext {
+    return {
+      category: 'crops',
+      subcategory: purpose, // identification, health, harvest, etc.
+      contextId: farmId,
+      entityId: entityId || fieldId,
+    };
+  }
+
+  static createSoilAnalysisContext(farmId: string, analysisType: string, locationId: string): MediaContext {
+    return {
+      category: 'soil-analysis',
+      subcategory: analysisType, // tests, sand-analysis, composition, etc.
+      contextId: farmId,
+      entityId: locationId,
+    };
+  }
+
+  static createInfrastructureContext(farmId: string, infrastructureType: string, entityId: string): MediaContext {
+    return {
+      category: 'infrastructure',
+      subcategory: infrastructureType, // buildings, equipment, irrigation, etc.
+      contextId: farmId,
+      entityId: entityId,
+    };
+  }
+
+  static createDocumentationContext(farmId: string, docType: string, entityId: string): MediaContext {
+    return {
+      category: 'documentation',
+      subcategory: docType, // procedures, compliance, reports, etc.
+      contextId: farmId,
+      entityId: entityId,
+    };
   }
 
   // S3 compatibility methods

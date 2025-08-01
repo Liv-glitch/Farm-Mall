@@ -36,21 +36,22 @@ export const sequelize = env.DATABASE_URL
 
 // Test database connection
 export const connectDatabase = async (): Promise<void> => {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Database connection established successfully.');
-    
-    // Initialize all models after connection is established
-    const { initializeModels } = await import('../models');
-    initializeModels(sequelize);
-    
-    // Note: Schema creation now handled by migrations
-    // Run 'npm run migrate' to create/update database schema
-    console.log('💡 Use "npm run migrate" to run database migrations');
-  } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
-    process.exit(1);
-  }
+  // Add timeout to database connection
+  const authenticatePromise = sequelize.authenticate();
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Database connection timeout after 10s')), 10000);
+  });
+
+  await Promise.race([authenticatePromise, timeoutPromise]);
+  console.log('✅ Database connection established successfully.');
+  
+  // Initialize all models after connection is established
+  const { initializeModels } = await import('../models');
+  initializeModels(sequelize);
+  
+  // Note: Schema creation now handled by migrations
+  // Run 'npm run migrate' to create/update database schema
+  console.log('💡 Use "npm run migrate" to run database migrations');
 };
 
 // Close database connection

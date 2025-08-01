@@ -294,6 +294,69 @@ router.get('/profile', authenticate, authController.getProfile.bind(authControll
 
 /**
  * @swagger
+ * /api/v1/auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 example: "John Doe"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "+254712345678"
+ *               county:
+ *                 type: string
+ *                 example: "Nairobi"
+ *               subCounty:
+ *                 type: string
+ *                 example: "Westlands"
+ *               profilePictureUrl:
+ *                 type: string
+ *                 format: uri
+ *                 example: "https://your-supabase-url/storage/v1/object/public/bucket/users/profile/user-id/profile.jpg"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error or phone number already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/profile', authenticate, authController.updateProfile.bind(authController) as any);
+
+/**
+ * @swagger
  * /api/v1/auth/change-password:
  *   post:
  *     summary: Change user password
