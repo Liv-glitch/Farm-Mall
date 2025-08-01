@@ -8,6 +8,19 @@ export interface MediaVariant {
   fileSize: number;
 }
 
+export interface MediaContext {
+  category: string;           // livestock, crops, soil-analysis, etc.
+  subcategory?: string;       // cattle, identification, tests, etc.
+  contextId: string;          // farmId, fieldId, recordId, etc.
+  entityId?: string;          // specific entity being documented
+}
+
+export type MediaRole = 
+  | 'primary' | 'thumbnail' | 'attachment' 
+  | 'before' | 'after' | 'comparison'
+  | 'profile' | 'documentation' | 'evidence'
+  | 'diagnostic' | 'treatment' | 'progress';
+
 export interface MediaAnalytics {
   uploadTime: Date;
   processingTime?: number;
@@ -60,6 +73,7 @@ export interface MediaAttributes {
   analytics: MediaAnalytics;
   isPublic: boolean;
   expiresAt?: Date;
+  context: MediaContext;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -83,6 +97,7 @@ export class Media extends Model<MediaAttributes, MediaCreationAttributes> imple
   public analytics!: MediaAnalytics;
   public isPublic!: boolean;
   public expiresAt?: Date;
+  public context!: MediaContext;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -169,12 +184,18 @@ export class Media extends Model<MediaAttributes, MediaCreationAttributes> imple
           type: DataTypes.DATE,
           allowNull: true,
         },
+        context: {
+          type: DataTypes.JSONB,
+          allowNull: false,
+          defaultValue: {},
+        },
       },
       {
         sequelize,
         modelName: 'Media',
         tableName: 'media',
         timestamps: true,
+        underscored: false,
         indexes: [
           {
             fields: ['userId'],
@@ -191,6 +212,14 @@ export class Media extends Model<MediaAttributes, MediaCreationAttributes> imple
           },
           {
             fields: ['createdAt'],
+          },
+          {
+            fields: ['context'],
+            using: 'gin',
+          },
+          {
+            fields: [{ name: 'context', operator: 'jsonb_path_ops' }],
+            using: 'gin',
           },
         ],
       }

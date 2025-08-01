@@ -27,10 +27,12 @@ export class MediaProcessorQueue {
         this.isRedisAvailable = true;
         this.initializeQueue();
       } else {
-        logInfo('Redis not available, media processing queue disabled');
+        logInfo('Redis not available, media processing queue disabled - will process synchronously');
+        this.isRedisAvailable = false;
       }
     } catch (error) {
-      logError('Failed to initialize media processor queue', error as Error);
+      logError('Failed to initialize media processor queue - continuing without queue', error as Error);
+      this.isRedisAvailable = false;
     }
   }
 
@@ -69,7 +71,10 @@ export class MediaProcessorQueue {
       this.setupEventHandlers();
       logInfo('Media processor queue initialized successfully');
     } catch (error) {
-      logError('Failed to initialize media processor queue', error as Error);
+      logError('Failed to initialize media processor queue - disabling queue functionality', error as Error);
+      this.isRedisAvailable = false;
+      this.queue = null;
+      this.worker = null;
     }
   }
 
@@ -80,7 +85,9 @@ export class MediaProcessorQueue {
   ): Promise<Job<MediaProcessingJobData> | null> {
     try {
       if (!this.isRedisAvailable || !this.queue) {
-        logInfo('Redis not available, skipping job queue', { mediaId });
+        logInfo('Redis not available, processing media synchronously', { mediaId });
+        // Process synchronously when Redis is not available
+        await this.processSynchronously(mediaId, options);
         return null;
       }
 
@@ -96,8 +103,40 @@ export class MediaProcessorQueue {
       logInfo('Media processing job added', { mediaId, jobId: job.id, options });
       return job;
     } catch (error) {
-      logError('Failed to add media processing job', error as Error, { mediaId, options });
-      return null; // Don't throw, just return null
+      logError('Failed to add media processing job, falling back to synchronous processing', error as Error, { mediaId, options });
+      // Fallback to synchronous processing if queue fails
+      try {
+        await this.processSynchronously(mediaId, options);
+      } catch (syncError) {
+        logError('Synchronous media processing also failed', syncError as Error, { mediaId });
+      }
+      return null;
+    }
+  }
+
+  // Process media synchronously when Redis/queue is not available
+  private async processSynchronously(mediaId: string, options: MediaProcessingJobData['options']): Promise<void> {
+    try {
+      logInfo('Processing media synchronously', { mediaId, options });
+      
+      // Import service dynamically to avoid circular dependency
+      const { EnterpriseMediaService } = await import('../services/enterprise-media.service');
+      const mediaService = new EnterpriseMediaService();
+
+      // Generate variants if requested
+      if (options.generateVariants) {
+        await mediaService.generateVariants(mediaId);
+      }
+
+      // AI analysis if requested
+      if (options.aiAnalysis) {
+        await this.performAIAnalysis(mediaId);
+      }
+
+      logInfo('Synchronous media processing completed', { mediaId });
+    } catch (error) {
+      logError('Synchronous media processing failed', error as Error, { mediaId });
+      throw error;
     }
   }
 

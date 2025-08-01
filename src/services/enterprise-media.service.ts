@@ -3,7 +3,7 @@ import path from 'path';
 import sharp from 'sharp';
 import ExifReader from 'exifreader';
 import { FileStorageService } from './fileStorage.service';
-import { Media, MediaAttributes, MediaVariant, MediaMetadata } from '../models/Media.model';
+import { Media, MediaAttributes, MediaVariant, MediaMetadata, MediaContext, MediaRole } from '../models/Media.model';
 import { MediaAssociation } from '../models/MediaAssociation.model';
 import { logInfo, logError } from '../utils/logger';
 import { Op } from 'sequelize';
@@ -14,12 +14,14 @@ export interface UploadOptions {
   expiresAt?: Date;
   metadata?: Record<string, any>;
   aiAnalysis?: boolean;
+  context: MediaContext;
 }
 
 export interface AssociationOptions {
-  associatableType: 'plant_identification' | 'plant_health' | 'soil_test' | 'production_cycle' | 'user_profile' | 'pest_analysis';
+  associatableType: string;
   associatableId: string;
-  role?: 'primary' | 'thumbnail' | 'attachment' | 'comparison' | 'before' | 'after';
+  role?: MediaRole;
+  context: MediaContext;
   order?: number;
 }
 
@@ -33,7 +35,7 @@ export class EnterpriseMediaService {
   async uploadMedia(
     userId: string,
     file: Express.Multer.File,
-    options: UploadOptions = {}
+    options: UploadOptions
   ): Promise<MediaAttributes> {
     const startTime = Date.now();
 
@@ -55,9 +57,14 @@ export class EnterpriseMediaService {
       const ext = path.extname(file.originalname);
       const fileName = `${hash}${ext}`;
       
-      // Determine storage path
-      const category = this.getCategoryFromMimeType(file.mimetype);
-      const storagePath = `${category}/${userId}/${fileName}`;
+      // Build hierarchical storage path
+      const pathParts = [options.context.category];
+      if (options.context.subcategory) pathParts.push(options.context.subcategory);
+      pathParts.push(options.context.contextId);
+      if (options.context.entityId) pathParts.push(options.context.entityId);
+      pathParts.push(fileName);
+      
+      const storagePath = pathParts.join('/');
 
       // Create media record
       const media = await Media.create({
@@ -78,17 +85,18 @@ export class EnterpriseMediaService {
         },
         isPublic: options.isPublic || false,
         expiresAt: options.expiresAt,
+        context: options.context,
       });
 
       // Upload to storage
       const uploadResult = await this.storageService.uploadFile(
-        userId,
         file,
-        category as any,
+        options.context,
         {
           generateThumbnail: false, // We'll handle this in processing
           isPublic: options.isPublic || false,
           metadata: options.metadata,
+          customFileName: fileName,
         }
       );
 
@@ -142,6 +150,7 @@ export class EnterpriseMediaService {
         associatableType: association.associatableType,
         associatableId: association.associatableId,
         role: association.role || 'primary',
+        context: association.context,
         order: association.order || 0,
       });
 
@@ -264,15 +273,24 @@ export class EnterpriseMediaService {
         // Upload variant
         const variantFileName = `${media.fileName.replace(/\.[^/.]+$/, '')}_${size.name}.jpg`;
 
+        const processedContext: MediaContext = {
+          category: 'processed',
+          subcategory: 'variants',
+          contextId: media.context.contextId,
+          entityId: media.id,
+        };
+
         const uploadResult = await this.storageService.uploadFile(
-          media.userId,
           {
             buffer: processedBuffer,
             originalname: variantFileName,
             mimetype: 'image/jpeg',
           } as Express.Multer.File,
-          'processed' as any,
-          { isPublic: media.isPublic }
+          processedContext,
+          { 
+            isPublic: media.isPublic,
+            customFileName: variantFileName,
+          }
         );
 
         const metadata = await sharp(processedBuffer).metadata();
@@ -448,12 +466,23 @@ export class EnterpriseMediaService {
     return metadata;
   }
 
-  private getCategoryFromMimeType(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'plant-image';
-    if (mimeType.startsWith('video/')) return 'plant-video';
-    if (mimeType === 'application/pdf') return 'soil-test';
-    return 'document';
+  /**
+   * Helper method to create appropriate context based on file type and purpose
+   */
+  static createContextFromType(
+    category: string,
+    subcategory: string,
+    contextId: string,
+    entityId?: string
+  ): MediaContext {
+    return {
+      category,
+      subcategory,
+      contextId,
+      entityId,
+    };
   }
+
 
   private isProcessableMedia(mimeType: string): boolean {
     return mimeType.startsWith('image/') && !mimeType.includes('svg');

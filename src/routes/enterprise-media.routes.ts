@@ -97,6 +97,18 @@ const upload = multer({
  *                 type: string
  *                 format: binary
  *                 description: Media file to upload
+ *               category:
+ *                 type: string
+ *                 description: Media category (livestock, crops, soil-analysis, etc.)
+ *               subcategory:
+ *                 type: string
+ *                 description: Media subcategory (cattle, identification, tests, etc.)
+ *               contextId:
+ *                 type: string
+ *                 description: Context ID (farmId, userId, etc.)
+ *               entityId:
+ *                 type: string
+ *                 description: Entity ID (specific record/entity)
  *               generateVariants:
  *                 type: boolean
  *                 default: true
@@ -118,6 +130,8 @@ const upload = multer({
  *                 description: Expiration date for the media
  *             required:
  *               - file
+ *               - category
+ *               - contextId
  *     responses:
  *       201:
  *         description: Media uploaded successfully
@@ -165,20 +179,34 @@ router.post('/upload',
  *             properties:
  *               associatableType:
  *                 type: string
- *                 enum: [plant_identification, plant_health, soil_test, production_cycle, user_profile, pest_analysis]
+ *                 description: Dynamic association type (livestock_record, crop_cycle, soil_test, etc.)
  *               associatableId:
  *                 type: string
  *                 format: uuid
  *               role:
  *                 type: string
- *                 enum: [primary, thumbnail, attachment, comparison, before, after]
+ *                 enum: [primary, thumbnail, attachment, comparison, before, after, profile, documentation, evidence, diagnostic, treatment, progress]
  *                 default: primary
+ *               category:
+ *                 type: string
+ *                 description: Context category
+ *               subcategory:
+ *                 type: string
+ *                 description: Context subcategory
+ *               contextId:
+ *                 type: string
+ *                 description: Context ID
+ *               entityId:
+ *                 type: string
+ *                 description: Entity ID
  *               order:
  *                 type: number
  *                 default: 0
  *             required:
  *               - associatableType
  *               - associatableId
+ *               - category
+ *               - contextId
  *     responses:
  *       200:
  *         description: Media associated successfully
@@ -216,7 +244,7 @@ router.post('/:mediaId/associate',
  *         name: role
  *         schema:
  *           type: string
- *           enum: [primary, thumbnail, attachment, comparison, before, after]
+ *           enum: [primary, thumbnail, attachment, comparison, before, after, profile, documentation, evidence, diagnostic, treatment, progress]
  *     responses:
  *       200:
  *         description: Media retrieved successfully
@@ -392,6 +420,177 @@ router.get('/analytics',
 router.delete('/:mediaId',
   authenticate,
   mediaController.deleteMedia.bind(mediaController)
+);
+
+// Specialized upload endpoints for easier frontend integration
+
+/**
+ * @swagger
+ * /api/v1/media/upload/user-profile:
+ *   post:
+ *     summary: Upload user profile picture
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               isPublic:
+ *                 type: boolean
+ *                 default: false
+ *             required:
+ *               - file
+ *     responses:
+ *       201:
+ *         description: Profile picture uploaded successfully
+ */
+router.post('/upload/user-profile',
+  authenticate,
+  upload.single('file'),
+  mediaController.uploadUserProfile.bind(mediaController)
+);
+
+/**
+ * @swagger
+ * /api/v1/media/upload/livestock:
+ *   post:
+ *     summary: Upload livestock media
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               farmId:
+ *                 type: string
+ *                 format: uuid
+ *               animalType:
+ *                 type: string
+ *                 enum: [cattle, poultry, swine, sheep, goats, other]
+ *               recordId:
+ *                 type: string
+ *                 format: uuid
+ *               generateVariants:
+ *                 type: boolean
+ *                 default: true
+ *             required:
+ *               - file
+ *               - farmId
+ *               - animalType
+ *               - recordId
+ *     responses:
+ *       201:
+ *         description: Livestock media uploaded successfully
+ */
+router.post('/upload/livestock',
+  authenticate,
+  upload.single('file'),
+  mediaController.uploadLivestockMedia.bind(mediaController)
+);
+
+/**
+ * @swagger
+ * /api/v1/media/upload/crops:
+ *   post:
+ *     summary: Upload crop media
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               farmId:
+ *                 type: string
+ *                 format: uuid
+ *               purpose:
+ *                 type: string
+ *                 enum: [identification, health, harvest, treatment, progress]
+ *               fieldId:
+ *                 type: string
+ *                 format: uuid
+ *               entityId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: Specific crop/plant ID
+ *               generateVariants:
+ *                 type: boolean
+ *                 default: true
+ *             required:
+ *               - file
+ *               - farmId
+ *               - purpose
+ *               - fieldId
+ *     responses:
+ *       201:
+ *         description: Crop media uploaded successfully
+ */
+router.post('/upload/crops',
+  authenticate,
+  upload.single('file'),
+  mediaController.uploadCropMedia.bind(mediaController)
+);
+
+/**
+ * @swagger
+ * /api/v1/media/upload/soil-analysis:
+ *   post:
+ *     summary: Upload soil analysis documents
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               farmId:
+ *                 type: string
+ *                 format: uuid
+ *               analysisType:
+ *                 type: string
+ *                 enum: [soil-test, sand-analysis, composition, ph-test, nutrient-analysis]
+ *               locationId:
+ *                 type: string
+ *                 format: uuid
+ *             required:
+ *               - file
+ *               - farmId
+ *               - analysisType
+ *               - locationId
+ *     responses:
+ *       201:
+ *         description: Soil analysis document uploaded successfully
+ */
+router.post('/upload/soil-analysis',
+  authenticate,
+  upload.single('file'),
+  mediaController.uploadSoilAnalysis.bind(mediaController)
 );
 
 export default router;

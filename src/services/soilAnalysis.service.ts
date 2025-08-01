@@ -1,6 +1,7 @@
 import { Queue, Worker, ConnectionOptions } from 'bullmq';
 import { SoilTestModel } from '../models/SoilTest.model';
 import { FileStorageService } from './fileStorage.service';
+import { MediaContext } from '../models/Media.model';
 import { CropVarietyModel } from '../models/CropVariety.model';
 import OpenAI from 'openai';
 
@@ -217,8 +218,17 @@ export class SoilAnalysisService {
   }
 
   async uploadAndAnalyze(userId: string, file: Express.Multer.File, farmId?: string) {
+    // Create context for soil analysis upload
+    const context: MediaContext = farmId 
+      ? FileStorageService.createSoilAnalysisContext(farmId, 'soil-test', userId)
+      : {
+          category: 'soil-analysis',
+          subcategory: 'soil-test',
+          contextId: userId,
+        };
+
     // Upload file to Supabase
-    const uploadResult = await this.fileStorage.uploadFile(userId, file, 'soil-test', {
+    const uploadResult = await this.fileStorage.uploadFile(file, context, {
       generateThumbnail: true,
       metadata: {
         farmId,
