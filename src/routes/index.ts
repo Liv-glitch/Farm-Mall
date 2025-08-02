@@ -9,6 +9,7 @@ import adminRoutes from './admin.routes';
 import collaborationRoutes from './collaboration.routes';
 import soilAnalysisRoutes from './soilAnalysis.routes';
 import enterpriseMediaRoutes from './enterprise-media.routes';
+import enhancedPlantRoutes from './enhanced-plant.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -47,6 +48,7 @@ router.use('/admin', adminRoutes);
 router.use('/collaboration', collaborationRoutes);
 router.use('/soil-analysis', soilAnalysisRoutes);
 router.use('/media', enterpriseMediaRoutes);
+router.use('/enhanced-plant', enhancedPlantRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -76,7 +78,8 @@ router.get('/', (_, res) => {
       admin: '/admin',
       collaboration: '/collaboration',
       'soil-analysis': '/soil-analysis',
-      media: '/media'
+      media: '/media',
+      'enhanced-plant': '/enhanced-plant'
     }
   });
 });
