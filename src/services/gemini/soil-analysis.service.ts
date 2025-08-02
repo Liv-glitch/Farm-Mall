@@ -182,7 +182,6 @@ export class SoilAnalysisService extends BaseGeminiService {
           await soilTest.update({
             status: 'failed',
             analysisResult: {
-              error: error.message,
               recommendations: []
             }
           });

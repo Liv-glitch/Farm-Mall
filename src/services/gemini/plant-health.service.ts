@@ -1,6 +1,6 @@
 import { BaseGeminiService, GeminiConfig, AnalysisOptions, StructuredResponse } from './base-gemini.service';
 import { PlantHealthAssessmentModel } from '../../models/PlantHealthAssessment.model';
-import { FileStorageService } from '../fileStorage.service';
+// import { FileStorageService } from '../fileStorage.service'; // Available for future use
 import { logInfo, logError } from '../../utils/logger';
 
 export interface Disease {
@@ -114,11 +114,11 @@ export interface PlantHealthResponse {
 }
 
 export class PlantHealthService extends BaseGeminiService {
-  private fileStorage: FileStorageService;
+  // private fileStorage: FileStorageService; // Available for future use
 
   constructor(config: GeminiConfig) {
     super(config);
-    this.fileStorage = new FileStorageService();
+    // this.fileStorage = new FileStorageService(); // Available for future use
   }
 
   async assessPlantHealth(

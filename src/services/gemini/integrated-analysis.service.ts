@@ -96,7 +96,7 @@ export class IntegratedAnalysisService {
             {
               location: request.options?.location,
               plantType: request.options?.plantType as any,
-              region: request.options?.region as any,
+              focusRegion: (request.options?.region as any) || 'kenya',
               includeUsageInfo: true,
               includeCultivationInfo: true,
               additionalContext: request.options?.additionalContext
@@ -107,7 +107,7 @@ export class IntegratedAnalysisService {
             analysisRecord = await this.plantIdService.saveIdentificationResult(
               request.userId,
               uploadedMedia.publicUrl!,
-              this.getThumbnailUrl(uploadedMedia),
+              this.getThumbnailUrl(uploadedMedia) || '',
               uploadedMedia.originalName,
               analysisResult.data,
               request.options?.location
@@ -132,7 +132,7 @@ export class IntegratedAnalysisService {
             analysisRecord = await this.plantHealthService.saveHealthAssessment(
               request.userId,
               uploadedMedia.publicUrl!,
-              this.getThumbnailUrl(uploadedMedia),
+              this.getThumbnailUrl(uploadedMedia) || '',
               uploadedMedia.originalName,
               analysisResult.data,
               request.options?.location

@@ -1,6 +1,6 @@
 import { BaseGeminiService, GeminiConfig, AnalysisOptions, StructuredResponse } from './base-gemini.service';
 import { PlantIdentificationModel } from '../../models/PlantIdentification.model';
-import { FileStorageService } from '../fileStorage.service';
+// import { FileStorageService } from '../fileStorage.service'; // Available for future use
 import { logInfo, logError } from '../../utils/logger';
 
 export interface PlantIdentification {
@@ -52,11 +52,11 @@ export interface PlantIdentificationResponse {
 }
 
 export class PlantIdentificationService extends BaseGeminiService {
-  private fileStorage: FileStorageService;
+  // private fileStorage: FileStorageService; // Available for future use
 
   constructor(config: GeminiConfig) {
     super(config);
-    this.fileStorage = new FileStorageService();
+    // this.fileStorage = new FileStorageService(); // Available for future use
   }
 
   async identifyPlant(

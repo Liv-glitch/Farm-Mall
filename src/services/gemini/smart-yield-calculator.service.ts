@@ -158,7 +158,7 @@ export class SmartYieldCalculatorService extends BaseGeminiService {
         cropType: inputs.cropType,
         location: inputs.location,
         farmSize: inputs.farmSize,
-        estimatedYield: parsedData.estimatedYield.mostLikely,
+        estimatedYield: parsedData.estimatedYield.range.mostLikely,
         confidence: parsedData.confidence,
         processingTime
       });
