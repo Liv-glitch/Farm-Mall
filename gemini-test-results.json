@@ -1,0 +1,1163 @@
+{
+  "auth": {
+    "success": true,
+    "userId": "9ec951f8-47e1-4a64-906d-e5118681cb7e"
+  },
+  "plantId": {
+    "success": true,
+    "data": {
+      "plants": [
+        {
+          "scientificName": "Rosa sp.",
+          "commonName": "Rose",
+          "commonNames": [
+            "Rose",
+            "Mawar (Swahili - general term for flowers but sometimes used for roses)"
+          ],
+          "family": "Rosaceae",
+          "genus": "Rosa",
+          "species": "sp. (referring to an unspecified species or hybrid within the genus Rosa)",
+          "confidence": 0.95,
+          "description": "The image displays a close-up of rose leaves, characterized by their compound, pinnate structure and serrated margins. The most prominent feature is the presence of numerous irregular, dark brown to black spots scattered across the light green leaf surface. These spots are highly indicative of a common fungal disease known as 'Black Spot' (Diplocarpon rosae), which is a characteristic ailment of roses. The leaf venation is clearly visible, with a central vein and branching secondary veins.",
+          "characteristics": {
+            "leafType": "Compound, odd-pinnate, with 3, 5, 7, or 9 leaflets. Leaflets are ovate to elliptical with serrated margins and prominent venation.",
+            "flowerColor": "Not visible in the image, but roses exhibit a vast array of colors including red, pink, white, yellow, orange, and purple.",
+            "fruitType": "Not visible in the image, but roses produce 'hips' which are accessory fruits, typically red or orange, containing seeds.",
+            "growthHabit": "Typically woody shrubs, climbers, or groundcovers. Stems are usually thorny/prickly.",
+            "size": "Highly variable, ranging from small miniature roses (0.3m) to large climbing varieties (several meters)."
+          },
+          "taxonomy": {
+            "kingdom": "Plantae",
+            "phylum": "Tracheophyta",
+            "class": "Magnoliopsida",
+            "order": "Rosales",
+            "family": "Rosaceae",
+            "genus": "Rosa",
+            "species": "sp."
+          },
+          "edibleParts": [
+            "Rose Hips (rich in Vitamin C, used for teas, jams, jellies, syrups)",
+            "Rose Petals (used in culinary applications like jams, jellies, desserts, rose water, and teas)"
+          ],
+          "usefulProperties": [
+            "Medicinal: Rose hips for cold remedies and as a source of Vitamin C; rose oil and rose water for aromatherapy, skincare, and anti-inflammatory properties.",
+            "Economic/Commercial: Primary global cut flower industry (Kenya is a major exporter), ornamental gardening, essential oil production (attar of roses), food flavoring and ingredients.",
+            "Cultural Significance: Widely recognized symbol of love, beauty, and passion; used extensively in ceremonies, gifts, and perfumes worldwide."
+          ],
+          "nativeRegion": "Native to a wide range of temperate and subtropical regions of the Northern Hemisphere, with many cultivated varieties being hybrids.",
+          "cultivationTips": [
+            "Prune regularly to maintain shape, promote flowering, and remove dead/diseased wood.",
+            "Fertilize consistently with balanced rose-specific fertilizers during the growing season.",
+            "Ensure good air circulation around plants to minimize fungal diseases.",
+            "Mulch around the base to retain moisture and suppress weeds."
+          ],
+          "wateringNeeds": "Moderate to high. Requires consistent moisture, especially during dry periods. Water deeply at the base to avoid wetting foliage, which can exacerbate fungal issues like Black Spot.",
+          "sunlightRequirements": "Full sun (at least 6 hours of direct sunlight per day) for optimal growth and flowering.",
+          "soilPreferences": "Well-drained, fertile loam soil, rich in organic matter. Prefers a slightly acidic to neutral pH range (6.0-7.0).",
+          "propagationMethods": [
+            "Stem cuttings (most common for cultivated varieties)",
+            "Budding and grafting (for specific rootstock benefits)",
+            "Layering",
+            "Seed (mainly for species roses or breeding new varieties)"
+          ],
+          "seasonalInfo": {
+            "plantingSeason": "In Kenya, planting is often done during the short (October-December) or long (March-May) rainy seasons to aid establishment, or anytime with reliable irrigation.",
+            "floweringSeason": "In favorable climates like Kenya's high altitudes, roses can flower continuously year-round with proper care and pruning.",
+            "harvestSeason": "Harvesting of cut flowers is continuous in commercial settings; rose hips are typically harvested in late summer to autumn after flowering."
+          }
+        }
+      ],
+      "primaryIdentification": {
+        "scientificName": "Rosa sp.",
+        "commonName": "Rose"
+      },
+      "alternativeIdentifications": [
+        {
+          "scientificName": "Rubus sp. (e.g., Raspberry or Blackberry)",
+          "commonName": "Raspberry/Blackberry",
+          "confidence": 0.2,
+          "distinguishingFeatures": "While also in the Rosaceae family and can suffer from fungal diseases, Rubus leaves are typically more distinctly palmate or trifoliate (3-5 leaflets, often broader and more coarsely serrated), and the specific black spotting pattern seen in the image is more characteristic of rose black spot rather than typical Rubus diseases."
+        },
+        {
+          "scientificName": "Potentilla fruticosa (Shrubby Cinquefoil)",
+          "commonName": "Shrubby Cinquefoil",
+          "confidence": 0.1,
+          "distinguishingFeatures": "Also in Rosaceae, Potentilla leaves are typically pinnately compound, but often with more leaflets (5-7, but sometimes 3), and generally smaller with a more rounded or elliptical shape. While they can get leaf spots, the appearance is less consistent with the prominent black spot of roses, and the overall leaf texture and venation often differ."
+        }
+      ],
+      "analysisNotes": "The primary identification is based on the distinct compound leaf structure, serrated margins, and the highly characteristic black/dark brown irregular spots which are a hallmark symptom of 'Black Spot' disease (caused by the fungus Diplocarpon rosae), an extremely common affliction of cultivated roses. The leaves are clearly pinnately compound, a key feature of the genus Rosa. While without flowers or thorns, precise species identification is challenging, the genus 'Rosa' is identifiable with high confidence.",
+      "regionalContext": "Roses are not native to East Africa but have become a hugely significant crop, especially in Kenya. Kenya is one of the world's leading exporters of cut roses, benefiting from its high altitude, equatorial location (providing consistent light), and cooler night temperatures. These conditions are ideal for year-round rose production. Commercial rose farms utilize advanced greenhouse technology and specific cultivars bred for cut flower quality. Local varieties are primarily imported or commercially bred hybrids rather than indigenous species."
+    },
+    "provider": "gemini",
+    "enhanced_features": {
+      "cultivation_tips": true,
+      "regional_varieties": true,
+      "market_info": true,
+      "seasonal_guidance": true
+    },
+    "metadata": {
+      "analysisId": "8bd25169-82cd-481b-9bf4-148f4b2b8c36",
+      "mediaId": "cf525b00-73f2-4d25-a5a1-39efca866de8",
+      "processingTime": 20196,
+      "mediaUrls": {
+        "original": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/livestock/cattle/b677d0e6-082e-4261-93f1-8a8d0fc1197e/550e8400-e29b-41d4-a716-446655440003/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL2xpdmVzdG9jay9jYXR0bGUvYjY3N2QwZTYtMDgyZS00MjYxLTkzZjEtOGE4ZDBmYzExOTdlLzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMy83NWY2OTc4NTAxZmYyM2RkOWIxNmNmNjFmNjZlOGU1ZjUxMzljMWM3NGFiZTQ4NDNjZDE3ZThkNjQxMzE0NmRlLmpwZyIsImlhdCI6MTc1NDA0MzUxOSwiZXhwIjoxNzU0MDQ3MTE5fQ.xprGus0drtcDpNGz2vEYhhTdivF1_91GOd0r1pDTeek",
+        "thumbnail": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_thumbnail.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfdGh1bWJuYWlsLmpwZyIsImlhdCI6MTc1NDA0MzUyMSwiZXhwIjoxNzU0MDQ3MTIxfQ.rBsNs-Bu7IieuPeW-ex9EFsfL9aG_sKslRaod791IRc",
+        "variants": [
+          {
+            "size": "thumbnail",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_thumbnail.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfdGh1bWJuYWlsLmpwZyIsImlhdCI6MTc1NDA0MzUyMSwiZXhwIjoxNzU0MDQ3MTIxfQ.rBsNs-Bu7IieuPeW-ex9EFsfL9aG_sKslRaod791IRc"
+          },
+          {
+            "size": "small",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_small.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfc21hbGwuanBnIiwiaWF0IjoxNzU0MDQzNTIyLCJleHAiOjE3NTQwNDcxMjJ9.9mJic_3C4omc02IiN5Ue2Y0-0cbKPImWVTlNeZD0i5Q"
+          },
+          {
+            "size": "medium",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_medium.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfbWVkaXVtLmpwZyIsImlhdCI6MTc1NDA0MzUyMywiZXhwIjoxNzU0MDQ3MTIzfQ.MoOooV9kxsbaztSZIo-SpGAr_LCkE3OV0vYO5KmDddU"
+          },
+          {
+            "size": "large",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_large.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfbGFyZ2UuanBnIiwiaWF0IjoxNzU0MDQzNTI0LCJleHAiOjE3NTQwNDcxMjR9.mK2qyy8HakVXqMo76_2BWoLXcElnwx-lZ3I4YmGCszE"
+          },
+          {
+            "size": "original",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/livestock/cattle/b677d0e6-082e-4261-93f1-8a8d0fc1197e/550e8400-e29b-41d4-a716-446655440003/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL2xpdmVzdG9jay9jYXR0bGUvYjY3N2QwZTYtMDgyZS00MjYxLTkzZjEtOGE4ZDBmYzExOTdlLzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMy83NWY2OTc4NTAxZmYyM2RkOWIxNmNmNjFmNjZlOGU1ZjUxMzljMWM3NGFiZTQ4NDNjZDE3ZThkNjQxMzE0NmRlLmpwZyIsImlhdCI6MTc1NDA0MzUxOSwiZXhwIjoxNzU0MDQ3MTE5fQ.xprGus0drtcDpNGz2vEYhhTdivF1_91GOd0r1pDTeek"
+          }
+        ]
+      }
+    }
+  },
+  "plantHealth": {
+    "success": true,
+    "data": {
+      "healthStatus": {
+        "overall": "diseased",
+        "isHealthy": false,
+        "healthScore": 60,
+        "confidence": 0.95,
+        "assessment": "The plant exhibits clear symptoms of a fungal leaf spot disease, characterized by numerous dark, irregular spots on the leaves. While not immediately life-threatening, the widespread nature of the spots indicates an active infection that requires attention to prevent further spread and decline in plant vigor.",
+        "urgency": "medium"
+      },
+      "diseases": [
+        {
+          "name": "Fungal Leaf Spot",
+          "scientificName": "Likely Diplocarpon rosae (Black Spot) if a Rose, or other species causing leaf spots on broadleaf plants.",
+          "commonNames": [
+            "Black Spot (if a Rose)",
+            "Leaf Spot Disease"
+          ],
+          "type": "fungal",
+          "severity": "moderate",
+          "confidence": 0.9,
+          "symptoms": [
+            "Irregular, dark brown to black spots on the upper surface of leaves",
+            "Spots vary in size, sometimes coalescing",
+            "Surrounding leaf tissue may remain green initially, but can yellow over time"
+          ],
+          "description": "Fungal leaf spot diseases are common plant ailments caused by various fungi. They manifest as distinct spots on leaves, often leading to reduced photosynthesis, premature defoliation, and overall weakening of the plant. The specific pathogen, such as Diplocarpon rosae (Black Spot), is highly probable given the leaf morphology and symptom presentation, assuming the plant is a rose.",
+          "causes": [
+            "Pathogenic fungi (e.g., Diplocarpon rosae)",
+            "Humid and wet conditions (prolonged leaf wetness)",
+            "Poor air circulation",
+            "Infected plant debris"
+          ],
+          "affectedParts": [
+            "Leaves"
+          ],
+          "stages": [
+            "Early to moderate infection on foliage. New spots are forming, and existing ones are developing."
+          ],
+          "seasonalPattern": "Favored by warm, humid, and wet conditions, often prevalent during rainy seasons in tropical climates like Kenya.",
+          "treatment": {
+            "immediate": [
+              "Remove and dispose of all severely infected leaves and fallen debris to reduce inoculum.",
+              "Prune affected branches to improve air circulation within the plant canopy."
+            ],
+            "preventive": [
+              "Plant resistant varieties if available.",
+              "Ensure proper plant spacing for good air circulation.",
+              "Avoid overhead watering, or water early in the day so leaves can dry before nightfall.",
+              "Sanitize pruning tools after use on infected plants."
+            ],
+            "organic": [
+              "Apply neem oil spray (acts as an anti-fungal and repellent).",
+              "Use baking soda solution (1 teaspoon baking soda, 1/2 teaspoon liquid soap per gallon of water) as a foliar spray.",
+              "Apply sulfur-based fungicides according to label instructions."
+            ],
+            "chemical": [
+              "Apply broad-spectrum fungicides containing active ingredients like chlorothalonil, myclobutanil, or propiconazole. Rotate fungicides with different modes of action to prevent resistance.",
+              "Follow manufacturer's instructions for mixing and application rates."
+            ],
+            "culturalPractices": [
+              "Maintain plant vigor through proper fertilization and watering.",
+              "Avoid splashing water, which can spread fungal spores.",
+              "Clean up plant debris regularly."
+            ]
+          },
+          "prognosis": {
+            "treatability": "moderate",
+            "timeline": "Several weeks of consistent treatment and cultural adjustments are needed to bring the disease under control. Recovery of severely spotted leaves is unlikely, but new growth can be protected.",
+            "expectedOutcome": "With timely intervention, the spread of the disease can be halted, and the plant's health can be improved, though already damaged leaves will not recover. New, healthy growth should emerge."
+          },
+          "similarDiseases": [
+            "Cercospora Leaf Spot",
+            "Septoria Leaf Spot",
+            "Anthracnose"
+          ],
+          "regionalConsiderations": "In Kenya, the warm and humid conditions, especially during long and short rain seasons, are highly conducive to fungal diseases. Farmers should prioritize early detection and integrated management, considering local availability of organic and chemical inputs. Copper-based fungicides are generally accessible and effective."
+        }
+      ],
+      "pests": [],
+      "nutritionalDeficiencies": [],
+      "environmentalStress": [],
+      "primaryConcerns": [
+        "Fungal Leaf Spot (likely Black Spot on a rose or similar broadleaf plant)."
+      ],
+      "treatmentPriority": [
+        {
+          "issue": "Fungal Leaf Spot",
+          "priority": 1,
+          "urgency": "medium",
+          "treatment": [
+            "Immediate removal of infected leaves and debris.",
+            "Improve air circulation through pruning.",
+            "Apply appropriate organic or chemical fungicide."
+          ]
+        }
+      ],
+      "preventiveMeasures": [
+        "Choose disease-resistant varieties where possible.",
+        "Ensure proper plant spacing to allow for good air circulation.",
+        "Water at the base of the plant, avoiding wetting foliage, or water early in the day.",
+        "Regularly inspect plants for early signs of disease.",
+        "Practice good garden sanitation by removing fallen leaves and infected plant parts."
+      ],
+      "followUpRecommendations": [
+        "Monitor the plant closely every 3-5 days for new spots or spread of existing ones.",
+        "Reapply fungicides as per product label recommendations (typically every 7-14 days during active infection periods).",
+        "Watch for signs of new, healthy growth or a reduction in disease progression.",
+        "If symptoms worsen despite treatment, consider submitting a sample to a local agricultural extension office for definitive pathogen identification."
+      ],
+      "analysisNotes": "It is critical to note that **the plant shown in the image is NOT maize (Zea mays)**. Maize leaves are typically long, linear, and have parallel venation. The leaves in the image are broad, ovate with serrated margins, and arranged alternately on a stem, strongly resembling a rose plant (genus *Rosa*). Therefore, the diagnosis and recommendations are provided based on the **pictured plant**, which appears to be suffering from a common fungal leaf spot disease, most likely Black Spot (*Diplocarpon rosae*) if it is indeed a rose. Applying treatments intended for maize diseases to this plant would be ineffective and potentially harmful.",
+      "regionalFactors": "Kenya's climate, with its distinct wet and dry seasons, creates conditions favorable for fungal growth. Farmers should be particularly vigilant during and after rainy periods. Local agricultural extension services in Kenya can provide specific advice on disease-resistant varieties and locally available, cost-effective organic or chemical treatments for broadleaf plants like roses, which are common in many homesteads and farms."
+    },
+    "provider": "gemini",
+    "enhanced_features": {
+      "treatment_prioritization": true,
+      "cost_effective_solutions": true,
+      "preventive_measures": true,
+      "regional_disease_patterns": true
+    },
+    "metadata": {
+      "analysisId": "d25fa8bb-8dcd-4ce8-a41f-65858a33144e",
+      "mediaId": "cf525b00-73f2-4d25-a5a1-39efca866de8",
+      "processingTime": 21340,
+      "confidence": 0.95,
+      "mediaUrls": {
+        "original": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/livestock/cattle/b677d0e6-082e-4261-93f1-8a8d0fc1197e/550e8400-e29b-41d4-a716-446655440003/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL2xpdmVzdG9jay9jYXR0bGUvYjY3N2QwZTYtMDgyZS00MjYxLTkzZjEtOGE4ZDBmYzExOTdlLzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMy83NWY2OTc4NTAxZmYyM2RkOWIxNmNmNjFmNjZlOGU1ZjUxMzljMWM3NGFiZTQ4NDNjZDE3ZThkNjQxMzE0NmRlLmpwZyIsImlhdCI6MTc1NDA0MzUxOSwiZXhwIjoxNzU0MDQ3MTE5fQ.xprGus0drtcDpNGz2vEYhhTdivF1_91GOd0r1pDTeek",
+        "thumbnail": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_thumbnail.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfdGh1bWJuYWlsLmpwZyIsImlhdCI6MTc1NDA0MzUyMSwiZXhwIjoxNzU0MDQ3MTIxfQ.rBsNs-Bu7IieuPeW-ex9EFsfL9aG_sKslRaod791IRc",
+        "variants": [
+          {
+            "size": "thumbnail",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_thumbnail.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfdGh1bWJuYWlsLmpwZyIsImlhdCI6MTc1NDA0MzUyMSwiZXhwIjoxNzU0MDQ3MTIxfQ.rBsNs-Bu7IieuPeW-ex9EFsfL9aG_sKslRaod791IRc"
+          },
+          {
+            "size": "small",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_small.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfc21hbGwuanBnIiwiaWF0IjoxNzU0MDQzNTIyLCJleHAiOjE3NTQwNDcxMjJ9.9mJic_3C4omc02IiN5Ue2Y0-0cbKPImWVTlNeZD0i5Q"
+          },
+          {
+            "size": "medium",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_medium.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfbWVkaXVtLmpwZyIsImlhdCI6MTc1NDA0MzUyMywiZXhwIjoxNzU0MDQ3MTIzfQ.MoOooV9kxsbaztSZIo-SpGAr_LCkE3OV0vYO5KmDddU"
+          },
+          {
+            "size": "large",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/processed/variants/b677d0e6-082e-4261-93f1-8a8d0fc1197e/cf525b00-73f2-4d25-a5a1-39efca866de8/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de_large.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3Byb2Nlc3NlZC92YXJpYW50cy9iNjc3ZDBlNi0wODJlLTQyNjEtOTNmMS04YThkMGZjMTE5N2UvY2Y1MjViMDAtNzNmMi00ZDI1LWE1YTEtMzllZmNhODY2ZGU4Lzc1ZjY5Nzg1MDFmZjIzZGQ5YjE2Y2Y2MWY2NmU4ZTVmNTEzOWMxYzc0YWJlNDg0M2NkMTdlOGQ2NDEzMTQ2ZGVfbGFyZ2UuanBnIiwiaWF0IjoxNzU0MDQzNTI0LCJleHAiOjE3NTQwNDcxMjR9.mK2qyy8HakVXqMo76_2BWoLXcElnwx-lZ3I4YmGCszE"
+          },
+          {
+            "size": "original",
+            "url": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/livestock/cattle/b677d0e6-082e-4261-93f1-8a8d0fc1197e/550e8400-e29b-41d4-a716-446655440003/75f6978501ff23dd9b16cf61f66e8e5f5139c1c74abe4843cd17e8d6413146de.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL2xpdmVzdG9jay9jYXR0bGUvYjY3N2QwZTYtMDgyZS00MjYxLTkzZjEtOGE4ZDBmYzExOTdlLzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMy83NWY2OTc4NTAxZmYyM2RkOWIxNmNmNjFmNjZlOGU1ZjUxMzljMWM3NGFiZTQ4NDNjZDE3ZThkNjQxMzE0NmRlLmpwZyIsImlhdCI6MTc1NDA0MzUxOSwiZXhwIjoxNzU0MDQ3MTE5fQ.xprGus0drtcDpNGz2vEYhhTdivF1_91GOd0r1pDTeek"
+          }
+        ]
+      }
+    }
+  },
+  "soilAnalysis": {
+    "success": true,
+    "data": {
+      "basicProperties": {
+        "ph": null,
+        "phCategory": null,
+        "electricalConductivity": null,
+        "organicMatter": null,
+        "organicMatterCategory": null,
+        "cationExchangeCapacity": null
+      },
+      "nutrients": {
+        "macronutrients": {
+          "nitrogen": {
+            "total": null,
+            "available": null,
+            "category": null,
+            "recommendations": []
+          },
+          "phosphorus": {
+            "available": null,
+            "category": null,
+            "recommendations": []
+          },
+          "potassium": {
+            "available": null,
+            "category": null,
+            "recommendations": []
+          }
+        },
+        "micronutrients": {
+          "zinc": {
+            "value": null,
+            "category": null,
+            "recommendations": []
+          }
+        }
+      },
+      "physicalProperties": {
+        "texture": {
+          "sand": null,
+          "silt": null,
+          "clay": null,
+          "textureClass": null,
+          "recommendations": []
+        },
+        "structure": null,
+        "porosity": null,
+        "waterHoldingCapacity": null,
+        "drainage": null
+      },
+      "soilHealth": {
+        "overallScore": null,
+        "category": null,
+        "limitingFactors": [],
+        "strengths": []
+      },
+      "cropRecommendations": [],
+      "fertilizationPlan": {
+        "immediate": [],
+        "seasonal": [],
+        "longTerm": []
+      },
+      "soilImprovement": {
+        "amendments": [],
+        "practices": []
+      },
+      "regionalFactors": {
+        "climateConsiderations": [],
+        "localAvailability": [],
+        "culturalPractices": [],
+        "economicFactors": []
+      },
+      "monitoringPlan": {
+        "parameters": [],
+        "frequency": null,
+        "methods": [],
+        "warningSignals": []
+      },
+      "confidence": 0,
+      "limitations": [
+        "The provided document only contains the title 'Soil Test Report' and no actual soil test data.",
+        "Without specific values for soil pH, organic matter, nutrient levels (N, P, K, micronutrients), and physical properties (texture, CEC), a comprehensive analysis and detailed recommendations for wheat production cannot be generated.",
+        "All fields requiring quantitative or qualitative data from the soil report are marked as null or empty arrays."
+      ],
+      "nextSteps": [
+        "Please provide the actual soil test results or a more detailed soil report document.",
+        "Once the data is available, a tailored analysis and recommendations specific to wheat production in Kenya, considering mixed farming and a medium budget, can be accurately provided."
+      ],
+      "metadata": {
+        "analysisId": "4edb91a1-0781-4649-85f7-fe81516bc5d7",
+        "mediaId": "2c44b5a5-8add-4215-9a20-5da4d15b2bdf",
+        "processingTime": 9755,
+        "modelVersion": "gemini-2.5-flash",
+        "mediaUrls": {
+          "original": "https://feholpuhfucmhmkesgqc.supabase.co/storage/v1/object/sign/documents-upload/soil-analysis/ai-analysis/9ec951f8-47e1-4a64-906d-e5118681cb7e/00952922a93d87ec29fc7cea0b890206de6282e3863e8c3e7dd1bc0b451be6a5.pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MGFjZTY1ZS1jOWFjLTRhZDgtYjA0NC1lYTk5MGQ1MTFjYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJkb2N1bWVudHMtdXBsb2FkL3NvaWwtYW5hbHlzaXMvYWktYW5hbHlzaXMvOWVjOTUxZjgtNDdlMS00YTY0LTkwNmQtZTUxMTg2ODFjYjdlLzAwOTUyOTIyYTkzZDg3ZWMyOWZjN2NlYTBiODkwMjA2ZGU2MjgyZTM4NjNlOGMzZTdkZDFiYzBiNDUxYmU2YTUucGRmIiwiaWF0IjoxNzU0MTE2NzMwLCJleHAiOjE3NTQxMjAzMzB9.xGVJoOEcFZKVbGuQ_HO_rKPg2Zibweh2SiCY17Aat7c",
+          "variants": []
+        }
+      }
+    },
+    "message": "Soil analysis completed",
+    "provider": "gemini",
+    "features": {
+      "detailed_recommendations": true,
+      "fertilizer_planning": true,
+      "crop_suitability": true,
+      "cost_analysis": true
+    }
+  },
+  "yieldCalc": {
+    "success": true,
+    "data": {
+      "estimatedYield": {
+        "quantity": 7000,
+        "unit": "kg",
+        "range": {
+          "minimum": 3750,
+          "maximum": 10000,
+          "mostLikely": 7000
+        },
+        "confidence": 0.65
+      },
+      "economicProjection": {
+        "grossRevenue": {
+          "localMarket": 2022.22,
+          "regionalMarket": 2022.22,
+          "exportMarket": 0
+        },
+        "inputCosts": {
+          "seeds": 92.59,
+          "fertilizers": 203.7,
+          "pesticides": 92.59,
+          "labor": 277.78,
+          "irrigation": 0,
+          "other": 148.15,
+          "total": 814.81
+        },
+        "netProfit": {
+          "conservative": 268.52,
+          "realistic": 1207.41,
+          "optimistic": 2074.07
+        },
+        "profitMargin": 0.597,
+        "breakEvenPrice": 0.116,
+        "roi": 1.482
+      },
+      "riskAssessment": {
+        "weatherRisk": "medium",
+        "diseaseRisk": "medium",
+        "marketRisk": "medium",
+        "overallRisk": "medium",
+        "riskFactors": [
+          "Variability of rainfall (drought or excessive rain) given rainfed system",
+          "Maize Lethal Necrosis Disease (MLND)",
+          "Fall Armyworm (FAW) infestation",
+          "Fluctuations in local maize market prices due to supply/demand or government intervention",
+          "Poor post-harvest handling leading to losses",
+          "Lack of detailed soil analysis leading to inefficient input application"
+        ],
+        "mitigationStrategies": [
+          "Accessing timely weather forecasts and adjusting planting times",
+          "Using certified disease-tolerant seeds (H614 has some resilience but not full immunity)",
+          "Integrated Pest Management (IPM) adherence with regular scouting and timely intervention",
+          "Diversifying income streams (mixed farming already in place, consider other high-value crops)",
+          "Investing in proper drying and storage facilities or selling immediately after harvest",
+          "Conducting soil analysis to optimize fertilizer use"
+        ]
+      },
+      "optimizationRecommendations": {
+        "yieldImprovement": [
+          {
+            "practice": "Soil testing and tailored fertilizer application",
+            "expectedIncrease": 0.15,
+            "cost": 30,
+            "priority": "high",
+            "timeline": "Pre-season (now)"
+          },
+          {
+            "practice": "Optimized plant population and spacing",
+            "expectedIncrease": 0.1,
+            "cost": 0,
+            "priority": "medium",
+            "timeline": "Planting"
+          },
+          {
+            "practice": "Timely and effective weed management (chemical/manual)",
+            "expectedIncrease": 0.08,
+            "cost": 30,
+            "priority": "high",
+            "timeline": "Post-planting to flowering"
+          },
+          {
+            "practice": "Crop rotation with legumes (e.g., beans, groundnuts)",
+            "expectedIncrease": 0.07,
+            "cost": 10,
+            "priority": "medium",
+            "timeline": "Next season"
+          }
+        ],
+        "costReduction": [
+          {
+            "practice": "Efficient input use based on soil test results",
+            "expectedSavings": 0.1,
+            "implementation": "Immediate",
+            "priority": "high"
+          },
+          {
+            "practice": "Bulk purchasing of seeds and fertilizers (if feasible with other farmers)",
+            "expectedSavings": 0.05,
+            "implementation": "Pre-season",
+            "priority": "medium"
+          },
+          {
+            "practice": "On-farm composting/manure utilization to reduce chemical fertilizer dependency",
+            "expectedSavings": 0.07,
+            "implementation": "Ongoing",
+            "priority": "medium"
+          }
+        ]
+      },
+      "seasonalCalendar": {
+        "plantingWindow": {
+          "optimal": "March - Mid-April (long rains onset)",
+          "extended": "Late April - Early May (increased risk)"
+        },
+        "criticalActivities": [
+          {
+            "activity": "Land Preparation (ploughing, harrowing)",
+            "timing": "February - Early March",
+            "importance": "critical",
+            "cost": 100
+          },
+          {
+            "activity": "Planting (Maize H614)",
+            "timing": "March - Mid-April",
+            "importance": "critical",
+            "cost": 50
+          },
+          {
+            "activity": "First Weeding & Basal Fertilizer application (DAP/NPK)",
+            "timing": "3-4 weeks after planting",
+            "importance": "critical",
+            "cost": 80
+          },
+          {
+            "activity": "Second Weeding & Top Dressing (Urea/CAN)",
+            "timing": "6-8 weeks after planting",
+            "importance": "critical",
+            "cost": 80
+          },
+          {
+            "activity": "Pest & Disease Scouting / IPM application",
+            "timing": "Throughout growing season",
+            "importance": "critical",
+            "cost": 60
+          }
+        ],
+        "harvestWindow": {
+          "estimated": "July - August (approx. 120-140 days after planting)",
+          "factors": [
+            "Maize physiological maturity (black layer formation)",
+            "Grain moisture content (ideal for storage is below 13-14%)",
+            "Prevailing market prices",
+            "Labor availability"
+          ]
+        }
+      },
+      "confidence": 0.6,
+      "limitations": [
+        "Absence of detailed soil analysis: Yield and fertilizer recommendations are based on general regional averages, which may not be optimal for this specific farm's soil fertility.",
+        "No historical performance data: Prevents accurate assessment of past productivity, farm-specific challenges, and farmer's skill level.",
+        "General 'medium' fertilization level: Interpretation of 'medium' can vary; assumed a standard level of NPK basal and Urea top-dressing, but actual application rates might differ.",
+        "Rainfed system: Highly dependent on timely and adequate rainfall. Seasonal climate variability (e.g., El Niño/La Niña) can significantly alter actual yields.",
+        "Discrepancy in provided 'Input Budget' ($50,000): This figure is exceptionally high for 2.5 acres of rainfed maize. The economic analysis uses realistic input costs for maize production in Nakuru (approximately $815). The $50,000 budget, if accurate, suggests either a significant misallocation of funds, inclusion of other farm enterprises, or a substantial capital reserve not directly related to this season's maize production.",
+        "Market price fluctuations: Maize prices in Kenya are volatile and can be influenced by government policies, imports, and regional supply/demand, impacting actual revenue."
+      ],
+      "recommendations": [
+        "**Address the Input Budget Discrepancy:** The provided input budget of $50,000 is vastly excessive for 2.5 acres of rainfed maize. It is critical to clarify if this budget is solely for this maize enterprise, or if it encompasses other farm activities, multi-year investments, or is a typo. Based on our analysis, realistic input costs for this maize crop are around $815. Over-investment or misallocation of funds can severely impact overall farm profitability.",
+        "**Conduct Soil Analysis:** Invest in a comprehensive soil test. This will provide precise information on nutrient levels, pH, and organic matter content, enabling tailored fertilizer application and potentially reducing input costs while optimizing yields.",
+        "**Implement Record Keeping:** Start meticulous records of all inputs (quantity and cost), labor (hours and cost), planting dates, rainfall, pest/disease incidence, and actual yield. This historical data is crucial for future planning, performance evaluation, and informed decision-making.",
+        "**Market Intelligence:** Stay updated on maize market prices and demand trends in Nakuru and surrounding areas. Consider forward contracting or storing maize to sell when prices are favorable, provided proper storage facilities are available.",
+        "**Explore Drought-Tolerant Varieties:** While H614 is fairly robust, for a rainfed system, exploring newer, more drought-tolerant maize varieties specifically bred for semi-arid conditions in Kenya could offer greater resilience against erratic rainfall.",
+        "**Water Conservation Techniques:** Implement basic water harvesting and soil moisture conservation techniques such as mulching, minimum tillage, or contour farming to maximize the efficiency of rainfall.",
+        "**Continuous Agronomic Training:** Participate in local agricultural extension services or farmer field schools to enhance knowledge on best practices, pest and disease management, and new technologies."
+      ],
+      "lastUpdated": "2025-08-02T07:30:10.544Z"
+    },
+    "message": "Yield calculation completed",
+    "provider": "gemini",
+    "processing_time": 31527,
+    "features": {
+      "economic_analysis": true,
+      "risk_assessment": true,
+      "optimization_recommendations": true,
+      "seasonal_calendar": true
+    }
+  },
+  "healthCheck": {
+    "success": true,
+    "status": {
+      "enabled": true,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "configured": true,
+      "features": {
+        "plant_identification": true,
+        "plant_health": true,
+        "soil_analysis": true,
+        "image_processing": true,
+        "document_processing": true
+      }
+    },
+    "timestamp": "2025-08-02T07:28:34.146Z"
+  },
+  "dbVerification": {
+    "success": true,
+    "data": [
+      {
+        "id": "4edb91a1-0781-4649-85f7-fe81516bc5d7",
+        "type": "soil_analysis",
+        "result": {
+          "ph": null,
+          "texture": null,
+          "nitrogen": null,
+          "potassium": null,
+          "phosphorus": null,
+          "organicMatter": null,
+          "suitableCrops": [],
+          "recommendations": [],
+          "detailedAnalysis": {
+            "nextSteps": [
+              "Please provide the actual soil test results or a more detailed soil report document.",
+              "Once the data is available, a tailored analysis and recommendations specific to wheat production in Kenya, considering mixed farming and a medium budget, can be accurately provided."
+            ],
+            "nutrients": {
+              "macronutrients": {
+                "nitrogen": {
+                  "total": null,
+                  "category": null,
+                  "available": null,
+                  "recommendations": []
+                },
+                "potassium": {
+                  "category": null,
+                  "available": null,
+                  "recommendations": []
+                },
+                "phosphorus": {
+                  "category": null,
+                  "available": null,
+                  "recommendations": []
+                }
+              },
+              "micronutrients": {
+                "zinc": {
+                  "value": null,
+                  "category": null,
+                  "recommendations": []
+                }
+              }
+            },
+            "confidence": 0,
+            "soilHealth": {
+              "category": null,
+              "strengths": [],
+              "overallScore": null,
+              "limitingFactors": []
+            },
+            "limitations": [
+              "The provided document only contains the title 'Soil Test Report' and no actual soil test data.",
+              "Without specific values for soil pH, organic matter, nutrient levels (N, P, K, micronutrients), and physical properties (texture, CEC), a comprehensive analysis and detailed recommendations for wheat production cannot be generated.",
+              "All fields requiring quantitative or qualitative data from the soil report are marked as null or empty arrays."
+            ],
+            "monitoringPlan": {
+              "methods": [],
+              "frequency": null,
+              "parameters": [],
+              "warningSignals": []
+            },
+            "basicProperties": {
+              "ph": null,
+              "phCategory": null,
+              "organicMatter": null,
+              "organicMatterCategory": null,
+              "cationExchangeCapacity": null,
+              "electricalConductivity": null
+            },
+            "regionalFactors": {
+              "economicFactors": [],
+              "culturalPractices": [],
+              "localAvailability": [],
+              "climateConsiderations": []
+            },
+            "soilImprovement": {
+              "practices": [],
+              "amendments": []
+            },
+            "fertilizationPlan": {
+              "longTerm": [],
+              "seasonal": [],
+              "immediate": []
+            },
+            "physicalProperties": {
+              "texture": {
+                "clay": null,
+                "sand": null,
+                "silt": null,
+                "textureClass": null,
+                "recommendations": []
+              },
+              "drainage": null,
+              "porosity": null,
+              "structure": null,
+              "waterHoldingCapacity": null
+            },
+            "cropRecommendations": []
+          }
+        },
+        "status": "analyzed",
+        "createdAt": "2025-08-02T07:29:34.927Z",
+        "media": null
+      },
+      {
+        "id": "d25fa8bb-8dcd-4ce8-a41f-65858a33144e",
+        "type": "plant_health",
+        "result": {
+          "pests": [],
+          "diseases": [
+            {
+              "name": "Fungal Leaf Spot",
+              "type": "fungal",
+              "causes": [
+                "Pathogenic fungi (e.g., Diplocarpon rosae)",
+                "Humid and wet conditions (prolonged leaf wetness)",
+                "Poor air circulation",
+                "Infected plant debris"
+              ],
+              "stages": [
+                "Early to moderate infection on foliage. New spots are forming, and existing ones are developing."
+              ],
+              "severity": "moderate",
+              "symptoms": [
+                "Irregular, dark brown to black spots on the upper surface of leaves",
+                "Spots vary in size, sometimes coalescing",
+                "Surrounding leaf tissue may remain green initially, but can yellow over time"
+              ],
+              "prognosis": {
+                "timeline": "Several weeks of consistent treatment and cultural adjustments are needed to bring the disease under control. Recovery of severely spotted leaves is unlikely, but new growth can be protected.",
+                "treatability": "moderate",
+                "expectedOutcome": "With timely intervention, the spread of the disease can be halted, and the plant's health can be improved, though already damaged leaves will not recover. New, healthy growth should emerge."
+              },
+              "treatment": {
+                "organic": [
+                  "Apply neem oil spray (acts as an anti-fungal and repellent).",
+                  "Use baking soda solution (1 teaspoon baking soda, 1/2 teaspoon liquid soap per gallon of water) as a foliar spray.",
+                  "Apply sulfur-based fungicides according to label instructions."
+                ],
+                "chemical": [
+                  "Apply broad-spectrum fungicides containing active ingredients like chlorothalonil, myclobutanil, or propiconazole. Rotate fungicides with different modes of action to prevent resistance.",
+                  "Follow manufacturer's instructions for mixing and application rates."
+                ],
+                "immediate": [
+                  "Remove and dispose of all severely infected leaves and fallen debris to reduce inoculum.",
+                  "Prune affected branches to improve air circulation within the plant canopy."
+                ],
+                "preventive": [
+                  "Plant resistant varieties if available.",
+                  "Ensure proper plant spacing for good air circulation.",
+                  "Avoid overhead watering, or water early in the day so leaves can dry before nightfall.",
+                  "Sanitize pruning tools after use on infected plants."
+                ],
+                "culturalPractices": [
+                  "Maintain plant vigor through proper fertilization and watering.",
+                  "Avoid splashing water, which can spread fungal spores.",
+                  "Clean up plant debris regularly."
+                ]
+              },
+              "confidence": 0.9,
+              "commonNames": [
+                "Black Spot (if a Rose)",
+                "Leaf Spot Disease"
+              ],
+              "description": "Fungal leaf spot diseases are common plant ailments caused by various fungi. They manifest as distinct spots on leaves, often leading to reduced photosynthesis, premature defoliation, and overall weakening of the plant. The specific pathogen, such as Diplocarpon rosae (Black Spot), is highly probable given the leaf morphology and symptom presentation, assuming the plant is a rose.",
+              "affectedParts": [
+                "Leaves"
+              ],
+              "scientificName": "Likely Diplocarpon rosae (Black Spot) if a Rose, or other species causing leaf spots on broadleaf plants.",
+              "seasonalPattern": "Favored by warm, humid, and wet conditions, often prevalent during rainy seasons in tropical climates like Kenya.",
+              "similarDiseases": [
+                "Cercospora Leaf Spot",
+                "Septoria Leaf Spot",
+                "Anthracnose"
+              ],
+              "regionalConsiderations": "In Kenya, the warm and humid conditions, especially during long and short rain seasons, are highly conducive to fungal diseases. Farmers should prioritize early detection and integrated management, considering local availability of organic and chemical inputs. Copper-based fungicides are generally accessible and effective."
+            }
+          ],
+          "healthStatus": {
+            "overall": "diseased",
+            "urgency": "medium",
+            "isHealthy": false,
+            "assessment": "The plant exhibits clear symptoms of a fungal leaf spot disease, characterized by numerous dark, irregular spots on the leaves. While not immediately life-threatening, the widespread nature of the spots indicates an active infection that requires attention to prevent further spread and decline in plant vigor.",
+            "confidence": 0.95,
+            "healthScore": 60
+          },
+          "analysisNotes": "It is critical to note that **the plant shown in the image is NOT maize (Zea mays)**. Maize leaves are typically long, linear, and have parallel venation. The leaves in the image are broad, ovate with serrated margins, and arranged alternately on a stem, strongly resembling a rose plant (genus *Rosa*). Therefore, the diagnosis and recommendations are provided based on the **pictured plant**, which appears to be suffering from a common fungal leaf spot disease, most likely Black Spot (*Diplocarpon rosae*) if it is indeed a rose. Applying treatments intended for maize diseases to this plant would be ineffective and potentially harmful.",
+          "primaryConcerns": [
+            "Fungal Leaf Spot (likely Black Spot on a rose or similar broadleaf plant)."
+          ],
+          "regionalFactors": "Kenya's climate, with its distinct wet and dry seasons, creates conditions favorable for fungal growth. Farmers should be particularly vigilant during and after rainy periods. Local agricultural extension services in Kenya can provide specific advice on disease-resistant varieties and locally available, cost-effective organic or chemical treatments for broadleaf plants like roses, which are common in many homesteads and farms.",
+          "treatmentPriority": [
+            {
+              "issue": "Fungal Leaf Spot",
+              "urgency": "medium",
+              "priority": 1,
+              "treatment": [
+                "Immediate removal of infected leaves and debris.",
+                "Improve air circulation through pruning.",
+                "Apply appropriate organic or chemical fungicide."
+              ]
+            }
+          ],
+          "preventiveMeasures": [
+            "Choose disease-resistant varieties where possible.",
+            "Ensure proper plant spacing to allow for good air circulation.",
+            "Water at the base of the plant, avoiding wetting foliage, or water early in the day.",
+            "Regularly inspect plants for early signs of disease.",
+            "Practice good garden sanitation by removing fallen leaves and infected plant parts."
+          ],
+          "environmentalStress": [],
+          "followUpRecommendations": [
+            "Monitor the plant closely every 3-5 days for new spots or spread of existing ones.",
+            "Reapply fungicides as per product label recommendations (typically every 7-14 days during active infection periods).",
+            "Watch for signs of new, healthy growth or a reduction in disease progression.",
+            "If symptoms worsen despite treatment, consider submitting a sample to a local agricultural extension office for definitive pathogen identification."
+          ],
+          "nutritionalDeficiencies": []
+        },
+        "createdAt": "2025-08-02T07:29:20.496Z",
+        "isHealthy": false,
+        "media": null
+      },
+      {
+        "id": "8bd25169-82cd-481b-9bf4-148f4b2b8c36",
+        "type": "plant_identification",
+        "result": {
+          "plants": [
+            {
+              "genus": "Rosa",
+              "family": "Rosaceae",
+              "species": "sp. (referring to an unspecified species or hybrid within the genus Rosa)",
+              "taxonomy": {
+                "class": "Magnoliopsida",
+                "genus": "Rosa",
+                "order": "Rosales",
+                "family": "Rosaceae",
+                "phylum": "Tracheophyta",
+                "kingdom": "Plantae",
+                "species": "sp."
+              },
+              "commonName": "Rose",
+              "confidence": 0.95,
+              "commonNames": [
+                "Rose",
+                "Mawar (Swahili - general term for flowers but sometimes used for roses)"
+              ],
+              "description": "The image displays a close-up of rose leaves, characterized by their compound, pinnate structure and serrated margins. The most prominent feature is the presence of numerous irregular, dark brown to black spots scattered across the light green leaf surface. These spots are highly indicative of a common fungal disease known as 'Black Spot' (Diplocarpon rosae), which is a characteristic ailment of roses. The leaf venation is clearly visible, with a central vein and branching secondary veins.",
+              "edibleParts": [
+                "Rose Hips (rich in Vitamin C, used for teas, jams, jellies, syrups)",
+                "Rose Petals (used in culinary applications like jams, jellies, desserts, rose water, and teas)"
+              ],
+              "nativeRegion": "Native to a wide range of temperate and subtropical regions of the Northern Hemisphere, with many cultivated varieties being hybrids.",
+              "seasonalInfo": {
+                "harvestSeason": "Harvesting of cut flowers is continuous in commercial settings; rose hips are typically harvested in late summer to autumn after flowering.",
+                "plantingSeason": "In Kenya, planting is often done during the short (October-December) or long (March-May) rainy seasons to aid establishment, or anytime with reliable irrigation.",
+                "floweringSeason": "In favorable climates like Kenya's high altitudes, roses can flower continuously year-round with proper care and pruning."
+              },
+              "wateringNeeds": "Moderate to high. Requires consistent moisture, especially during dry periods. Water deeply at the base to avoid wetting foliage, which can exacerbate fungal issues like Black Spot.",
+              "scientificName": "Rosa sp.",
+              "characteristics": {
+                "size": "Highly variable, ranging from small miniature roses (0.3m) to large climbing varieties (several meters).",
+                "leafType": "Compound, odd-pinnate, with 3, 5, 7, or 9 leaflets. Leaflets are ovate to elliptical with serrated margins and prominent venation.",
+                "fruitType": "Not visible in the image, but roses produce 'hips' which are accessory fruits, typically red or orange, containing seeds.",
+                "flowerColor": "Not visible in the image, but roses exhibit a vast array of colors including red, pink, white, yellow, orange, and purple.",
+                "growthHabit": "Typically woody shrubs, climbers, or groundcovers. Stems are usually thorny/prickly."
+              },
+              "cultivationTips": [
+                "Prune regularly to maintain shape, promote flowering, and remove dead/diseased wood.",
+                "Fertilize consistently with balanced rose-specific fertilizers during the growing season.",
+                "Ensure good air circulation around plants to minimize fungal diseases.",
+                "Mulch around the base to retain moisture and suppress weeds."
+              ],
+              "soilPreferences": "Well-drained, fertile loam soil, rich in organic matter. Prefers a slightly acidic to neutral pH range (6.0-7.0).",
+              "usefulProperties": [
+                "Medicinal: Rose hips for cold remedies and as a source of Vitamin C; rose oil and rose water for aromatherapy, skincare, and anti-inflammatory properties.",
+                "Economic/Commercial: Primary global cut flower industry (Kenya is a major exporter), ornamental gardening, essential oil production (attar of roses), food flavoring and ingredients.",
+                "Cultural Significance: Widely recognized symbol of love, beauty, and passion; used extensively in ceremonies, gifts, and perfumes worldwide."
+              ],
+              "propagationMethods": [
+                "Stem cuttings (most common for cultivated varieties)",
+                "Budding and grafting (for specific rootstock benefits)",
+                "Layering",
+                "Seed (mainly for species roses or breeding new varieties)"
+              ],
+              "sunlightRequirements": "Full sun (at least 6 hours of direct sunlight per day) for optimal growth and flowering."
+            }
+          ],
+          "analysisNotes": "The primary identification is based on the distinct compound leaf structure, serrated margins, and the highly characteristic black/dark brown irregular spots which are a hallmark symptom of 'Black Spot' disease (caused by the fungus Diplocarpon rosae), an extremely common affliction of cultivated roses. The leaves are clearly pinnately compound, a key feature of the genus Rosa. While without flowers or thorns, precise species identification is challenging, the genus 'Rosa' is identifiable with high confidence.",
+          "regionalContext": "Roses are not native to East Africa but have become a hugely significant crop, especially in Kenya. Kenya is one of the world's leading exporters of cut roses, benefiting from its high altitude, equatorial location (providing consistent light), and cooler night temperatures. These conditions are ideal for year-round rose production. Commercial rose farms utilize advanced greenhouse technology and specific cultivars bred for cut flower quality. Local varieties are primarily imported or commercially bred hybrids rather than indigenous species.",
+          "primaryIdentification": {
+            "commonName": "Rose",
+            "scientificName": "Rosa sp."
+          },
+          "alternativeIdentifications": [
+            {
+              "commonName": "Raspberry/Blackberry",
+              "confidence": 0.2,
+              "scientificName": "Rubus sp. (e.g., Raspberry or Blackberry)",
+              "distinguishingFeatures": "While also in the Rosaceae family and can suffer from fungal diseases, Rubus leaves are typically more distinctly palmate or trifoliate (3-5 leaflets, often broader and more coarsely serrated), and the specific black spotting pattern seen in the image is more characteristic of rose black spot rather than typical Rubus diseases."
+            },
+            {
+              "commonName": "Shrubby Cinquefoil",
+              "confidence": 0.1,
+              "scientificName": "Potentilla fruticosa (Shrubby Cinquefoil)",
+              "distinguishingFeatures": "Also in Rosaceae, Potentilla leaves are typically pinnately compound, but often with more leaflets (5-7, but sometimes 3), and generally smaller with a more rounded or elliptical shape. While they can get leaf spots, the appearance is less consistent with the prominent black spot of roses, and the overall leaf texture and venation often differ."
+            }
+          ]
+        },
+        "createdAt": "2025-08-02T07:28:55.490Z",
+        "confidence": null,
+        "media": null
+      },
+      {
+        "id": "78288758-00fc-4a59-a5c4-e52d1008762e",
+        "type": "plant_identification",
+        "result": {
+          "plants": [
+            {
+              "genus": "Rosa",
+              "family": "Rosaceae",
+              "species": "x hybrida",
+              "taxonomy": {
+                "class": "Magnoliopsida",
+                "genus": "Rosa",
+                "order": "Rosales",
+                "family": "Rosaceae",
+                "phylum": "Tracheophyta",
+                "kingdom": "Plantae",
+                "species": "x hybrida"
+              },
+              "commonName": "Rose",
+              "confidence": 0.95,
+              "commonNames": [
+                "Rose"
+              ],
+              "description": "The image displays a branch of a plant with compound leaves, each leaflet exhibiting prominent venation and serrated margins. The most distinctive feature is the presence of numerous dark, irregular, and often circular spots scattered across the leaf surface. These spots are highly characteristic symptoms of Black Spot disease, a common fungal infection primarily affecting roses. The overall leaf morphology is highly consistent with that of cultivated rose varieties.",
+              "edibleParts": [
+                "Rose hips (rich in Vitamin C, used in teas, jams, syrups)",
+                "Petals (used in culinary preparations like rose water, jams, jellies, desserts, and as garnishes)"
+              ],
+              "nativeRegion": "Northern Hemisphere (native to Asia, Europe, and North America), widely cultivated globally.",
+              "seasonalInfo": {
+                "harvestSeason": "Continuous for cut flower production in tropical regions.",
+                "plantingSeason": "Year-round in tropical climates like Kenya, but establishment is best during cooler, drier periods (e.g., April-May, Sept-Oct).",
+                "floweringSeason": "Continuously in warm, favorable climates; typically spring to fall in temperate regions."
+              },
+              "wateringNeeds": "Moderate and consistent moisture; deep watering is preferred. Avoid overhead watering to reduce fungal diseases like Black Spot.",
+              "scientificName": "Rosa x hybrida",
+              "characteristics": {
+                "size": "Highly variable depending on species and cultivar, ranging from 0.3 meters (1 foot) to several meters (20+ feet) for climbing varieties.",
+                "leafType": "Compound, pinnate, typically with 5-7 leaflets (sometimes 3 or 9). Leaflets are ovate to elliptical with serrated margins and prominent venation. Color is typically green, often with disease symptoms.",
+                "fruitType": "Hips (accessory fruit), typically round to ovoid and red or orange when ripe (not visible in image).",
+                "flowerColor": "Variable (not visible in image), depending on cultivar; wide range including red, pink, white, yellow, orange, and bicolors.",
+                "growthHabit": "Shrub, climber, or groundcover, often with thorny stems."
+              },
+              "cultivationTips": [
+                "Requires well-drained, fertile soil.",
+                "Needs adequate air circulation to prevent fungal diseases.",
+                "Regular pruning to maintain shape, encourage new growth, and remove diseased parts.",
+                "Fertilize regularly during the growing season.",
+                "Integrated pest and disease management is crucial for commercial production."
+              ],
+              "soilPreferences": "Well-drained, loamy soil with a slightly acidic to neutral pH (6.0-6.8).",
+              "usefulProperties": [
+                "Ornamental (cultivated globally for cut flowers and garden landscaping)",
+                "Medicinal (traditional uses of hips and petals for various ailments, rich in antioxidants)",
+                "Fragrance (essential oils extracted for perfumes and cosmetics)",
+                "Economic value (major crop in the cut flower industry, significant for export economies like Kenya)"
+              ],
+              "propagationMethods": [
+                "Cuttings (most common for hybrid varieties)",
+                "Grafting (for rootstock benefits)",
+                "Budding",
+                "Seeds (primarily for species roses or breeding new varieties)"
+              ],
+              "sunlightRequirements": "Full sun (at least 6 hours of direct sunlight per day) for optimal growth and flowering."
+            }
+          ],
+          "analysisNotes": "The images clearly show compound leaves with serrated margins, which is a hallmark of the genus *Rosa*. The most striking feature, the dark, irregular black spots on the leaves, is a classic and unmistakable symptom of Black Spot disease, caused by the fungus *Diplocarpon rosae*. This disease is extremely common in cultivated roses and is a significant concern for growers. Given Kenya's prominent role as a global exporter of cut flowers, particularly roses, identifying this as a cultivated rose variety (*Rosa x hybrida*) is highly accurate within the context of 'crop plants' in the region. The detailed venation and leaflet shape further support this identification.",
+          "regionalContext": "Kenya is a global leader in the cut flower industry, with roses being its primary export crop. Large-scale rose farms are predominantly located in elevated regions like Naivasha, Thika, and the Rift Valley, which offer ideal climatic conditions (consistent temperatures, high light intensity, and moderate rainfall). The cultivation of roses is a year-round activity due to the equatorial climate. Black Spot disease is a significant management challenge for Kenyan rose growers, requiring proactive fungicide application and cultural practices to maintain plant health and bloom quality for export markets. Local varieties and cultivars are typically hybrids selected for their aesthetic qualities, vase life, and disease resistance (though black spot remains prevalent).",
+          "primaryIdentification": {
+            "commonName": "Rose",
+            "scientificName": "Rosa x hybrida"
+          },
+          "alternativeIdentifications": [
+            {
+              "commonName": "Dog Rose",
+              "confidence": 0.7,
+              "description": "A wild rose species with similar compound leaves. While it can suffer from black spot, the extensive and severe spotting seen in the image is more typical of cultivated hybrid roses, which are often more susceptible due to their genetic makeup and dense planting conditions.",
+              "scientificName": "Rosa canina",
+              "keyDistinguishingFeatures": "Often has fewer, smaller thorns; hips are typically larger and more prominent; generally grows as a scrambling shrub rather than the more upright habit of many cultivated roses. Less likely to be a 'crop' in the commercial sense as seen in Kenya unless for rose hip production."
+            },
+            {
+              "commonName": "Blackberry / Raspberry",
+              "confidence": 0.6,
+              "description": "Also members of the Rosaceae family with compound, often prickly leaves. Some species can exhibit leaf spots. However, the specific pattern and texture of the black spots, combined with the typical venation and overall leaflet shape in the image, are more characteristic of Black Spot on roses.",
+              "scientificName": "Rubus spp.",
+              "keyDistinguishingFeatures": "Rubus leaves often have a different texture (e.g., hairy undersides), different leaflet arrangements (e.g., palmate or pinnate with 3-5 broad leaflets), and different types of diseases (e.g., rusts, anthracnose, cane blight) that manifest differently than rose black spot. The thorns are also typically different."
+            }
+          ]
+        },
+        "createdAt": "2025-08-02T07:27:44.631Z",
+        "confidence": null,
+        "media": null
+      },
+      {
+        "id": "21139a9b-2180-40f7-8026-b5dca7402457",
+        "type": "plant_identification",
+        "result": {
+          "plants": [
+            {
+              "genus": "Rosa",
+              "family": "Rosaceae",
+              "species": "sp.",
+              "taxonomy": {
+                "class": "Magnoliopsida",
+                "genus": "Rosa",
+                "order": "Rosales",
+                "family": "Rosaceae",
+                "phylum": "Tracheophyta",
+                "kingdom": "Plantae",
+                "species": "sp."
+              },
+              "commonName": "Rose",
+              "confidence": 0.95,
+              "commonNames": [
+                "Rose",
+                "Waridi (Swahili)"
+              ],
+              "description": "The plant depicted exhibits classic symptoms of Black Spot disease, caused by the fungus Diplocarpon rosae. This is evidenced by the distinct dark brown to black, irregular spots on the green leaves. The leaves themselves are typically pinnately compound, with serrated margins and prominent venation, consistent with the morphology of a rose plant. Roses are a significant horticultural crop in Kenya, primarily for cut flower export.",
+              "edibleParts": [
+                "Rose hips (fruits) are edible, rich in Vitamin C, and used in teas, jams, syrups, and preserves.",
+                "Rose petals are edible and used for culinary flavoring, garnishes, rose water, and preserves."
+              ],
+              "nativeRegion": "Predominantly temperate regions of the Northern Hemisphere; cultivated globally.",
+              "seasonalInfo": {
+                "harvestSeason": "For commercial cut flower production, harvesting occurs year-round, as flowers reach the desired stage.",
+                "plantingSeason": "In Kenya's suitable highland climates, roses can be planted year-round, often coinciding with rainy seasons (e.g., March-May and October-December) for establishment.",
+                "floweringSeason": "In ideal commercial cultivation conditions in tropical highlands, flowering can occur year-round."
+              },
+              "wateringNeeds": "Moderate to high; consistent moisture is key, especially during dry spells. Deep watering is preferred to shallow, frequent watering.",
+              "scientificName": "Rosa sp.",
+              "characteristics": {
+                "size": "Highly variable, from compact groundcovers (0.3m) to large climbers (over 6m).",
+                "leafType": "Pinnately compound (consisting of 3-9, usually 5-7, leaflets); leaflets are ovate to elliptical with serrated margins; alternate arrangement on the stem.",
+                "fruitType": "Hips (a fleshy, often colorful accessory fruit containing achenes, not visible in image).",
+                "flowerColor": "Highly variable depending on the species or cultivar (not visible in image), ranging across white, pink, red, yellow, orange, and purple hues.",
+                "growthHabit": "Typically a thorny shrub, but also includes climbing, trailing, or groundcover forms."
+              },
+              "cultivationTips": [
+                "Requires full sun (at least 6 hours of direct sunlight daily) for optimal growth and flowering.",
+                "Prefers well-drained, fertile loamy soil with a slightly acidic to neutral pH (6.0-7.0).",
+                "Requires consistent and deep watering, especially during dry periods, but avoid waterlogging.",
+                "Good air circulation around plants helps prevent fungal diseases like black spot.",
+                "Regular feeding with balanced fertilizer, especially during active growth and blooming.",
+                "Pruning is essential for plant health, shape, and encouraging new blooms.",
+                "Integrated Pest Management (IPM) strategies are vital for controlling common pests (aphids, spider mites) and diseases (Black Spot, Powdery Mildew, Rust)."
+              ],
+              "soilPreferences": "Well-drained, fertile loamy soil; pH range of 6.0-7.0 (slightly acidic to neutral).",
+              "usefulProperties": [
+                "Major horticultural crop globally, especially for cut flowers (economic value in Kenya is significant).",
+                "Source of essential oil (rose oil/attar) for perfumery and cosmetics.",
+                "Medicinal uses: Rose hips traditionally used for colds, flu, and as a general tonic; possess antioxidant, anti-inflammatory, and mild laxative properties. Rose water/oil used for skin soothing and aromatherapy."
+              ],
+              "propagationMethods": [
+                "Stem cuttings (common for cultivars)",
+                "Grafting",
+                "Budding",
+                "Seeds (less common for propagation of specific cultivars)."
+              ],
+              "sunlightRequirements": "Full sun (minimum 6 hours of direct sunlight daily)."
+            }
+          ],
+          "analysisNotes": "The confidence in identifying the plant as a species within the genus Rosa is very high (0.95) due to the unmistakable symptoms of Black Spot disease (*Diplocarpon rosae*) on the leaves. This particular fungal disease is notoriously prevalent and visually distinctive on roses. Furthermore, the visible leaf morphology—serrated margins, prominent venation, and the apparent compound nature (implied by the leaflet arrangement on the stem)—is entirely consistent with the characteristics of *Rosa* species. Given the instruction to focus on 'crop plants' in Kenya, roses are a major horticultural export commodity, making this identification highly relevant in the regional context.",
+          "regionalContext": "Kenya is a globally significant exporter of cut flowers, with roses being one of the leading crops. Commercial rose cultivation is primarily concentrated in the cooler, high-altitude regions of the Rift Valley (e.g., Naivasha, Nakuru), where environmental conditions are favorable for year-round production. Cultivation involves modern hybrid cultivars, and growers actively manage common diseases like Black Spot through cultural practices, resistant varieties, and fungicidal applications to maintain high-quality yields for the international market. While not a food crop, its substantial economic contribution classifies it as a vital 'crop plant' in the region.",
+          "primaryIdentification": "Rosa sp.",
+          "alternativeIdentifications": [
+            {
+              "commonName": "Cherry/Plum/Peach (general)",
+              "confidence": 0.1,
+              "description": "Some species within the genus Prunus (also in the Rosaceae family) can develop various leaf spot diseases. However, the typical leaf morphology of most Prunus species is simple (not compound like roses), and the specific appearance of the black spots, while somewhat similar, is less diagnostic for Prunus compared to Rosa.",
+              "scientificName": "Prunus sp.",
+              "distinguishingFeatures": "Leaves are typically simple rather than pinnately compound. While susceptible to leaf spots, the visual pattern and prevalence of 'black spot' as seen in the image are less characteristic than for roses."
+            },
+            {
+              "commonName": "Blackberry/Raspberry (general)",
+              "confidence": 0.05,
+              "description": "Also belonging to the Rosaceae family, species of Rubus (e.g., blackberries, raspberries) can experience various leaf spot diseases. However, their leaf structure often differs (e.g., palmate compound leaves or different leaflet shapes/textures), and their growth habit typically involves canes, which are distinguishable from the branch shown.",
+              "scientificName": "Rubus sp.",
+              "distinguishingFeatures": "Often have different leaf compounding (e.g., palmate) or distinct leaflet shapes/textures. Growth habit is typically cane-like with prickles."
+            }
+          ]
+        },
+        "createdAt": "2025-08-02T07:26:37.039Z",
+        "confidence": null,
+        "media": null
+      },
+      {
+        "id": "8ae797c5-5600-4954-929d-d8ae569ce774",
+        "type": "soil_analysis",
+        "result": {
+          "suitableCrops": [],
+          "recommendations": [],
+          "detailedAnalysis": "I apologize, but the provided image content only displays the text \"Soil Test Report\" and does not contain any actual soil test data or results. Therefore, I am unable to extract and analyze the specific information requested regarding soil pH, nutrient levels, texture, or any other soil properties.\n\nTo provide comprehensive recommendations for wheat production using mixed farming practices in Kenya with a medium budget, I would require a detailed soil test report containing the necessary analytical data.\n\nSince I cannot perform a data-driven analysis from the provided blank image, the following JSON object will contain placeholder values (0, null, or \"unknown\") for fields that depend on the soil test data, and general, typical recommendations for wheat farming in Kenya where possible, explicitly stating the lack of specific data.\n\n```json\n{\n  \"basicProperties\": {\n    \"ph\": null,\n    \"phCategory\": \"unknown\",\n    \"electricalConductivity\": null,\n    \"organicMatter\": null,\n    \"organicMatterCategory\": \"unknown\",\n    \"cationExchangeCapacity\": null\n  },\n  \"nutrients\": {\n    \"macronutrients\": {\n      \"nitrogen\": {\n        \"total\": null,\n        \"available\": null,\n        \"category\": \"unknown\",\n        \"recommendations\": [\n          \"Without specific data, a balanced approach is recommended.\",\n          \"For wheat, Nitrogen is crucial for yield and quality. Typical rates in Kenya range from 60-120 kg N/ha depending on rainfall and yield potential.\",\n          \"Apply N in split doses: basal at planting and top-dressing at tillering/booting stage.\"\n        ]\n      },\n      \"phosphorus\": {\n        \"available\": null,\n        \"category\": \"unknown\",\n        \"recommendations\": [\n          \"Phosphorus is essential for root development and early plant vigor.\",\n          \"Kenya soils are often P-deficient and have high P-fixation capacity.\",\n          \"Typical recommendation for wheat is 40-60 kg P2O5/ha, applied at planting. Use Triple Superphosphate (TSP) or Diammonium Phosphate (DAP).\"\n        ]\n      },\n      \"potassium\": {\n        \"available\": null,\n        \"category\": \"unknown\",\n        \"recommendations\": [\n          \"Potassium contributes to stress tolerance, disease resistance, and grain filling.\",\n          \"Many Kenyan soils have adequate K, but intensive cultivation can deplete it.\",\n          \"If K is suspected to be low (e.g., on sandy soils or after years of cropping), apply 30-60 kg K2O/ha. Muriate of Potash (MOP) is a common source.\"\n        ]\n      }\n    },\n    \"micronutrients\": {\n      \"zinc\": {\n        \"value\": null,\n        \"category\": \"unknown\",\n        \"recommendations\": [\n          \"Zinc deficiency is common in some Kenyan soils, especially high pH or high phosphorus soils.\",\n          \"If deficiency is suspected or observed, a foliar application of Zinc Sulphate (0.5%) can be effective.\",\n          \"Consider seed treatment with micronutrients for early vigor.\"\n        ]\n      }\n    }\n  },\n  \"physicalProperties\": {\n    \"texture\": {\n      \"sand\": null,\n      \"silt\": null,\n      \"clay\": null,\n      \"textureClass\": \"unknown\",\n      \"recommendations\": [\n        \"Good soil structure and drainage are vital for wheat.\",\n        \"Incorporate organic matter to improve soil aggregation and water infiltration, regardless of initial texture.\"\n      ]\n    },\n    \"structure\": \"unknown\",\n    \"porosity\": \"unknown\",\n    \"waterHoldingCapacity\": \"unknown\",\n    \"drainage\": \"unknown\"\n  },\n  \"soilHealth\": {\n    \"overallScore\": 0,\n    \"category\": \"unknown\",\n    \"limitingFactors\": [\n      \"Lack of specific soil data is the primary limiting factor for targeted recommendations.\"\n    ],\n    \"strengths\": [\n      \"Potential for improvement through data-driven management.\"\n    ]\n  },\n  \"cropRecommendations\": [\n    {\n      \"cropType\": \"Wheat\",\n      \"suitabilityScore\": 50,\n      \"growthPotential\": \"fair\",\n      \"specificRecommendations\": [\n        \"Select high-yielding, disease-resistant wheat varieties adapted to Kenyan conditions (e.g., Eagle 10, Njombe, Njoro BW series).\",\n        \"Consider timely planting to align with rainfall patterns.\",\n        \"Practice good weed, pest, and disease management.\"\n      ],\n      \"expectedYield\": \"Variable, depends heavily on actual soil conditions and management (typically 2-4 tons/ha under good management in Kenya).\",\n      \"profitabilityIndicator\": \"medium\"\n    },\n    {\n      \"cropType\": \"Maize (as rotation crop)\",\n      \"suitabilityScore\": 60,\n      \"growthPotential\": \"good\",\n      \"specificRecommendations\": [\n        \"Excellent rotational crop for breaking pest/disease cycles and improving soil structure.\",\n        \"Consider drought-tolerant varieties if rainfall is erratic.\"\n      ],\n      \"expectedYield\": \"Variable, high potential with good management.\",\n      \"profitabilityIndicator\": \"medium\"\n    },\n    {\n      \"cropType\": \"Legumes (e.g., Beans, Green Grams, Chickpeas)\",\n      \"suitabilityScore\": 70,\n      \"growthPotential\": \"good\",\n      \"specificRecommendations\": [\n        \"Highly recommended for mixed farming, improving soil nitrogen through fixation.\",\n        \"Provides additional income and dietary diversity.\",\n        \"Excellent for breaking pest/disease cycles from cereals.\"\n      ],\n      \"expectedYield\": \"Variable, good potential.\",\n      \"profitabilityIndicator\": \"medium\"\n    }\n  ],\n  \"fertilizationPlan\": {\n    \"immediate\": [\n      {\n        \"product\": \"DAP (Diammonium Phosphate) or TSP (Triple Superphosphate)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"100-150 kg/ha\",\n        \"application\": \"Basal application, broadcast and incorporate before planting or banded at planting.\",\n        \"timing\": \"At planting\",\n        \"cost\": \"Medium\"\n      },\n      {\n        \"product\": \"UREA (46% N) or CAN (26% N)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"50-100 kg/ha\",\n        \"application\": \"Top-dressing.\",\n        \"timing\": \"Tillering stage (approx. 3-4 weeks after emergence)\",\n        \"cost\": \"Medium\"\n      },\n      {\n        \"product\": \"Compost/Well-decomposed Manure\",\n        \"type\": \"organic\",\n        \"amount\": \"5-10 tons/ha\",\n        \"application\": \"Broadcast and incorporate deeply during land preparation.\",\n        \"timing\": \"Pre-planting (at least 2-4 weeks before)\",\n        \"cost\": \"Low-Medium (if sourced locally or produced on-farm)\"\n      }\n    ],\n    \"seasonal\": [\n      {\n        \"season\": \"Long Rains (March-May/June)\",\n        \"applications\": [\n          {\n            \"product\": \"DAP/TSP\",\n            \"amount\": \"100-150 kg/ha\",\n            \"timing\": \"Planting\",\n            \"purpose\": \"Phosphorus and initial Nitrogen for establishment\"\n          },\n          {\n            \"product\": \"UREA/CAN\",\n            \"amount\": \"50-100 kg/ha\",\n            \"timing\": \"Tillering\",\n            \"purpose\": \"Nitrogen top-dressing for vegetative growth\"\n          }\n        ]\n      },\n      {\n        \"season\": \"Short Rains (Oct-Dec) - if double cropping or legume rotation\",\n        \"applications\": [\n          {\n            \"product\": \"N/P/K compound (e.g., 23:23:0 or 17:17:17)\",\n            \"amount\": \"70-120 kg/ha\",\n            \"timing\": \"Planting (for rotational crop)\",\n            \"purpose\": \"Balanced nutrition for subsequent crop\"\n          }\n        ]\n      }\n    ],\n    \"longTerm\": [\n      {\n        \"practice\": \"Crop Rotation\",\n        \"description\": \"Rotate wheat with legumes (beans, chickpeas) and other cereals (maize, sorghum) to break disease cycles, improve soil structure, and enhance nutrient cycling (especially N from legumes).\",\n        \"timeline\": \"Annually/Seasonally\",\n        \"benefits\": [\n          \"Improved soil fertility\",\n          \"Reduced pest/disease pressure\",\n          \"Enhanced biodiversity\",\n          \"Reduced reliance on synthetic fertilizers\"\n        ]\n      },\n      {\n        \"practice\": \"Organic Matter Addition\",\n        \"description\": \"Regular application of farmyard manure, compost, or crop residues. Consider cover cropping during fallow periods.\",\n        \"timeline\": \"Annually\",\n        \"benefits\": [\n          \"Improved soil structure\",\n          \"Increased water holding capacity\",\n          \"Enhanced nutrient retention and availability\",\n          \"Increased microbial activity\"\n        ]\n      },\n      {\n        \"practice\": \"Minimum Tillage/Conservation Agriculture\",\n        \"description\": \"Reduce plowing and soil disturbance to preserve soil structure, organic matter, and moisture.\",\n        \"timeline\": \"Continuous\",\n        \"benefits\": [\n          \"Reduced soil erosion\",\n          \"Improved soil health\",\n          \"Reduced fuel costs\",\n          \"Enhanced water infiltration\"\n        ]\n      }\n    ]\n  },\n  \"soilImprovement\": {\n    \"amendments\": [\n      {\n        \"material\": \"Farmyard Manure/Compost\",\n        \"purpose\": \"Improve organic matter, enhance soil structure, provide slow-release nutrients.\",\n        \"amount\": \"5-10 tons/ha\",\n        \"frequency\": \"Annually/Biennially\",\n        \"benefits\": [\n          \"Improved water retention\",\n          \"Enhanced microbial activity\",\n          \"Buffer pH changes\",\n          \"Increased nutrient availability\"\n        ]\n      },\n      {\n        \"material\": \"Agricultural Lime (if pH is acidic - assumed common in parts of Kenya)\",\n        \"purpose\": \"Raise soil pH, improve nutrient availability (especially P), reduce aluminum toxicity.\",\n        \"amount\": \"Varies by pH (e.g., 1-2 tons/ha for moderately acidic soils, apply based on test results)\",\n        \"frequency\": \"Every 3-5 years or as needed\",\n        \"benefits\": [\n          \"Optimized nutrient uptake\",\n          \"Improved root growth\",\n          \"Increased beneficial microbial activity\"\n        ]\n      }\n    ],\n    \"practices\": [\n      {\n        \"practice\": \"Cover Cropping\",\n        \"description\": \"Planting non-cash crops (e.g., vetch, sunnhemp, oats) during fallow periods to protect soil, add organic matter, and fix nitrogen (legumes).\",\n        \"implementation\": \"Sow immediately after harvesting main crop, terminate before next planting.\",\n        \"benefits\": [\n          \"Erosion control\",\n          \"Weed suppression\",\n          \"Nutrient cycling\",\n          \"Soil organic matter build-up\"\n        ],\n        \"timeline\": \"Seasonal\"\n      },\n      {\n        \"practice\": \"Intercropping (with legumes)\",\n        \"description\": \"Planting wheat alongside a compatible legume (e.g., certain bean varieties) to maximize land use and benefit from nitrogen fixation.\",\n        \"implementation\": \"Careful row spacing and crop selection needed.\",\n        \"benefits\": [\n          \"Increased overall productivity per unit area\",\n          \"Improved soil fertility (N fixation)\",\n          \"Reduced pest pressure\",\n          \"Diversified income\"\n        ],\n        \"timeline\": \"Per cropping season\"\n      }\n    ]\n  },\n  \"regionalFactors\": {\n    \"climateConsiderations\": [\n      \"Rainfall variability: Focus on water harvesting techniques, early maturing varieties, and drought-tolerant practices.\",\n      \"Temperature: Wheat thrives in cool to moderately warm conditions; highland areas of Kenya are suitable.\"\n    ],\n    \"localAvailability\": [\n      \"Fertilizers (DAP, NPK, Urea, CAN) are generally available in agro-dealer shops in major towns.\",\n      \"Lime availability can be localized and vary in cost and quality.\",\n      \"Farmyard manure and compost are widely available from livestock farmers or on-farm.\"\n    ],\n    \"culturalPractices\": [\n      \"Mixed farming is traditional; integration of livestock for manure production is common and encouraged.\",\n      \"Community sharing of labor for planting/harvesting (e.g., 'mwethya' or 'harambee') can reduce costs.\"\n    ],\n    \"economicFactors\": [\n      \"Market access for wheat and other produce.\",\n      \"Fluctuating input costs (fertilizers, seeds, fuel).\",\n      \"Access to affordable credit for farm inputs.\",\n      \"Government policies and subsidies for wheat production.\"\n    ]\n  },\n  \"monitoringPlan\": {\n    \"parameters\": [\n      \"Soil moisture content (visual observation, feel method)\",\n      \"Crop vigor and color (indicates nutrient deficiencies)\",\n      \"Pest and disease incidence\",\n      \"Weed pressure\",\n      \"Yield performance (at harvest)\",\n      \"Soil test results (periodically)\"\n    ],\n    \"frequency\": \"Weekly during growing season, annually for soil tests (or biennially if budget constrained).\",\n    \"methods\": [\n      \"Visual inspection of plants and soil.\",\n      \"Hand-feel test for soil moisture.\",\n      \"Regular scouting for pests/diseases.\",\n      \"Yield estimation prior to harvest and actual yield measurement.\",\n      \"Sending soil samples to accredited labs for testing.\"\n    ],\n    \"warningSignals\": [\n      \"Yellowing leaves (potential N deficiency, water stress)\",\n      \"Purpling leaves (potential P deficiency)\",\n      \"Stunted growth, poor tillering\",\n      \"Unusual spots or lesions on leaves/stems\",\n      \"Sudden increase in pest populations\",\n      \"Excessive weed growth\",\n      \"Poor water infiltration or standing water (drainage issues)\"\n    ]\n  },\n  \"confidence\": 0,\n  \"limitations\": [\n    \"The analysis and recommendations are severely limited due to the absence of an actual soil test report. The provided image was blank except for the title.\",\n    \"Specific fertilizer rates, liming requirements, and micronutrient corrections cannot be accurately determined without actual soil data.\",\n    \"Assumptions have been made based on typical soil conditions and agricultural practices in Kenya, but these may not apply to the specific farm.\"\n  ],\n  \"nextSteps\": [\n    \"Obtain a comprehensive soil test report from an accredited laboratory in Kenya.\",\n    \"Provide the detailed soil test results for a precise and tailored analysis and recommendations.\",\n    \"Consult with local agricultural extension officers for region-specific advice and available resources.\",\n    \"Keep detailed farm records of inputs, practices, and yields for future planning.\"\n  ]\n}\n```"
+        },
+        "status": "analyzed",
+        "createdAt": "2025-08-02T07:23:59.746Z",
+        "media": null
+      },
+      {
+        "id": "f7dd477f-cf09-42ba-b468-542061e66642",
+        "type": "soil_analysis",
+        "result": {
+          "suitableCrops": [],
+          "recommendations": [],
+          "detailedAnalysis": "The provided \"Soil Test Report\" document is blank and contains no data for analysis. Therefore, I cannot extract specific information from it.\n\nHowever, as an expert soil scientist and agricultural consultant specializing in Kenya, I understand the need for practical recommendations. I will proceed by generating a **plausible, hypothetical soil test report scenario** typical for wheat production in the Kenyan highlands (e.g., parts of Rift Valley, Central Kenya) under mixed farming practices and a medium budget. This hypothetical scenario will allow me to demonstrate the comprehensive analysis and recommendations requested.\n\n**Please note: The data below is entirely hypothetical and generated to illustrate the depth of the analysis. For actual farming decisions, a real soil test report is indispensable.**\n\n---\n\n```json\n{\n  \"basicProperties\": {\n    \"ph\": 5.8,\n    \"phCategory\": \"slightly_acidic\",\n    \"electricalConductivity\": 0.4,\n    \"organicMatter\": 1.8,\n    \"organicMatterCategory\": \"low\",\n    \"cationExchangeCapacity\": 15.0\n  },\n  \"nutrients\": {\n    \"macronutrients\": {\n      \"nitrogen\": {\n        \"total\": 0.15,\n        \"available\": null,\n        \"category\": \"deficient\",\n        \"recommendations\": [\n          \"Apply Starter N (e.g., DAP or NPK) at planting, followed by top-dressing with CAN/Urea.\",\n          \"Incorporate legume cover crops or intercrops in rotation.\",\n          \"Utilize composted farmyard manure (FYM) to build organic N.\",\n          \"Avoid excessive tilling to preserve organic matter.\"\n        ]\n      },\n      \"phosphorus\": {\n        \"available\": 10.0,\n        \"category\": \"deficient\",\n        \"recommendations\": [\n          \"Apply Phosphorus-rich fertilizer (e.g., DAP, TSP, or Mavuno NPK) at planting. Focus on placement (banding) to improve efficiency.\",\n          \"Incorporate rock phosphate (if budget allows for long-term buildup) or enriched compost.\",\n          \"Ensure adequate soil pH to maximize P availability.\"\n        ]\n      },\n      \"potassium\": {\n        \"available\": 180.0,\n        \"category\": \"adequate\",\n        \"recommendations\": [\n          \"Monitor K levels in future tests. For now, moderate K application (e.g., through NPK blends or MOP if needed) is sufficient.\",\n          \"Retain crop residues to recycle K back into the soil.\",\n          \"Composted farmyard manure contributes to K.\"\n        ]\n      }\n    },\n    \"micronutrients\": {\n      \"zinc\": {\n        \"value\": 0.8,\n        \"category\": \"deficient\",\n        \"recommendations\": [\n          \"Apply Zinc sulfate (ZnSO4) as a foliar spray during tillering to flag leaf stages (0.5-1 kg/ha).\",\n          \"Consider seed treatment with Zinc.\",\n          \"Incorporate Zinc-enriched fertilizers if available and cost-effective.\"\n        ]\n      },\n      \"iron\": {\n        \"value\": 50.0,\n        \"category\": \"adequate\",\n        \"recommendations\": [\n          \"No specific Iron application needed at this time. Maintain good soil aeration and pH.\"\n        ]\n      },\n      \"manganese\": {\n        \"value\": 15.0,\n        \"category\": \"adequate\",\n        \"recommendations\": [\n          \"No specific Manganese application needed at this time.\"\n        ]\n      },\n      \"copper\": {\n        \"value\": 1.2,\n        \"category\": \"adequate\",\n        \"recommendations\": [\n          \"No specific Copper application needed at this time.\"\n        ]\n      },\n      \"boron\": {\n        \"value\": 0.3,\n        \"category\": \"deficient\",\n        \"recommendations\": [\n          \"Apply Borax or Boric acid as a foliar spray (0.5 kg/ha) during tillering to booting stages.\",\n          \"Incorporate farmyard manure which often contains trace elements.\"\n        ]\n      }\n    }\n  },\n  \"physicalProperties\": {\n    \"texture\": {\n      \"sand\": 40.0,\n      \"silt\": 30.0,\n      \"clay\": 30.0,\n      \"textureClass\": \"clay_loam\",\n      \"recommendations\": [\n        \"This texture is generally good for wheat production, offering balanced drainage and water retention.\",\n        \"Focus on maintaining and improving soil structure through organic matter addition and reduced tillage.\",\n        \"Avoid compaction, especially when soil is wet.\"\n      ]\n    },\n    \"structure\": \"Likely moderate to poor due to low organic matter and potential past tillage.\",\n    \"porosity\": \"Likely moderate, can be improved with organic matter.\",\n    \"waterHoldingCapacity\": \"Good (due to clay and silt content), but can be enhanced by increasing organic matter.\",\n    \"drainage\": \"moderate\"\n  },\n  \"soilHealth\": {\n    \"overallScore\": 65,\n    \"category\": \"fair\",\n    \"limitingFactors\": [\n      \"Low soil pH (slightly acidic)\",\n      \"Low organic matter content\",\n      \"Deficiencies in Nitrogen, Phosphorus, Zinc, and Boron\",\n      \"Potential for soil compaction (if not managed well)\"\n    ],\n    \"strengths\": [\n      \"Favorable soil texture (clay loam) providing good water and nutrient retention potential.\",\n      \"Moderate Cation Exchange Capacity, indicating capacity to hold nutrients.\",\n      \"Adequate levels of Potassium, Iron, Manganese, and Copper.\"\n    ]\n  },\n  \"cropRecommendations\": [\n    {\n      \"cropType\": \"Wheat (Triticum aestivum)\",\n      \"suitabilityScore\": 7.5,\n      \"growthPotential\": \"good\",\n      \"specificRecommendations\": [\n        \"Select drought-tolerant and disease-resistant wheat varieties suitable for Kenyan highlands (e.g., K. Wren, K. Tai, K. Eagle).\",\n        \"Implement proper fertilization as per recommendations.\",\n        \"Consider crop rotation with legumes (beans, peas) to fix nitrogen and improve soil health.\",\n        \"Ensure timely planting and appropriate seed rate.\",\n        \"Practice integrated pest and disease management.\"\n      ],\n      \"expectedYield\": \"2.5 - 3.5 tons/ha (with good management)\",\n      \"profitabilityIndicator\": \"medium\"\n    },\n    {\n      \"cropType\": \"Maize (Zea mays)\",\n      \"suitabilityScore\": 8.0,\n      \"growthPotential\": \"excellent\",\n      \"specificRecommendations\": [\n        \"Soil is well-suited, but higher N and P demands will require robust fertilization.\",\n        \"Intercrop with legumes for improved soil fertility and risk diversification.\",\n        \"Manage for common maize diseases and pests (e.g., MLN, Fall Armyworm).\"\n      ],\n      \"expectedYield\": \"3.5 - 5.0 tons/ha (with good management)\",\n      \"profitabilityIndicator\": \"medium\"\n    },\n    {\n      \"cropType\": \"Beans (Phaseolus vulgaris)\",\n      \"suitabilityScore\": 8.5,\n      \"growthPotential\": \"excellent\",\n      \"specificRecommendations\": [\n        \"Excellent rotational crop for Nitrogen fixation and improving soil health.\",\n        \"Requires adequate P and Boron, which aligns with soil deficiencies.\",\n        \"Good market demand in Kenya.\"\n      ],\n      \"expectedYield\": \"1.0 - 1.5 tons/ha\",\n      \"profitabilityIndicator\": \"high\"\n    }\n  ],\n  \"fertilizationPlan\": {\n    \"immediate\": [\n      {\n        \"product\": \"DAP (Diammonium Phosphate)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"100 kg/acre (250 kg/ha)\",\n        \"application\": \"Broadcasting and incorporating before planting, or banding during planting.\",\n        \"timing\": \"At planting (basal application)\",\n        \"cost\": \"Medium\"\n      },\n      {\n        \"product\": \"CAN (Calcium Ammonium Nitrate)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"50 kg/acre (125 kg/ha)\",\n        \"application\": \"Top-dressing, broadcast between rows.\",\n        \"timing\": \"3-4 weeks after emergence (tillering stage)\",\n        \"cost\": \"Medium\"\n      },\n      {\n        \"product\": \"Zinc Sulfate (ZnSO4)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"0.5 kg/ha (mixed with water)\",\n        \"application\": \"Foliar spray\",\n        \"timing\": \"Tillering to jointing stage of wheat\",\n        \"cost\": \"Low\"\n      },\n      {\n        \"product\": \"Borax (Sodium tetraborate)\",\n        \"type\": \"inorganic\",\n        \"amount\": \"0.5 kg/ha (mixed with water)\",\n        \"application\": \"Foliar spray\",\n        \"timing\": \"Tillering to jointing stage of wheat\",\n        \"cost\": \"Low\"\n      },\n      {\n        \"product\": \"Composted Farmyard Manure (FYM)\",\n        \"type\": \"organic\",\n        \"amount\": \"5-10 tons/acre (12.5-25 tons/ha)\",\n        \"application\": \"Broadcasting and incorporating thoroughly before land preparation.\",\n        \"timing\": \"Pre-planting (at least 2-4 weeks before)\",\n        \"cost\": \"Low (if locally available), Medium (if purchased/transported)\"\n      }\n    ],\n    \"seasonal\": [\n      {\n        \"season\": \"Long Rains (March-June)\",\n        \"applications\": [\n          {\n            \"product\": \"DAP/NPK (e.g., 23-23-0)\",\n            \"amount\": \"100 kg/acre\",\n            \"timing\": \"At planting (basal)\",\n            \"purpose\": \"Establishment and early growth (N, P, K)\"\n          },\n          {\n            \"product\": \"CAN\",\n            \"amount\": \"50 kg/acre\",\n            \"timing\": \"3-4 weeks after planting (top-dress)\",\n            \"purpose\": \"Vegetative growth (N)\"\n          },\n          {\n            \"product\": \"Zinc & Boron foliar spray\",\n            \"amount\": \"0.5 kg/ha each\",\n            \"timing\": \"Tillering/jointing\",\n            \"purpose\": \"Micronutrient correction\"\n          }\n        ]\n      },\n      {\n        \"season\": \"Short Rains (Oct-Dec) - if double cropping or fallow crop\",\n        \"applications\": [\n          {\n            \"product\": \"Legume Cover Crop/Green Manure\",\n            \"amount\": \"Appropriate seed rate\",\n            \"timing\": \"Post-harvest of long rains crop\",\n            \"purpose\": \"Nitrogen fixation, organic matter, soil cover\"\n          },\n          {\n            \"product\": \"Compost/FYM\",\n            \"amount\": \"As available\",\n            \"timing\": \"Before next planting season\",\n            \"purpose\": \"Soil health, nutrient cycling\"\n          }\n        ]\n      }\n    ],\n    \"longTerm\": [\n      {\n        \"practice\": \"Crop Rotation with Legumes\",\n        \"description\": \"Rotate wheat with crops like beans, peas, or groundnuts. This helps fix atmospheric nitrogen, break pest/disease cycles, and improve soil structure.\",\n        \"timeline\": \"Every 1-2 seasons\",\n        \"benefits\": [\n          \"Increased soil nitrogen\",\n          \"Improved soil structure and aggregation\",\n          \"Reduced pest and disease pressure\",\n          \"Enhanced biodiversity\"\n        ]\n      },\n      {\n        \"practice\": \"Minimum/No-Tillage\",\n        \"description\": \"Reduce plowing and harrowing to preserve soil structure, organic matter, and moisture. Direct drilling or shallow tillage methods.\",\n        \"timeline\": \"Continuous practice\",\n        \"benefits\": [\n          \"Increased organic matter accumulation\",\n          \"Improved water infiltration and retention\",\n          \"Reduced soil erosion\",\n          \"Lower fuel costs\"\n        ]\n      },\n      {\n        \"practice\": \"Cover Cropping\",\n        \"description\": \"Plant non-cash crops (e.g., Crotalaria, Sunn hemp, vetch) during fallow periods or intercrop. Incorporate residues before next cash crop.\",\n        \"timeline\": \"Annually or during fallow periods\",\n        \"benefits\": [\n          \"Nitrogen fixation (legumes)\",\n          \"Erosion control\",\n          \"Weed suppression\",\n          \"Increased soil organic matter\",\n          \"Improved nutrient cycling\"\n        ]\n      },\n      {\n        \"practice\": \"Composting and Farmyard Manure Management\",\n        \"description\": \"Establish a robust composting system for crop residues and animal waste. Proper composting reduces pathogen load and nutrient loss. Apply well-composted manure regularly.\",\n        \"timeline\": \"Continuous (annual application)\",\n        \"benefits\": [\n          \"Significant increase in soil organic matter\",\n          \"Improved nutrient availability (macro and micro)\",\n          \"Enhanced soil microbial activity\",\n          \"Improved water holding capacity and structure\"\n        ]\n      }\n    ]\n  },\n  \"soilImprovement\": {\n    \"amendments\": [\n      {\n        \"material\": \"Agricultural Lime (Calcium Carbonate/Dolomitic Lime)\",\n        \"purpose\": \"Raise soil pH, provide Calcium (and Magnesium if dolomitic), improve nutrient availability, reduce Aluminum toxicity.\",\n        \"amount\": \"1-2 tons/ha (based on pH 5.8, actual rate needs detailed lime requirement test)\",\n        \"frequency\": \"Every 3-5 years, or as guided by soil tests.\",\n        \"benefits\": [\n          \"Increased nutrient availability (especially P)\",\n          \"Reduced Aluminum toxicity (critical for root growth)\",\n          \"Improved microbial activity\",\n          \"Better fertilizer efficiency\"\n        ]\n      },\n      {\n        \"material\": \"Composted Farmyard Manure / Organic Compost\",\n        \"purpose\": \"Increase organic matter, improve soil structure, provide slow-release nutrients, enhance microbial life, buffer pH.\",\n        \"amount\": \"10-20 tons/ha annually or biennially\",\n        \"frequency\": \"Annually or biennially\",\n        \"benefits\": [\n          \"Improved water retention\",\n          \"Enhanced nutrient cycling\",\n          \"Better soil aeration and drainage\",\n          \"Reduced soil compaction\"\n        ]\n      }\n    ],\n    \"practices\": [\n      {\n        \"practice\": \"Soil pH Management\",\n        \"description\": \"Regular application of agricultural lime (e.g., dolomitic lime for both Ca and Mg) to bring the pH into the optimal range (6.0-7.0) for wheat and nutrient availability. Incorporate lime thoroughly.\",\n        \"implementation\": \"Apply lime 2-3 months before planting if possible, to allow time for reaction. Incorporate into top 15-20 cm of soil.\",\n        \"benefits\": [\n          \"Optimized nutrient uptake by wheat\",\n          \"Reduced toxicity from elements like Aluminum and Manganese\",\n          \"Improved conditions for beneficial soil microorganisms\"\n        ],\n        \"timeline\": \"Initial application pre-planting, subsequent applications every 3-5 years based on soil tests.\"\n      },\n      {\n        \"practice\": \"Enhanced Organic Matter Building\",\n        \"description\": \"Combine the use of farmyard manure, compost, crop residue retention, and cover cropping/green manuring. This is crucial for long-term soil health.\",\n        \"implementation\": \"Annual application of organic amendments, continuous practice of residue retention and cover cropping.\",\n        \"benefits\": [\n          \"Increased Cation Exchange Capacity (CEC)\",\n          \"Improved soil structure and aggregation\",\n          \"Enhanced water holding capacity and infiltration\",\n          \"Reduced reliance on synthetic fertilizers in the long run\"\n        ],\n        \"timeline\": \"Continuous, long-term commitment.\"\n      },\n      {\n        \"practice\": \"Integrated Nutrient Management (INM)\",\n        \"description\": \"Combine organic and inorganic fertilizer sources to provide balanced nutrition. This approach optimizes nutrient use efficiency and minimizes environmental impact.\",\n        \"implementation\": \"Follow specific recommendations for basal and top-dressing, integrating organic sources systematically.\",\n        \"benefits\": [\n          \"Sustainable nutrient supply\",\n          \"Improved soil biological activity\",\n          \"Reduced nutrient losses\",\n          \"Cost-effective nutrient management\"\n        ],\n        \"timeline\": \"Ongoing, adapted seasonally.\"\n      }\n    ]\n  },\n  \"regionalFactors\": {\n    \"climateConsiderations\": [\n      \"Bimodal rainfall pattern (Long Rains: March-May/June; Short Rains: Oct-Dec). Wheat is typically planted in the long rains.\",\n      \"Rainfall variability and potential for drought stress, requiring selection of drought-tolerant varieties and good soil moisture management.\",\n      \"Temperature ranges are generally favorable for wheat in the highlands, but heat stress during grain filling can occur in warmer zones.\",\n      \"Risk of frost in higher altitudes, requiring variety selection.\"\n    ],\n    \"localAvailability\": [\n      \"Common fertilizers: DAP, CAN, Urea, NPK blends (e.g., Mavuno, Baraka).\",\n      \"Lime (agricultural lime) is available from local suppliers, though quality can vary.\",\n      \"Farmyard manure is readily available from mixed farming setups.\",\n      \"Basic micronutrient products (Zinc Sulfate, Borax) are often available at agro-vet shops.\",\n      \"Improved wheat seeds (certified varieties) from KALRO or private companies.\"\n    ],\n    \"culturalPractices\": [\n      \"Traditional mixed farming systems often incorporate livestock, providing manure.\",\n      \"Intercropping and relay cropping are common, which can be adapted for soil health (e.g., maize-bean intercrop).\",\n      \"Burning of crop residues is sometimes practiced, which should be discouraged to promote soil health.\"\n    ],\n    \"economicFactors\": [\n      \"Fluctuating market prices for wheat can affect profitability, requiring efficient production.\",\n      \"Input costs (fertilizers, seeds, labor, fuel) are significant and require careful budgeting.\",\n      \"Access to credit for purchasing inputs is crucial for medium-budget farmers.\",\n      \"Value addition opportunities (e.g., local milling) could enhance profitability.\",\n      \"Government policies on subsidies or price support can impact viability.\"\n    ]\n  },\n  \"monitoringPlan\": {\n    \"parameters\": [\n      \"Soil pH\",\n      \"Organic Matter content\",\n      \"Available Phosphorus\",\n      \"Exchangeable Potassium\",\n      \"Micronutrients (Zinc, Boron)\",\n      \"Crop visual symptoms (nutrient deficiencies, diseases, pests)\",\n      \"Yield performance\"\n    ],\n    \"frequency\": \"Annually or biennially for soil tests (especially pH and OM); weekly for visual crop monitoring during growing season.\",\n    \"methods\": [\n      \"Laboratory soil testing (recommended)\",\n      \"On-farm pH test kits (for quick checks)\",\n      \"Visual assessment of crop vigor and color\",\n      \"Yield measurement and record keeping\",\n      \"Rainfall monitoring and weather forecasting\"\n    ],\n    \"warningSignals\": [\n      \"Stunted growth, yellowing (N deficiency), purpling (P deficiency), pale green/streaky leaves (Zn/Mn deficiency), brittle young leaves (B deficiency).\",\n      \"Increased incidence of soil-borne diseases or nematodes.\",\n      \"Poor crop stand establishment or uneven growth.\",\n      \"Visible soil erosion or compaction.\",\n      \"Significant yield decline compared to previous seasons or benchmarks.\"\n    ]\n  },\n  \"confidence\": 0.8,\n  \"limitations\": [\n    \"The analysis is based on a hypothetical soil test report. Actual results could vary significantly.\",\n    \"Specific fertilizer recommendations (precise rates) require further calibration based on local conditions, specific wheat variety, and target yield.\",\n    \"The medium budget implies a balance between optimal and practical solutions; some ideal solutions might be deferred.\",\n    \"Climate variability, pest/disease outbreaks, and market fluctuations are inherent risks not fully captured in soil analysis.\",\n    \"Lack of information on soil biology and specific microbial activity, which are crucial for soil health.\"\n  ],\n  \"nextSteps\": [\n    \"Obtain an actual, comprehensive soil test report for the specific farm plot.\",\n    \"Consult with a local agricultural extension officer or agronomist to refine recommendations based on precise local conditions and current input prices.\",\n    \"Implement a phased soil improvement plan, starting with pH correction and organic matter building.\",\n    \"Keep detailed farm records (inputs, yields, observations) to track progress and inform future decisions.\",\n    \"Explore training opportunities on sustainable soil management practices and integrated pest management (IPM).\"\n  ]\n}\n```"
+        },
+        "status": "analyzed",
+        "createdAt": "2025-08-02T07:18:50.487Z",
+        "media": null
+      },
+      {
+        "id": "6a047666-063b-4769-baf9-21ba2fafea5b",
+        "type": "plant_health",
+        "result": {
+          "pests": [],
+          "diseases": [],
+          "healthStatus": {
+            "overall": "not_applicable_no_plant_visible",
+            "urgency": "none",
+            "isHealthy": false,
+            "assessment": "The provided image is a solid green color and does not contain any discernible plant material. Therefore, a visual plant health assessment for maize cannot be conducted based on this image. To receive a comprehensive health assessment, please provide an image clearly showing the maize plant or its affected parts.",
+            "confidence": 0,
+            "healthScore": 0
+          },
+          "analysisNotes": "The provided image is a solid green color and does not contain any discernible plant material. As such, it is impossible to perform a visual assessment for diseases, pests, nutritional deficiencies, or environmental stress indicators on a maize plant. To receive a comprehensive health assessment, please provide an image clearly showing the maize plant or its affected parts.",
+          "primaryConcerns": [
+            "No plant visible for analysis."
+          ],
+          "regionalFactors": "Given that no plant image was provided, regional factors specific to Kenya, such as common maize diseases (e.g., Maize Lethal Necrosis, Head Smut, Grey Leaf Spot), prevalent pests (e.g., Fall Armyworm, Maize Stem Borer), or specific soil and climate conditions, cannot be applied to an actual plant health assessment at this time. These factors would typically be considered if plant symptoms were visible.",
+          "treatmentPriority": [],
+          "preventiveMeasures": [
+            "Please provide an image clearly showing the maize plant for analysis.",
+            "Ensure images are well-lit, in focus, and capture the entire plant or specific affected areas clearly."
+          ],
+          "environmentalStress": [],
+          "followUpRecommendations": [
+            "Submit a new image with clear visibility of the maize plant for assessment.",
+            "For general maize health in Kenya, monitor for common issues like Fall Armyworm, Maize Lethal Necrosis, Grey Leaf Spot, and nutrient deficiencies once a plant image is available."
+          ],
+          "nutritionalDeficiencies": []
+        },
+        "createdAt": "2025-08-02T07:17:29.573Z",
+        "isHealthy": false,
+        "media": null
+      }
+    ],
+    "total": 8,
+    "message": "History retrieved successfully"
+  }
+}
