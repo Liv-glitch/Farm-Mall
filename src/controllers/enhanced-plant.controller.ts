@@ -180,7 +180,7 @@ export class EnhancedPlantController {
       
       res.json({
         success: fallbackResult.success,
-        data: fallbackResult.data,
+        data: fallbackResult.data || null,
         provider: 'plantid',
         fallback_reason: result?.message || 'Gemini unavailable'
       });
@@ -371,7 +371,7 @@ export class EnhancedPlantController {
         success: result.success,
         data: result.data,
         total: result.data?.length || 0,
-        message: result.success ? 'History retrieved successfully' : result.message
+        message: result.success ? 'History retrieved successfully' : (result as any).message || 'Failed to retrieve history'
       });
 
     } catch (error: any) {
@@ -386,7 +386,7 @@ export class EnhancedPlantController {
   }
 
   // Service health check
-  public async healthCheck(req: Request, res: Response): Promise<void> {
+  public async healthCheck(_req: Request, res: Response): Promise<void> {
     try {
       const status = geminiWrapper.getHealthStatus();
       
@@ -447,12 +447,13 @@ export class EnhancedPlantController {
     };
   }
 
-  private async fallbackToPlantIdHealth(file: Express.Multer.File, options: any) {
+  private async fallbackToPlantIdHealth(_file: Express.Multer.File, _options: any) {
     // Similar implementation for Plant.id health API
     // Use your existing health assessment logic
     return {
       success: false,
-      message: 'Plant.id health API fallback not implemented'
+      message: 'Plant.id health API fallback not implemented',
+      data: null
     };
   }
 }
