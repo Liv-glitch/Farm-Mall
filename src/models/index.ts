@@ -8,6 +8,8 @@ import { PestAnalysisModel } from './PestAnalysis.model';
 import { WeatherRequestModel } from './WeatherRequest.model';
 import { FarmModel } from './Farm.model';
 import { SoilTestModel, initializeSoilTestModel } from './SoilTest.model';
+import { PlantIdentificationModel, initializePlantIdentificationModel } from './PlantIdentification.model';
+import { PlantHealthAssessmentModel, initializePlantHealthAssessmentModel } from './PlantHealthAssessment.model';
 import { Media } from './Media.model';
 import { MediaAssociation } from './MediaAssociation.model';
 
@@ -18,6 +20,10 @@ export function initializeModels(sequelize: Sequelize): void {
   
   // Initialize SoilTest model
   initializeSoilTestModel(sequelize);
+  
+  // Initialize Plant models
+  initializePlantIdentificationModel(sequelize);
+  initializePlantHealthAssessmentModel(sequelize);
   
   // Initialize Media models
   Media.initModel(sequelize);
@@ -85,6 +91,15 @@ function setupAssociations(): void {
     Farm: FarmModel,
   });
 
+  // Plant model associations
+  PlantIdentificationModel.associate({
+    User: UserModel,
+  });
+
+  PlantHealthAssessmentModel.associate({
+    User: UserModel,
+  });
+
   // Media associations
   Media.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
   MediaAssociation.belongsTo(Media, { foreignKey: 'mediaId', as: 'Media' });
@@ -102,6 +117,8 @@ export {
   WeatherRequestModel,
   FarmModel,
   SoilTestModel,
+  PlantIdentificationModel,
+  PlantHealthAssessmentModel,
   Media,
   MediaAssociation,
 };
