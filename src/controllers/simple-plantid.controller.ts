@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
+import { PlantIdentificationModel } from '../models/PlantIdentification.model';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
@@ -120,9 +121,49 @@ export class SimplePlantIdController {
         modelVersion: responseData.model_version
       });
 
+      // Save to database if we have user info and successful result
+      let savedRecord = null;
+      const userId = req.user?.id || req.body.userId;
+      
+      if (userId && responseData.result) {
+        try {
+          // Create a simple imageUrl since we're not using enterprise media service here
+          const imageUrl = `temp/${req.file.filename}`;
+          
+          // Extract confidence score from the response
+          let confidenceScore = 0;
+          if (responseData.result.classification?.suggestions?.length > 0) {
+            confidenceScore = responseData.result.classification.suggestions[0].probability;
+          }
+
+          savedRecord = await PlantIdentificationModel.create({
+            userId,
+            imageUrl,
+            originalFilename: req.file.originalname,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            identificationResult: responseData.result,
+            confidenceScore
+          });
+
+          logInfo('💾 Plant identification saved to database', {
+            recordId: savedRecord.id,
+            userId,
+            confidence: confidenceScore
+          });
+        } catch (dbError: any) {
+          logError('Failed to save plant identification to database', dbError, { userId });
+          // Don't fail the request if database save fails
+        }
+      }
+
       res.json({
         success: true,
-        data: responseData
+        data: responseData,
+        metadata: savedRecord ? {
+          recordId: savedRecord.id,
+          savedAt: savedRecord.createdAt
+        } : undefined
       });
 
     } catch (error: any) {
