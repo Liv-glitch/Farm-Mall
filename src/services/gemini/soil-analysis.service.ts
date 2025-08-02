@@ -211,14 +211,48 @@ export class SoilAnalysisService extends BaseGeminiService {
   ): Promise<StructuredResponse<SoilAnalysisResult>> {
     const prompt = this.buildSoilAnalysisPrompt(options);
     
-    return this.processDocumentWithPrompt<SoilAnalysisResult>(
-      documentBuffer,
-      prompt,
-      {
-        ...options,
-        additionalContext: this.buildSoilContext(options)
-      }
-    );
+    // Determine MIME type from buffer
+    const mimeType = this.detectDocumentMimeType(documentBuffer);
+    
+    if (mimeType === 'application/pdf') {
+      return this.processDocumentWithPrompt<SoilAnalysisResult>(
+        documentBuffer,
+        prompt,
+        mimeType,
+        {
+          ...options,
+          additionalContext: this.buildSoilContext(options)
+        }
+      );
+    } else {
+      // Handle as image (soil test chart/photo)
+      return this.processImageWithPrompt<SoilAnalysisResult>(
+        documentBuffer,
+        prompt,
+        mimeType,
+        {
+          ...options,
+          additionalContext: this.buildSoilContext(options)
+        }
+      );
+    }
+  }
+
+  private detectDocumentMimeType(buffer: Buffer): string {
+    // Check file signature to determine MIME type
+    const signature = buffer.toString('hex', 0, 4).toUpperCase();
+    
+    // PDF signature
+    if (buffer.toString('ascii', 0, 4) === '%PDF') return 'application/pdf';
+    
+    // Image signatures
+    if (signature.startsWith('FFD8')) return 'image/jpeg';
+    if (signature.startsWith('8950')) return 'image/png';
+    if (signature.startsWith('4749')) return 'image/gif';
+    if (signature.startsWith('5249')) return 'image/webp';
+    
+    // Default to PDF for unknown types
+    return 'application/pdf';
   }
 
   private buildSoilAnalysisPrompt(options: any): string {
@@ -609,42 +643,6 @@ Provide practical, actionable recommendations that are appropriate for the regio
 
     Format as a detailed JSON object with practical, implementable recommendations.`;
 
-    const startTime = Date.now();
-    
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      const processingTime = Date.now() - startTime;
-      
-      let parsedData: any;
-      try {
-        parsedData = JSON.parse(text);
-      } catch {
-        parsedData = { content: text };
-      }
-
-      return {
-        success: true,
-        data: parsedData,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    } catch (error: any) {
-      const processingTime = Date.now() - startTime;
-      return {
-        success: false,
-        error: error.message,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    }
+    return this.processTextPrompt(prompt);
   }
 }

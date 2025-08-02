@@ -1,6 +1,5 @@
 import { BaseGeminiService, GeminiConfig, AnalysisOptions, StructuredResponse } from './base-gemini.service';
 import { PlantHealthAssessmentModel } from '../../models/PlantHealthAssessment.model';
-// import { FileStorageService } from '../fileStorage.service'; // Available for future use
 import { logInfo, logError } from '../../utils/logger';
 
 export interface Disease {
@@ -114,15 +113,12 @@ export interface PlantHealthResponse {
 }
 
 export class PlantHealthService extends BaseGeminiService {
-  // private fileStorage: FileStorageService; // Available for future use
-
   constructor(config: GeminiConfig) {
     super(config);
-    // this.fileStorage = new FileStorageService(); // Available for future use
   }
 
   async assessPlantHealth(
-    imagePath: string | Buffer,
+    imageBuffer: Buffer,
     options: AnalysisOptions & {
       plantType?: string;
       plantAge?: string;
@@ -135,14 +131,31 @@ export class PlantHealthService extends BaseGeminiService {
   ): Promise<StructuredResponse<PlantHealthResponse>> {
     const prompt = this.buildHealthAssessmentPrompt(options);
     
+    // Determine MIME type from buffer
+    const mimeType = this.detectImageMimeType(imageBuffer);
+    
     return this.processImageWithPrompt<PlantHealthResponse>(
-      imagePath,
+      imageBuffer,
       prompt,
+      mimeType,
       {
         ...options,
         additionalContext: this.buildHealthContext(options)
       }
     );
+  }
+
+  private detectImageMimeType(buffer: Buffer): string {
+    // Check file signature to determine MIME type
+    const signature = buffer.toString('hex', 0, 4).toUpperCase();
+    
+    if (signature.startsWith('FFD8')) return 'image/jpeg';
+    if (signature.startsWith('8950')) return 'image/png';
+    if (signature.startsWith('4749')) return 'image/gif';
+    if (signature.startsWith('5249')) return 'image/webp';
+    
+    // Default to JPEG if unknown
+    return 'image/jpeg';
   }
 
   private buildHealthAssessmentPrompt(options: any): string {
@@ -367,7 +380,8 @@ Be thorough in your analysis. Focus on actionable, practical recommendations sui
       confidence: true
     };
 
-    const result = await this.assessPlantHealth(imagePath, {
+    const imageBuffer = typeof imagePath === 'string' ? Buffer.from(imagePath, 'base64') : imagePath;
+    const result = await this.assessPlantHealth(imageBuffer, {
       ...analysisOptions,
       plantType: options.plantType,
       region: 'kenya'
@@ -381,12 +395,10 @@ Be thorough in your analysis. Focus on actionable, practical recommendations sui
       };
     }
 
-    // Convert to Plant.id compatible format
-    const compatibleResponse = this.convertToPlantIdFormat(result.data, 'health');
-    
+    // Return result directly as it's already in proper format
     return {
       success: true,
-      data: compatibleResponse
+      data: result.data
     };
   }
 
@@ -451,7 +463,9 @@ Be thorough in your analysis. Focus on actionable, practical recommendations sui
   ): Promise<StructuredResponse<any>> {
     const prompt = this.buildSpecificIssuePrompt(issueType, specificConcern);
     
-    return this.processImageWithPrompt(imagePath, prompt, options);
+    const imageBuffer = typeof imagePath === 'string' ? Buffer.from(imagePath, 'base64') : imagePath;
+    const mimeType = this.detectImageMimeType(imageBuffer);
+    return this.processImageWithPrompt(imageBuffer, prompt, mimeType, options);
   }
 
   private buildSpecificIssuePrompt(issueType: string, concern: string): string {
@@ -506,42 +520,6 @@ Be thorough in your analysis. Focus on actionable, practical recommendations sui
 
     Format as a JSON object with prioritized actions, timeline, costs, and success monitoring methods.`;
 
-    const startTime = Date.now();
-    
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      const processingTime = Date.now() - startTime;
-      
-      let parsedData: any;
-      try {
-        parsedData = JSON.parse(text);
-      } catch {
-        parsedData = { content: text };
-      }
-
-      return {
-        success: true,
-        data: parsedData,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    } catch (error: any) {
-      const processingTime = Date.now() - startTime;
-      return {
-        success: false,
-        error: error.message,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    }
+    return this.processTextPrompt(prompt);
   }
 }

@@ -1,5 +1,5 @@
 import { BaseGeminiService, GeminiConfig, StructuredResponse } from './base-gemini.service';
-import { logInfo, logError } from '../../utils/logger';
+import { logInfo } from '../../utils/logger';
 
 export interface YieldCalculationInputs {
   // Basic farm information
@@ -136,61 +136,23 @@ export class SmartYieldCalculatorService extends BaseGeminiService {
   async calculateYield(inputs: YieldCalculationInputs): Promise<StructuredResponse<YieldPrediction>> {
     const prompt = this.buildYieldCalculationPrompt(inputs);
     
-    const startTime = Date.now();
+    const result = await this.processTextPrompt<YieldPrediction>(prompt);
     
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+    // Add lastUpdated timestamp to the data if successful
+    if (result.success && result.data) {
+      result.data.lastUpdated = new Date();
       
-      const processingTime = Date.now() - startTime;
-      
-      let parsedData: YieldPrediction;
-      try {
-        parsedData = JSON.parse(text);
-        parsedData.lastUpdated = new Date();
-      } catch {
-        // If parsing fails, create a basic response
-        parsedData = this.createFallbackResponse(inputs);
-      }
-
       logInfo('📊 Yield calculation completed', {
         cropType: inputs.cropType,
         location: inputs.location,
         farmSize: inputs.farmSize,
-        estimatedYield: parsedData.estimatedYield.range.mostLikely,
-        confidence: parsedData.confidence,
-        processingTime
+        estimatedYield: result.data.estimatedYield.range.mostLikely,
+        confidence: result.data.confidence,
+        processingTime: result.processingTime
       });
-
-      return {
-        success: true,
-        data: parsedData,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    } catch (error: any) {
-      const processingTime = Date.now() - startTime;
-      
-      logError('❌ Yield calculation failed', error, {
-        cropType: inputs.cropType,
-        location: inputs.location,
-        farmSize: inputs.farmSize
-      });
-
-      return {
-        success: false,
-        error: error.message,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
     }
+    
+    return result;
   }
 
   private buildYieldCalculationPrompt(inputs: YieldCalculationInputs): string {
@@ -326,121 +288,7 @@ Format your response as a comprehensive JSON object with this structure:
 Provide realistic, actionable, and region-specific recommendations based on current agricultural practices and market conditions in ${inputs.location}, ${this.country}.`;
   }
 
-  private createFallbackResponse(inputs: YieldCalculationInputs): YieldPrediction {
-    // Create a basic response if AI processing fails
-    const basicYield = this.estimateBasicYield(inputs);
-    
-    return {
-      estimatedYield: {
-        quantity: basicYield,
-        unit: 'kg',
-        range: {
-          minimum: basicYield * 0.7,
-          maximum: basicYield * 1.3,
-          mostLikely: basicYield
-        },
-        confidence: 0.6
-      },
-      economicProjection: {
-        grossRevenue: {
-          localMarket: basicYield * 50, // Assuming $0.50 per kg
-          regionalMarket: basicYield * 60,
-          exportMarket: basicYield * 80
-        },
-        inputCosts: {
-          seeds: inputs.farmSize * 200,
-          fertilizers: inputs.farmSize * 300,
-          pesticides: inputs.farmSize * 150,
-          labor: inputs.farmSize * 400,
-          irrigation: inputs.farmSize * 100,
-          other: inputs.farmSize * 100,
-          total: inputs.farmSize * 1250
-        },
-        netProfit: {
-          conservative: basicYield * 20,
-          realistic: basicYield * 30,
-          optimistic: basicYield * 45
-        },
-        profitMargin: 0.25,
-        breakEvenPrice: 0.40,
-        roi: 0.30
-      },
-      riskAssessment: {
-        weatherRisk: 'medium',
-        diseaseRisk: 'medium',
-        marketRisk: 'medium',
-        overallRisk: 'medium',
-        riskFactors: ['Limited data for detailed risk assessment'],
-        mitigationStrategies: ['Diversify farming practices', 'Monitor market prices', 'Use weather forecasts']
-      },
-      optimizationRecommendations: {
-        yieldImprovement: [
-          {
-            practice: 'Improve soil fertility',
-            expectedIncrease: 15,
-            cost: 500,
-            priority: 'high',
-            timeline: '6 months'
-          }
-        ],
-        costReduction: [
-          {
-            practice: 'Bulk input purchasing',
-            expectedSavings: 200,
-            implementation: 'Join farmer cooperative',
-            priority: 'medium'
-          }
-        ]
-      },
-      seasonalCalendar: {
-        plantingWindow: {
-          optimal: 'March-April',
-          extended: 'February-May'
-        },
-        criticalActivities: [
-          {
-            activity: 'Land preparation',
-            timing: '2 weeks before planting',
-            importance: 'critical',
-            cost: 200
-          }
-        ],
-        harvestWindow: {
-          estimated: '4-5 months after planting',
-          factors: ['Variety maturity period', 'Weather conditions']
-        }
-      },
-      confidence: 0.6,
-      limitations: ['Limited input data', 'Basic calculation method used'],
-      recommendations: ['Conduct soil analysis', 'Keep detailed farm records', 'Consider weather insurance'],
-      lastUpdated: new Date()
-    };
-  }
-
-  private estimateBasicYield(inputs: YieldCalculationInputs): number {
-    // Basic yield estimation based on crop type and farm size
-    const yieldPerAcre: Record<string, number> = {
-      'maize': 1200, // kg per acre
-      'beans': 800,
-      'potato': 8000,
-      'tomato': 15000,
-      'cabbage': 20000,
-      'carrot': 12000,
-      'onion': 10000
-    };
-
-    const baseYield = yieldPerAcre[inputs.cropType.toLowerCase()] || 1000;
-    
-    // Apply modifiers based on farming practices
-    let modifier = 1.0;
-    
-    if (inputs.farmingSystem === 'organic') modifier *= 0.85;
-    if (inputs.irrigationType === 'drip') modifier *= 1.2;
-    if (inputs.fertilizationLevel === 'high') modifier *= 1.15;
-    if (inputs.fertilizationLevel === 'low') modifier *= 0.8;
-    
-    return Math.round(baseYield * modifier * inputs.farmSize);
-  }
+  // Note: Fallback methods removed - now handled by base service error handling
 }
 
 export const smartYieldCalculator = new SmartYieldCalculatorService({

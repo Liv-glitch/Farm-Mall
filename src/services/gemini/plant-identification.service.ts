@@ -1,6 +1,5 @@
 import { BaseGeminiService, GeminiConfig, AnalysisOptions, StructuredResponse } from './base-gemini.service';
 import { PlantIdentificationModel } from '../../models/PlantIdentification.model';
-// import { FileStorageService } from '../fileStorage.service'; // Available for future use
 import { logInfo, logError } from '../../utils/logger';
 
 export interface PlantIdentification {
@@ -52,15 +51,12 @@ export interface PlantIdentificationResponse {
 }
 
 export class PlantIdentificationService extends BaseGeminiService {
-  // private fileStorage: FileStorageService; // Available for future use
-
   constructor(config: GeminiConfig) {
     super(config);
-    // this.fileStorage = new FileStorageService(); // Available for future use
   }
 
   async identifyPlant(
-    imagePath: string | Buffer,
+    imageBuffer: Buffer,
     options: AnalysisOptions & {
       plantType?: 'crop' | 'wild' | 'ornamental' | 'all';
       focusRegion?: 'kenya' | 'east-africa' | 'tropical' | 'global';
@@ -73,14 +69,31 @@ export class PlantIdentificationService extends BaseGeminiService {
 
     const prompt = this.buildPlantIdentificationPrompt(plantType, focusRegion, options);
     
+    // Determine MIME type from buffer
+    const mimeType = this.detectImageMimeType(imageBuffer);
+    
     return this.processImageWithPrompt<PlantIdentificationResponse>(
-      imagePath,
+      imageBuffer,
       prompt,
+      mimeType,
       {
         ...options,
         additionalContext: this.getRegionalContext(focusRegion)
       }
     );
+  }
+
+  private detectImageMimeType(buffer: Buffer): string {
+    // Check file signature to determine MIME type
+    const signature = buffer.toString('hex', 0, 4).toUpperCase();
+    
+    if (signature.startsWith('FFD8')) return 'image/jpeg';
+    if (signature.startsWith('8950')) return 'image/png';
+    if (signature.startsWith('4749')) return 'image/gif';
+    if (signature.startsWith('5249')) return 'image/webp';
+    
+    // Default to JPEG if unknown
+    return 'image/jpeg';
   }
 
   private buildPlantIdentificationPrompt(
@@ -222,7 +235,8 @@ Be thorough but concise. Prioritize accuracy over quantity of information.`;
       confidence: true
     };
 
-    const result = await this.identifyPlant(imagePath, {
+    const imageBuffer = typeof imagePath === 'string' ? Buffer.from(imagePath, 'base64') : imagePath;
+    const result = await this.identifyPlant(imageBuffer, {
       ...analysisOptions,
       plantType: options.plantType as any || 'all',
       focusRegion: 'kenya',
@@ -238,12 +252,10 @@ Be thorough but concise. Prioritize accuracy over quantity of information.`;
       };
     }
 
-    // Convert to Plant.id compatible format
-    const compatibleResponse = this.convertToPlantIdFormat(result.data, 'identification');
-    
+    // Return result directly as it's already in proper format
     return {
       success: true,
-      data: compatibleResponse
+      data: result.data
     };
   }
 
@@ -303,44 +315,7 @@ Be thorough but concise. Prioritize accuracy over quantity of information.`;
   ): Promise<StructuredResponse<any>> {
     const prompt = this.buildDetailedInfoPrompt(plantName, aspectType, region);
     
-    // For text-only queries, we'll use the model without image
-    const startTime = Date.now();
-    
-    try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      const processingTime = Date.now() - startTime;
-      
-      let parsedData: any;
-      try {
-        parsedData = JSON.parse(text);
-      } catch {
-        parsedData = { content: text };
-      }
-
-      return {
-        success: true,
-        data: parsedData,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    } catch (error: any) {
-      const processingTime = Date.now() - startTime;
-      return {
-        success: false,
-        error: error.message,
-        modelVersion: this.config.model!,
-        processingTime,
-        metadata: {
-          timestamp: new Date()
-        }
-      };
-    }
+    return this.processTextPrompt(prompt);
   }
 
   private buildDetailedInfoPrompt(plantName: string, aspectType: string, region: string): string {

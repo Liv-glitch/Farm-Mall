@@ -278,13 +278,8 @@ export class IntegratedAnalysisService {
       };
     }
 
-    // Convert to Plant.id compatible format using the base service method
-    let compatibleData;
-    if (analysisType === 'identification') {
-      compatibleData = this.plantIdService['convertToPlantIdFormat'](result.result, 'identification');
-    } else {
-      compatibleData = this.plantHealthService['convertToPlantIdFormat'](result.result, 'health');
-    }
+    // Use result data directly as it's already in proper format
+    const compatibleData = result.result;
 
     return {
       success: true,

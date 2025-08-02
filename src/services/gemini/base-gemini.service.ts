@@ -1,6 +1,5 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { logInfo, logError } from '../../utils/logger';
-import fs from 'fs/promises';
 
 export interface GeminiConfig {
   apiKey: string;
@@ -40,252 +39,317 @@ export interface StructuredResponse<T = any> {
 }
 
 export abstract class BaseGeminiService {
-  protected genAI: GoogleGenerativeAI;
-  protected model: GenerativeModel;
+  protected genAI: GoogleGenAI;
+  protected modelName: string;
   protected config: GeminiConfig;
 
   constructor(config: GeminiConfig) {
-    this.config = {
-      model: 'gemini-2.5-flash',
-      temperature: 0.3,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 8192,
-      ...config
-    };
+    this.config = config;
+    this.modelName = config.model || 'gemini-2.5-flash';
+    
+    if (!config.apiKey) {
+      throw new Error('Gemini API key is required');
+    }
 
-    this.genAI = new GoogleGenerativeAI(this.config.apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: this.config.model!,
-      generationConfig: {
-        temperature: this.config.temperature,
-        topK: this.config.topK,
-        topP: this.config.topP,
-        maxOutputTokens: this.config.maxOutputTokens,
-      },
+    // Initialize using the official @google/genai pattern
+    this.genAI = new GoogleGenAI({
+      apiKey: config.apiKey
+    });
+
+    logInfo('🤖 Gemini service initialized', {
+      model: this.modelName,
+      temperature: config.temperature || 0.3
     });
   }
 
+  /**
+   * Process image with Gemini using official docs pattern
+   */
   protected async processImageWithPrompt<T>(
-    imagePath: string | Buffer,
+    imageBuffer: Buffer,
     prompt: string,
+    mimeType: string = 'image/jpeg',
     options: AnalysisOptions = {}
   ): Promise<StructuredResponse<T>> {
     const startTime = Date.now();
-    
+
     try {
-      let imageData: Buffer;
-      let mimeType: string;
-
-      if (typeof imagePath === 'string') {
-        imageData = await fs.readFile(imagePath);
-        mimeType = this.getMimeType(imagePath);
-      } else {
-        imageData = imagePath;
-        mimeType = 'image/jpeg'; // Default fallback
-      }
-
-      // Prepare the image part
-      const imagePart = {
-        inlineData: {
-          data: imageData.toString('base64'),
-          mimeType: mimeType,
-        },
-      };
-
-      // Enhanced prompt with context
-      const enhancedPrompt = this.buildEnhancedPrompt(prompt, options);
-
       logInfo('🔍 Processing image with Gemini', {
-        model: this.config.model,
-        imageSize: imageData.length,
-        mimeType,
-        hasLocation: !!options.location,
-        promptLength: enhancedPrompt.length
+        model: this.modelName,
+        promptLength: prompt.length,
+        imageSize: imageBuffer.length,
+        mimeType
       });
 
-      const result = await this.model.generateContent([enhancedPrompt, imagePart]);
-      const response = await result.response;
-      const text = response.text();
+      // Convert buffer to base64 - exact pattern from official docs
+      const base64ImageData = imageBuffer.toString('base64');
+
+      // Create contents array exactly as shown in the official docs
+      const contents = [
+        {
+          inlineData: {
+            mimeType,
+            data: base64ImageData,
+          },
+        },
+        { text: prompt },
+      ];
+
+      // Generate content using the official @google/genai API
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: contents,
+      });
 
       const processingTime = Date.now() - startTime;
 
-      // Try to parse as JSON, fallback to raw text
-      let parsedData: T;
-      try {
-        parsedData = JSON.parse(text) as T;
-      } catch {
-        // If not valid JSON, wrap in a generic structure
-        parsedData = { content: text } as T;
+      if (!response.text) {
+        throw new Error('No response text received from Gemini');
       }
 
-      const structuredResponse: StructuredResponse<T> = {
+      logInfo('✅ Gemini analysis completed', {
+        model: this.modelName,
+        processingTime,
+        responseLength: response.text.length
+      });
+
+      // Parse JSON response
+      let parsedData: T;
+      try {
+        const cleanText = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        parsedData = JSON.parse(cleanText);
+      } catch (parseError) {
+        parsedData = response.text as unknown as T;
+      }
+
+      return {
         success: true,
         data: parsedData,
-        modelVersion: this.config.model!,
+        modelVersion: this.modelName,
         processingTime,
         metadata: {
           imageFormat: mimeType,
-          imageSize: imageData.length,
+          imageSize: imageBuffer.length,
           location: options.location,
           timestamp: new Date()
         }
       };
 
-      logInfo('✅ Gemini analysis completed', {
-        processingTime,
-        responseLength: text.length,
-        model: this.config.model
-      });
-
-      return structuredResponse;
-
     } catch (error: any) {
       const processingTime = Date.now() - startTime;
       
-      logError('❌ Gemini analysis failed', error, {
-        model: this.config.model,
+      logError('❌ Gemini image processing failed', error, {
+        model: this.modelName,
         processingTime,
-        promptLength: prompt.length
+        errorType: error.constructor.name
       });
 
       return {
         success: false,
-        error: error.message || 'Analysis failed',
-        modelVersion: this.config.model!,
+        error: error.message || 'Image processing failed',
+        modelVersion: this.modelName,
+        processingTime
+      };
+    }
+  }
+
+  /**
+   * Process document using File API as shown in official docs
+   */
+  protected async processDocumentWithPrompt<T>(
+    documentBuffer: Buffer,
+    prompt: string,
+    mimeType: string = 'application/pdf',
+    options: AnalysisOptions = {}
+  ): Promise<StructuredResponse<T>> {
+    const startTime = Date.now();
+
+    try {
+      logInfo('📄 Processing document with Gemini', {
+        model: this.modelName,
+        promptLength: prompt.length,
+        documentSize: documentBuffer.length,
+        mimeType
+      });
+
+      // Upload file using File API as shown in docs
+      // Convert Buffer to Blob for file upload
+      const blob = new Blob([documentBuffer], { type: mimeType });
+      const uploadedFile = await this.genAI.files.upload({
+        file: blob,
+        config: { mimeType }
+      });
+
+      logInfo('📤 Document uploaded to Gemini', {
+        fileUri: uploadedFile.uri,
+        fileName: uploadedFile.name
+      });
+
+      // Generate content with uploaded file - following docs pattern
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: [
+          { text: prompt },
+          {
+            fileData: {
+              mimeType: uploadedFile.mimeType,
+              fileUri: uploadedFile.uri
+            }
+          }
+        ],
+      });
+
+      const processingTime = Date.now() - startTime;
+
+      if (!response.text) {
+        throw new Error('No response text received from Gemini');
+      }
+
+      logInfo('✅ Gemini document analysis completed', {
+        model: this.modelName,
+        processingTime,
+        responseLength: response.text.length
+      });
+
+      // Clean up the uploaded file
+      try {
+        if (uploadedFile.name) {
+          await this.genAI.files.delete({ name: uploadedFile.name });
+          logInfo('🗑️ Temporary file cleaned up', { fileName: uploadedFile.name });
+        }
+      } catch (cleanupError) {
+        logError('⚠️ Failed to clean up temporary file', cleanupError as Error);
+      }
+
+      // Parse response
+      let parsedData: T;
+      try {
+        const cleanText = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        parsedData = JSON.parse(cleanText);
+      } catch (parseError) {
+        parsedData = response.text as unknown as T;
+      }
+
+      return {
+        success: true,
+        data: parsedData,
+        modelVersion: this.modelName,
+        processingTime,
+        metadata: {
+          imageFormat: mimeType,
+          imageSize: documentBuffer.length,
+          location: options.location,
+          timestamp: new Date()
+        }
+      };
+
+    } catch (error: any) {
+      const processingTime = Date.now() - startTime;
+      
+      logError('❌ Gemini document processing failed', error, {
+        model: this.modelName,
+        processingTime,
+        errorType: error.constructor.name
+      });
+
+      return {
+        success: false,
+        error: error.message || 'Document processing failed',
+        modelVersion: this.modelName,
+        processingTime
+      };
+    }
+  }
+
+  /**
+   * Process text-only prompts following official docs
+   */
+  protected async processTextPrompt<T>(
+    prompt: string,
+    _options: AnalysisOptions = {}
+  ): Promise<StructuredResponse<T>> {
+    const startTime = Date.now();
+
+    try {
+      logInfo('💭 Processing text prompt with Gemini', {
+        model: this.modelName,
+        promptLength: prompt.length
+      });
+
+      // Simple text generation as per official docs
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: [{ text: prompt }],
+      });
+
+      const processingTime = Date.now() - startTime;
+
+      if (!response.text) {
+        throw new Error('No response text received from Gemini');
+      }
+
+      logInfo('✅ Gemini text analysis completed', {
+        model: this.modelName,
+        processingTime,
+        responseLength: response.text.length
+      });
+
+      // Parse response
+      let parsedData: T;
+      try {
+        const cleanText = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        parsedData = JSON.parse(cleanText);
+      } catch (parseError) {
+        parsedData = response.text as unknown as T;
+      }
+
+      return {
+        success: true,
+        data: parsedData,
+        modelVersion: this.modelName,
         processingTime,
         metadata: {
           timestamp: new Date()
         }
       };
-    }
-  }
 
-  protected async processDocumentWithPrompt<T>(
-    documentBuffer: Buffer,
-    prompt: string,
-    options: AnalysisOptions = {}
-  ): Promise<StructuredResponse<T>> {
-    // For PDF/document processing, we'll convert to image first
-    // This is a simplified approach - in production you might want to use PDF parsing
-    return this.processImageWithPrompt<T>(documentBuffer, prompt, options);
-  }
+    } catch (error: any) {
+      const processingTime = Date.now() - startTime;
+      
+      logError('❌ Gemini text processing failed', error, {
+        model: this.modelName,
+        processingTime,
+        errorType: error.constructor.name
+      });
 
-  private buildEnhancedPrompt(basePrompt: string, options: AnalysisOptions): string {
-    let enhancedPrompt = basePrompt;
-
-    if (options.location) {
-      enhancedPrompt += `\n\nLocation context: Latitude ${options.location.latitude}, Longitude ${options.location.longitude}. Consider regional factors that might be relevant to the analysis.`;
-    }
-
-    if (options.additionalContext) {
-      enhancedPrompt += `\n\nAdditional context: ${options.additionalContext}`;
-    }
-
-    if (options.confidence) {
-      enhancedPrompt += `\n\nPlease include a confidence score (0-1) for your analysis.`;
-    }
-
-    enhancedPrompt += `\n\nPlease provide your response in valid JSON format for easy parsing.`;
-
-    return enhancedPrompt;
-  }
-
-  private getMimeType(filePath: string): string {
-    const extension = filePath.toLowerCase().split('.').pop();
-    const mimeTypes: Record<string, string> = {
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'webp': 'image/webp',
-      'heic': 'image/heic',
-      'heif': 'image/heif',
-      'pdf': 'application/pdf'
-    };
-    return mimeTypes[extension || ''] || 'image/jpeg';
-  }
-
-  protected createCacheKey(prompt: string, imageHash: string, options: AnalysisOptions): string {
-    const optionsStr = JSON.stringify(options);
-    return `gemini:${this.config.model}:${Buffer.from(`${prompt}:${imageHash}:${optionsStr}`).toString('base64')}`;
-  }
-
-  // Helper method for backward compatibility - converts Gemini response to Plant.id-like format
-  protected convertToPlantIdFormat(geminiResponse: any, type: 'identification' | 'health'): any {
-    if (type === 'identification') {
       return {
-        result: {
-          is_plant: {
-            probability: geminiResponse.confidence || 0.8,
-            binary: true,
-            threshold: 0.5
-          },
-          classification: {
-            suggestions: geminiResponse.plants?.map((plant: any, index: number) => ({
-              id: `gemini-${index}`,
-              name: plant.scientificName || plant.commonName,
-              probability: plant.confidence || 0.7,
-              confirmed: false,
-              similar_images: [],
-              details: {
-                common_names: plant.commonNames || [plant.commonName],
-                taxonomy: plant.taxonomy || {},
-                description: plant.description || {},
-                synonyms: plant.synonyms || [],
-                image: plant.image || {},
-                edible_parts: plant.edibleParts || [],
-                watering: plant.watering || {},
-                propagation_methods: plant.propagationMethods || []
-              }
-            })) || []
-          }
-        },
-        model_version: this.config.model,
-        input: {
-          latitude: geminiResponse.metadata?.location?.latitude,
-          longitude: geminiResponse.metadata?.location?.longitude,
-          similar_images: true,
-          datetime: new Date().toISOString()
-        },
-        status: 'COMPLETED',
-        sla_compliant_client: true,
-        sla_compliant_system: true,
-        created: Math.floor(Date.now() / 1000),
-        completed: Math.floor(Date.now() / 1000)
+        success: false,
+        error: error.message || 'Text processing failed',
+        modelVersion: this.modelName,
+        processingTime
       };
-    } else {
+    }
+  }
+
+  /**
+   * Health check for the Gemini service
+   */
+  async healthCheck(): Promise<{ available: boolean; model: string; error?: string }> {
+    try {
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: [{ text: 'Hello, reply with "OK"' }],
+      });
+
       return {
-        result: {
-          is_healthy: {
-            probability: geminiResponse.healthStatus?.isHealthy ? 0.9 : 0.1,
-            binary: geminiResponse.healthStatus?.isHealthy || false,
-            threshold: 0.5
-          },
-          disease: {
-            suggestions: geminiResponse.diseases?.map((disease: any, index: number) => ({
-              id: `gemini-disease-${index}`,
-              name: disease.name,
-              probability: disease.confidence || 0.7,
-              similar_images: [],
-              details: {
-                description: disease.description,
-                treatment: disease.treatment || {},
-                classification: disease.classification || {},
-                common_names: [disease.name],
-                url: disease.url || '',
-                language: 'en'
-              }
-            })) || []
-          }
-        },
-        model_version: this.config.model,
-        input: {
-          latitude: geminiResponse.metadata?.location?.latitude,
-          longitude: geminiResponse.metadata?.location?.longitude,
-          similar_images: true,
-          datetime: new Date().toISOString()
-        },
-        status: 'COMPLETED'
+        available: !!response.text,
+        model: this.modelName
+      };
+    } catch (error: any) {
+      return {
+        available: false,
+        model: this.modelName,
+        error: error.message
       };
     }
   }
