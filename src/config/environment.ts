@@ -33,6 +33,7 @@ interface EnvironmentConfig {
   OPENWEATHER_API_KEY?: string;
   WEATHER_API_KEY?: string;
   PLANTID_API_KEY?: string;
+  GEMINI_API_KEY?: string;
 
   // AWS S3
   AWS_S3_BUCKET?: string;
@@ -98,6 +99,7 @@ const validateEnvironment = (): EnvironmentConfig => {
     OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
     WEATHER_API_KEY: process.env.WEATHER_API_KEY,
     PLANTID_API_KEY: process.env.PLANTID_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 
     // AWS S3
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
