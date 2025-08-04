@@ -279,7 +279,7 @@ export abstract class BaseGeminiService {
       // Simple text generation as per official docs
       const response = await this.genAI.models.generateContent({
         model: this.modelName,
-        contents: [{ text: prompt }],
+        contents: prompt,
       });
 
       const processingTime = Date.now() - startTime;

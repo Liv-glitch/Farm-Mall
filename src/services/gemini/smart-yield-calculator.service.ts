@@ -288,10 +288,4 @@ Format your response as a comprehensive JSON object with this structure:
 Provide realistic, actionable, and region-specific recommendations based on current agricultural practices and market conditions in ${inputs.location}, ${this.country}.`;
   }
 
-  // Note: Fallback methods removed - now handled by base service error handling
 }
-
-export const smartYieldCalculator = new SmartYieldCalculatorService({
-  apiKey: process.env.GEMINI_API_KEY!,
-  model: (process.env.GEMINI_MODEL as any) || 'gemini-2.5-flash'
-});
