@@ -2,8 +2,24 @@ import { Request, Response } from 'express';
 import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
 import { geminiWrapper } from '../services/gemini/gemini-wrapper.service';
-import { smartYieldCalculator } from '../services/gemini/smart-yield-calculator.service';
+import { SmartYieldCalculatorService } from '../services/gemini/smart-yield-calculator.service';
 import multer from 'multer';
+
+// Initialize the smart yield calculator service (lazy initialization)
+let smartYieldCalculator: SmartYieldCalculatorService | null = null;
+
+const getSmartYieldCalculator = (): SmartYieldCalculatorService => {
+  if (!smartYieldCalculator) {
+    if (!env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+    smartYieldCalculator = new SmartYieldCalculatorService({
+      apiKey: env.GEMINI_API_KEY,
+      model: 'gemini-2.5-flash'
+    });
+  }
+  return smartYieldCalculator;
+};
 
 // Configure multer for memory storage (better for Gemini integration)
 const upload = multer({
@@ -312,29 +328,46 @@ export class EnhancedPlantController {
         location: inputs.location
       });
 
-      if (!geminiWrapper.isAvailable()) {
+      if (!env.GEMINI_API_KEY) {
         res.status(503).json({
           success: false,
-          message: 'Yield calculator service temporarily unavailable'
+          message: 'Yield calculator API key not configured'
         });
         return;
       }
 
-      const result = await smartYieldCalculator.calculateYield(inputs);
+      try {
+        logInfo('🤖 Initializing Smart Yield Calculator...');
+        const calculator = getSmartYieldCalculator();
+        
+        logInfo('📊 Starting yield calculation with Gemini AI...');
+        const result = await calculator.calculateYield(inputs);
+        
+        logInfo('✅ Yield calculation completed', { success: result.success });
+        
+        res.json({
+          success: result.success,
+          data: result.data,
+          message: result.success ? 'Yield calculation completed' : result.error,
+          provider: 'gemini',
+          processing_time: result.processingTime,
+          features: {
+            economic_analysis: true,
+            risk_assessment: true,
+            optimization_recommendations: true,
+            seasonal_calendar: true
+          }
+        });
       
-      res.json({
-        success: result.success,
-        data: result.data,
-        message: result.success ? 'Yield calculation completed' : result.error,
-        provider: 'gemini',
-        processing_time: result.processingTime,
-        features: {
-          economic_analysis: true,
-          risk_assessment: true,
-          optimization_recommendations: true,
-          seasonal_calendar: true
-        }
-      });
+      } catch (calculationError: any) {
+        logError('Smart Yield Calculator failed', calculationError);
+        res.status(500).json({
+          success: false,
+          message: 'Yield calculation failed',
+          error: calculationError.message
+        });
+        return;
+      }
 
     } catch (error: any) {
       logError('Yield calculation failed', error);
