@@ -1,6 +1,4 @@
 import { Model, DataTypes } from 'sequelize';
-import { sequelize } from '../config/database';
-import { UserModel } from './User.model';
 
 export class PlantHealthAssessmentModel extends Model {
   public id!: string;
@@ -16,9 +14,14 @@ export class PlantHealthAssessmentModel extends Model {
   public treatmentSuggestions?: any;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Association method
+  public static associate: (models: any) => void;
 }
 
-PlantHealthAssessmentModel.init({
+// Initialize the model with proper schema
+export function initializePlantHealthAssessmentModel(sequelize: any): void {
+  PlantHealthAssessmentModel.init({
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -28,7 +31,7 @@ PlantHealthAssessmentModel.init({
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: UserModel,
+      model: 'users',
       key: 'id'
     },
     onUpdate: 'CASCADE',
@@ -89,14 +92,17 @@ PlantHealthAssessmentModel.init({
     defaultValue: DataTypes.NOW,
     field: 'updated_at'
   }
-}, {
-  sequelize,
-  tableName: 'plant_health_assessments',
-  underscored: true
-});
+  }, {
+    sequelize,
+    tableName: 'plant_health_assessments',
+    underscored: true
+  });
+}
 
-// Define associations
-PlantHealthAssessmentModel.belongsTo(UserModel, {
-  foreignKey: 'userId',
-  as: 'user'
-}); 
+// Define associations method
+PlantHealthAssessmentModel.associate = (models: any) => {
+  PlantHealthAssessmentModel.belongsTo(models.User, {
+    foreignKey: 'userId',
+    as: 'user'
+  });
+}; 
