@@ -51,6 +51,9 @@ interface EnvironmentConfig {
   WHATSAPP_ACCESS_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
 
+  // Bot Authentication
+  BOT_API_KEY?: string;
+
   // Email
   SMTP_HOST?: string;
   SMTP_PORT: number | undefined;
@@ -116,6 +119,9 @@ const validateEnvironment = (): EnvironmentConfig => {
     WHATSAPP_WEBHOOK_TOKEN: process.env.WHATSAPP_WEBHOOK_TOKEN,
     WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+
+    // Bot Authentication
+    BOT_API_KEY: process.env.BOT_API_KEY,
 
     // Email
     SMTP_HOST: process.env.SMTP_HOST,
