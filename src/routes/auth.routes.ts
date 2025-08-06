@@ -412,4 +412,135 @@ router.post('/reset-password', authController.resetPassword.bind(authController)
 router.post('/verify-email', authController.verifyEmail.bind(authController));
 router.post('/verify-phone', authController.verifyPhone.bind(authController));
 
+/**
+ * @swagger
+ * /api/v1/auth/bot-auth:
+ *   get:
+ *     summary: Bot authentication - get user data by phone number
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: phone
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's phone number
+ *         example: "+254712345678"
+ *       - in: query
+ *         name: apiKey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Bot API key for authorization
+ *     responses:
+ *       200:
+ *         description: User data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         fullName:
+ *                           type: string
+ *                         phoneNumber:
+ *                           type: string
+ *                         county:
+ *                           type: string
+ *                         subCounty:
+ *                           type: string
+ *                         subscriptionType:
+ *                           type: string
+ *                         stats:
+ *                           type: object
+ *                           properties:
+ *                             totalFarms:
+ *                               type: number
+ *                             totalProductionCycles:
+ *                               type: number
+ *                             activeProductionCycles:
+ *                               type: number
+ *                             totalActivities:
+ *                               type: number
+ *                     farms:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           location:
+ *                             type: string
+ *                           sizeAcres:
+ *                             type: number
+ *                           collaboratorCount:
+ *                             type: number
+ *                     productionCycles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           landSizeAcres:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                           totalCost:
+ *                             type: number
+ *                           daysToHarvest:
+ *                             type: number
+ *                           activities:
+ *                             type: array
+ *                     activities:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           type:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           scheduledDate:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                           isOverdue:
+ *                             type: boolean
+ *       400:
+ *         description: Missing phone number
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Invalid or missing API key
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/bot-auth', authController.botAuth.bind(authController));
+
 export default router; 

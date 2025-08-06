@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { validateRegisterRequest, validateLoginRequest, validateChangePasswordRequest } from '../utils/validators';
 import { HTTP_STATUS, ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
+import { env } from '../config/environment';
 import {
   RegisterRequest,
   LoginRequest,
@@ -515,6 +516,66 @@ export class AuthController {
       });
     } catch (error: any) {
       logError('Update profile failed', error, { userId: req.user?.id });
+
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error',
+        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  // Bot authentication - get user data by phone number with API key
+  async botAuth(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone, apiKey } = req.query;
+
+      // Validate API key
+      if (!apiKey || apiKey !== env.BOT_API_KEY) {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Invalid or missing API key',
+          code: ERROR_CODES.INVALID_CREDENTIALS,
+        });
+        return;
+      }
+
+      // Validate phone number
+      if (!phone || typeof phone !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Phone number is required',
+          code: ERROR_CODES.MISSING_REQUIRED_FIELD,
+        });
+        return;
+      }
+
+      // Get user with all related data
+      const userData = await this.authService.getUserByPhoneWithAllData(phone);
+
+      if (!userData) {
+        res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'User not found',
+          code: ERROR_CODES.USER_NOT_FOUND,
+        });
+        return;
+      }
+
+      logInfo('Bot authentication successful', { 
+        userId: userData.user.id, 
+        phone: phone.toString().substring(0, 8) + '***' // Log partial phone for privacy
+      });
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'User data retrieved successfully',
+        data: userData,
+      });
+    } catch (error: any) {
+      logError('Bot authentication failed', error, { 
+        phone: req.query.phone?.toString().substring(0, 8) + '***' 
+      });
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
