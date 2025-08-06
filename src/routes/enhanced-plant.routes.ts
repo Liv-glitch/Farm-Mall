@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { enhancedPlantController } from '../controllers/enhanced-plant.controller';
 import { authenticate } from '../middleware/auth.middleware';
-import { aiRateLimit } from '../middleware/rateLimit.middleware';
+import { aiRateLimit, historyRateLimit } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -117,6 +117,7 @@ router.post('/yield',
  *       - bearerAuth: []
  */
 router.get('/history',
+  historyRateLimit,
   enhancedPlantController.getHistory.bind(enhancedPlantController)
 );
 
