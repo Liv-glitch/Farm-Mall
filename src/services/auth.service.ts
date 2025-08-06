@@ -5,6 +5,9 @@ import { env } from '../config/environment';
 import { redisClient } from '../config/redis';
 import { UserModel } from '../models';
 import { FarmModel } from '../models/Farm.model';
+import { ProductionCycleModel } from '../models/ProductionCycle.model';
+import { ActivityModel } from '../models/Activity.model';
+import { FarmCollaboratorModel } from '../models/FarmCollaborator.model';
 import {
   RegisterRequest,
   LoginRequest,
@@ -686,6 +689,182 @@ export class AuthService {
       return count;
     } catch (error) {
       logError('Failed to get feature usage', error as Error);
+      throw error;
+    }
+  }
+
+  // Get user by phone number with all related data for bot authentication
+  async getUserByPhoneWithAllData(phoneNumber: string): Promise<{
+    user: any;
+    farms: any[];
+    productionCycles: any[];
+    activities: any[];
+  } | null> {
+    try {
+      logInfo('Starting bot auth data retrieval', { 
+        phone: phoneNumber.substring(0, 8) + '***' 
+      });
+
+      // Find user by phone number
+      const user = await UserModel.findOne({
+        where: { phoneNumber },
+        attributes: { exclude: ['passwordHash'] },
+      });
+
+      if (!user) {
+        logInfo('User not found in database', { 
+          phone: phoneNumber.substring(0, 8) + '***' 
+        });
+        return null;
+      }
+
+      logInfo('User found, fetching related data', { 
+        userId: user.id,
+        phone: phoneNumber.substring(0, 8) + '***' 
+      });
+
+      // Get user's farms with collaborators
+      logInfo('Fetching farms for user', { userId: user.id });
+      const farms = await FarmModel.findAll({
+        where: { ownerId: user.id },
+        include: [
+          {
+            model: FarmCollaboratorModel,
+            as: 'collaborators',
+            required: false,
+            include: [
+              {
+                model: UserModel,
+                as: 'collaborator',
+                attributes: ['id', 'fullName', 'email', 'phoneNumber'],
+                required: false,
+              },
+            ],
+          },
+        ],
+      });
+      logInfo('Farms fetched successfully', { userId: user.id, farmCount: farms.length });
+
+      // Get production cycles with detailed information
+      logInfo('Fetching production cycles for user', { userId: user.id });
+      const productionCycles = await ProductionCycleModel.findAll({
+        where: { userId: user.id },
+        include: [
+          {
+            model: FarmModel,
+            as: 'farm',
+            attributes: ['id', 'name', 'location', 'locationLat', 'locationLng', 'sizeAcres'],
+            required: false,
+          },
+          {
+            model: ActivityModel,
+            as: 'activities',
+            attributes: [
+              'id',
+              'type',
+              'description',
+              'scheduledDate',
+              'completedDate',
+              'cost',
+              'laborHours',
+              'laborType',
+              'inputs',
+              'notes',
+              'status',
+            ],
+            required: false,
+          },
+        ],
+        order: [
+          ['createdAt', 'DESC'],
+          [{ model: ActivityModel, as: 'activities' }, 'scheduledDate', 'ASC'],
+        ],
+      });
+      logInfo('Production cycles fetched successfully', { userId: user.id, cycleCount: productionCycles.length });
+
+      // Get all activities for the user (including those not tied to specific cycles)
+      logInfo('Fetching activities for user', { userId: user.id });
+      const activities = await ActivityModel.findAll({
+        where: { userId: user.id },
+        include: [
+          {
+            model: ProductionCycleModel,
+            as: 'productionCycle',
+            attributes: ['id', 'status', 'cropVarietyId', 'landSizeAcres'],
+            required: false,
+            include: [
+              {
+                model: FarmModel,
+                as: 'farm',
+                attributes: ['id', 'name'],
+                required: false,
+              },
+            ],
+          },
+        ],
+        order: [['scheduledDate', 'DESC']],
+        limit: 50, // Limit to most recent 50 activities
+      });
+      logInfo('Activities fetched successfully', { userId: user.id, activityCount: activities.length });
+
+      // Calculate summary statistics
+      logInfo('Calculating user statistics', { userId: user.id });
+      const userStats = {
+        totalFarms: farms.length,
+        totalProductionCycles: productionCycles.length,
+        activeProductionCycles: productionCycles.filter(cycle => cycle.status === 'active').length,
+        completedProductionCycles: productionCycles.filter(cycle => cycle.status === 'harvested').length,
+        totalActivities: activities.length,
+        completedActivities: activities.filter(activity => activity.status === 'completed').length,
+        pendingActivities: activities.filter(activity => activity.status === 'planned').length,
+        subscriptionStatus: user.getSubscriptionStatus(),
+        isPremiumUser: user.isPremiumUser(),
+      };
+      logInfo('User statistics calculated', { userId: user.id, stats: userStats });
+
+      logInfo('Preparing response data', { userId: user.id });
+      const response = {
+        user: {
+          ...user.toJSON(),
+          stats: userStats,
+        },
+        farms: farms.map(farm => ({
+          ...farm.toJSON(),
+          collaboratorCount: farm.collaborators?.length || 0,
+        })),
+        productionCycles: productionCycles.map(cycle => ({
+          ...cycle.toJSON(),
+          activityCount: cycle.activities?.length || 0,
+          daysToHarvest: cycle.getDaysToHarvest(),
+          daysFromPlanting: cycle.getDaysFromPlanting(),
+          yieldPerAcre: cycle.getYieldPerAcre(),
+          costPerAcre: cycle.getCostPerAcre(),
+          profitability: cycle.getProfitability(),
+        })),
+        activities: activities.map(activity => ({
+          ...activity.toJSON(),
+          isCompleted: activity.isCompleted(),
+          isOverdue: activity.isOverdue(),
+          daysUntilScheduled: activity.getDaysUntilScheduled(),
+          totalCost: activity.getTotalCost(),
+        })),
+      };
+      
+      logInfo('Bot auth data retrieval completed successfully', { 
+        userId: user.id,
+        phone: phoneNumber.substring(0, 8) + '***',
+        responseSize: {
+          farms: response.farms.length,
+          productionCycles: response.productionCycles.length,
+          activities: response.activities.length
+        }
+      });
+      
+      return response;
+    } catch (error) {
+      logError('Failed to get user data by phone', error as Error, { 
+        phone: phoneNumber.substring(0, 8) + '***' 
+      });
       throw error;
     }
   }

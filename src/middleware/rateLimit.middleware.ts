@@ -114,4 +114,11 @@ export const premiumAiRateLimit = createRateLimit({
   message: 'AI rate limit exceeded for premium account',
 });
 
+// History endpoint rate limit (higher limit since it's just database reads)
+export const historyRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 200, // 200 history requests per 15 minutes
+  message: 'Too many history requests, please try again later',
+});
+
 export default apiRateLimit; 

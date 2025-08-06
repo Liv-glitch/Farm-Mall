@@ -66,7 +66,7 @@ export class ActivityModel extends Model<Activity, ActivityCreationAttributes> i
 
   public getTotalCost(): number {
     let total = this.cost || 0;
-    if (this.inputs) {
+    if (this.inputs && Array.isArray(this.inputs)) {
       total += this.inputs.reduce((sum, input) => sum + input.cost, 0);
     }
     return total;
