@@ -701,10 +701,19 @@ export class AuthService {
     activities: any[];
   } | null> {
     try {
+        // Normalize phone number
+      phoneNumber = phoneNumber.trim();
+      if (!phoneNumber.startsWith('+')) {
+        phoneNumber = '+' + phoneNumber;
+      }
+
       logInfo('Starting bot auth data retrieval', { 
         phone: phoneNumber.substring(0, 8) + '***' 
       });
 
+      console.log('Retrieving user data for bot authentication', {
+        phone: phoneNumber
+      });
       // Find user by phone number
       const user = await UserModel.findOne({
         where: { phoneNumber },
