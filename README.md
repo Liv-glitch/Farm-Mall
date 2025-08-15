@@ -9,7 +9,7 @@ A comprehensive agriculture management system for Kenya potato farming.
 - Weather integration and forecasting
 - Production cycle management
 - WhatsApp integration
-- Premium subscription features
+- Premium subscription features eg financial analytics
 - Farm collaboration and team management
 - Soil test analysis and recommendations
 
