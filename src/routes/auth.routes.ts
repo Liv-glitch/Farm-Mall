@@ -416,7 +416,7 @@ router.post('/verify-phone', authController.verifyPhone.bind(authController));
  * @swagger
  * /api/v1/auth/bot-auth:
  *   get:
- *     summary: Bot authentication - get user data by phone number
+ *     summary: Bot authentication - get user data and JWT tokens by phone number
  *     tags: [Authentication]
  *     parameters:
  *       - in: query
@@ -434,7 +434,7 @@ router.post('/verify-phone', authController.verifyPhone.bind(authController));
  *         description: Bot API key for authorization
  *     responses:
  *       200:
- *         description: User data retrieved successfully
+ *         description: User authenticated successfully with tokens and data
  *         content:
  *           application/json:
  *             schema:
@@ -473,6 +473,8 @@ router.post('/verify-phone', authController.verifyPhone.bind(authController));
  *                               type: number
  *                             totalActivities:
  *                               type: number
+ *                     tokens:
+ *                       $ref: '#/components/schemas/AuthTokens'
  *                     farms:
  *                       type: array
  *                       items:

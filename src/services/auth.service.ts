@@ -877,6 +877,63 @@ export class AuthService {
       throw error;
     }
   }
+
+  // Bot authentication with tokens - get user data and generate authentication tokens
+  async botAuthWithTokens(phoneNumber: string): Promise<{
+    user: any;
+    tokens: {
+      accessToken: string;
+      refreshToken: string;
+      expiresIn: number;
+      tokenType: 'Bearer';
+    };
+    farms: any[];
+    productionCycles: any[];
+    activities: any[];
+  } | null> {
+    try {
+      // Get user with all data using existing method
+      const userData = await this.getUserByPhoneWithAllData(phoneNumber);
+
+      if (!userData) {
+        return null;
+      }
+
+      // Find the user model instance to generate tokens
+      const user = await UserModel.findOne({
+        where: { phoneNumber: phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber.trim() },
+      });
+
+      if (!user) {
+        logError('User found in getUserByPhoneWithAllData but not in botAuthWithTokens', new Error('User not found'));
+        return null;
+      }
+
+      // Generate tokens
+      const tokens = await this.generateTokens(user);
+
+      // Cache user session
+      await this.cacheUserSession(user.id, tokens.refreshToken);
+
+      logInfo('Bot authentication with tokens successful', { 
+        userId: user.id,
+        phone: phoneNumber.substring(0, 8) + '***' 
+      });
+
+      return {
+        user: userData.user,
+        tokens,
+        farms: userData.farms,
+        productionCycles: userData.productionCycles,
+        activities: userData.activities,
+      };
+    } catch (error: any) {
+      logError('Bot authentication with tokens failed', error, {
+        phone: phoneNumber.substring(0, 8) + '***' 
+      });
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();
