@@ -525,7 +525,7 @@ export class AuthController {
     }
   }
 
-  // Bot authentication - get user data by phone number with API key
+  // Bot authentication - get user data by phone number with API key and generate tokens
   async botAuth(req: Request, res: Response): Promise<void> {
     try {
       const { phone, apiKey } = req.query;
@@ -550,10 +550,10 @@ export class AuthController {
         return;
       }
 
-      // Get user with all related data
-      const userData = await this.authService.getUserByPhoneWithAllData(phone);
+      // Get user with all related data and generate authentication tokens
+      const result = await this.authService.botAuthWithTokens(phone);
 
-      if (!userData) {
+      if (!result) {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
           message: 'User not found',
@@ -562,15 +562,15 @@ export class AuthController {
         return;
       }
 
-      logInfo('Bot authentication successful', { 
-        userId: userData.user.id, 
+      logInfo('Bot authentication with tokens successful', { 
+        userId: result.user.id, 
         phone: phone.toString().substring(0, 8) + '***' // Log partial phone for privacy
       });
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: 'User data retrieved successfully',
-        data: userData,
+        message: 'User authenticated successfully',
+        data: result,
       });
     } catch (error: any) {
       logError('Bot authentication failed', error, { 
