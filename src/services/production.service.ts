@@ -64,7 +64,7 @@ export class ProductionService {
         ...cycleData,
         userId,
         farmId: cycleData.farmId,
-        status: 'planning',
+        status: 'active',
         totalCost: 0,
       });
 
@@ -433,7 +433,7 @@ export class ProductionService {
         ...activityData,
         productionCycleId: cycleId,
         userId,
-        status: 'planned',
+        status: 'in_progress',
       });
 
       // Update cycle total cost if activity has cost
