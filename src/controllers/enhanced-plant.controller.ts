@@ -39,9 +39,64 @@ export class EnhancedPlantController {
   public uploadMiddleware = upload.single('image1');
   public uploadSoilMiddleware = upload.single('document');
 
+  // Helper function to download image from URL and create a File-like object
+  private async downloadImageFromUrl(imageUrl: string): Promise<Express.Multer.File | null> {
+    try {
+      logInfo('📥 Downloading image from URL', { imageUrl: imageUrl.substring(0, 100) + '...' });
+      
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      const buffer = Buffer.from(await response.arrayBuffer());
+      
+      // Create a mock Express.Multer.File object
+      const mockFile: Express.Multer.File = {
+        fieldname: 'image1',
+        originalname: `downloaded-image.${contentType.split('/')[1] || 'jpg'}`,
+        encoding: '7bit',
+        mimetype: contentType,
+        size: buffer.length,
+        buffer: buffer,
+        destination: '',
+        filename: '',
+        path: '',
+        stream: null as any
+      };
+
+      logInfo('✅ Image downloaded successfully', { 
+        size: buffer.length, 
+        contentType,
+        originalname: mockFile.originalname 
+      });
+      
+      return mockFile;
+    } catch (error: any) {
+      logError('❌ Failed to download image from URL', error, { imageUrl: imageUrl.substring(0, 100) + '...' });
+      return null;
+    }
+  }
+
   // Enhanced plant identification with Gemini + Plant.id fallback
   public async identify(req: Request, res: Response): Promise<void> {
     try {
+      // Log all incoming data for bot debugging
+      logInfo('🤖 Enhanced Plant Identify Request Debug', {
+        headers: JSON.stringify(req.headers, null, 2),
+        body: JSON.stringify(req.body, null, 2),
+        query: JSON.stringify(req.query, null, 2),
+        hasFile: !!req.file,
+        fileInfo: req.file ? {
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size
+        } : 'No file uploaded',
+        userAgent: req.headers['user-agent'],
+        contentType: req.headers['content-type']
+      });
+
       const userId = req.user?.id || req.body.userId;
       if (!userId) {
         res.status(401).json({
@@ -51,10 +106,26 @@ export class EnhancedPlantController {
         return;
       }
 
-      if (!req.file) {
+      // Check if image is provided as file upload or URL (for bot integration)
+      if (!req.file && !req.body.imageUrl) {
+        logInfo('🚨 Bot Request Missing Image - Validation Details', {
+          hasFile: !!req.file,
+          hasImageUrl: !!req.body.imageUrl,
+          bodyKeys: Object.keys(req.body || {}),
+          bodyImageUrl: req.body?.imageUrl,
+          bodyImage: req.body?.image,
+          bodyImage1: req.body?.image1,
+          allBodyValues: req.body
+        });
+        
         res.status(400).json({
           success: false,
-          message: 'Image file is required'
+          message: 'Image file or imageUrl is required',
+          debug: {
+            received_body_keys: Object.keys(req.body || {}),
+            has_file: !!req.file,
+            has_imageUrl: !!req.body.imageUrl
+          }
         });
         return;
       }
@@ -71,7 +142,8 @@ export class EnhancedPlantController {
 
       logInfo('🌱 Processing plant identification request', {
         userId,
-        fileName: req.file.originalname,
+        fileName: req.file?.originalname || 'URL provided',
+        imageUrl: req.body.imageUrl,
         location: options.location,
         hasCoordinates: !!(options.latitude && options.longitude),
         provider: geminiWrapper.isAvailable() ? 'gemini' : 'plantid'
@@ -79,10 +151,27 @@ export class EnhancedPlantController {
 
       let result;
 
-      // Try Gemini first if available
-      if (geminiWrapper.isAvailable()) {
+      // Handle image URL by downloading it
+      let imageFile: Express.Multer.File | undefined = req.file;
+      if (req.body.imageUrl && !req.file) {
+        logInfo('🤖 Bot detected - downloading image from URL');
+        const downloadedFile = await this.downloadImageFromUrl(req.body.imageUrl);
+        if (!downloadedFile) {
+          res.status(400).json({
+            success: false,
+            message: 'Failed to download image from provided URL',
+            imageUrl: req.body.imageUrl,
+            provider: 'error'
+          });
+          return;
+        }
+        imageFile = downloadedFile;
+      }
+
+      // Try Gemini first if available (only if we have a file)
+      if (geminiWrapper.isAvailable() && imageFile) {
         try {
-          result = await geminiWrapper.identifyPlant(userId, req.file, options);
+          result = await geminiWrapper.identifyPlant(userId, imageFile, options);
           
           // If Gemini succeeds, return enhanced response
           if (result.success) {
@@ -105,21 +194,28 @@ export class EnhancedPlantController {
         }
       }
 
-      // Fallback to Plant.id API (your existing logic)
-      const fallbackResult = await this.fallbackToPlantId(req.file, options);
-      
-      res.json({
-        success: fallbackResult.success,
-        data: fallbackResult.data,
-        provider: 'plantid',
-        fallback_reason: result?.message || 'Gemini unavailable',
-        enhanced_features: {
-          cultivation_tips: false,
-          regional_varieties: false,
-          market_info: false,
-          seasonal_guidance: false
-        }
-      });
+      // Fallback to Plant.id API (only if we have a file)
+      if (imageFile) {
+        const fallbackResult = await this.fallbackToPlantId(imageFile, options);
+        
+        res.json({
+          success: fallbackResult.success,
+          data: fallbackResult.data,
+          provider: 'plantid',
+          fallback_reason: result?.message || 'Gemini unavailable',
+          enhanced_features: {
+            cultivation_tips: false,
+            regional_varieties: false,
+            market_info: false,
+            seasonal_guidance: false
+          }
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'No valid image source provided'
+        });
+      }
 
     } catch (error: any) {
       logError('Plant identification failed', error);
@@ -135,6 +231,21 @@ export class EnhancedPlantController {
   // Enhanced plant health assessment
   public async assessHealth(req: Request, res: Response): Promise<void> {
     try {
+      // Log all incoming data for bot debugging
+      logInfo('🤖 Enhanced Plant Health Request Debug', {
+        headers: JSON.stringify(req.headers, null, 2),
+        body: JSON.stringify(req.body, null, 2),
+        query: JSON.stringify(req.query, null, 2),
+        hasFile: !!req.file,
+        fileInfo: req.file ? {
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size
+        } : 'No file uploaded',
+        userAgent: req.headers['user-agent'],
+        contentType: req.headers['content-type']
+      });
+
       const userId = req.user?.id || req.body.userId;
       if (!userId) {
         res.status(401).json({
@@ -144,10 +255,11 @@ export class EnhancedPlantController {
         return;
       }
 
-      if (!req.file) {
+      // Check if image is provided as file upload or URL (for bot integration)
+      if (!req.file && !req.body.imageUrl) {
         res.status(400).json({
           success: false,
-          message: 'Image file is required'
+          message: 'Image file or imageUrl is required'
         });
         return;
       }
@@ -163,16 +275,42 @@ export class EnhancedPlantController {
 
       logInfo('🏥 Processing plant health assessment', {
         userId,
-        fileName: req.file.originalname,
+        fileName: req.file?.originalname || 'URL provided',
+        imageUrl: req.body.imageUrl,
         location: options.location,
         plantType: options.plantType
       });
+
+      // Handle image URL by downloading it
+      let imageFile: Express.Multer.File | undefined = req.file;
+      if (req.body.imageUrl && !req.file) {
+        logInfo('🤖 Bot detected - downloading image from URL for health assessment');
+        const downloadedFile = await this.downloadImageFromUrl(req.body.imageUrl);
+        if (!downloadedFile) {
+          res.status(400).json({
+            success: false,
+            message: 'Failed to download image from provided URL for health assessment',
+            imageUrl: req.body.imageUrl,
+            provider: 'error'
+          });
+          return;
+        }
+        imageFile = downloadedFile;
+      }
+
+      if (!imageFile) {
+        res.status(400).json({
+          success: false,
+          message: 'No valid image source provided for health assessment'
+        });
+        return;
+      }
 
       let result;
 
       // Try Gemini first
       if (geminiWrapper.isAvailable()) {
-        result = await geminiWrapper.assessPlantHealth(userId, req.file, options);
+        result = await geminiWrapper.assessPlantHealth(userId, imageFile, options);
         
         if (result.success) {
           res.json({
@@ -192,7 +330,7 @@ export class EnhancedPlantController {
       }
 
       // Fallback to Plant.id health API
-      const fallbackResult = await this.fallbackToPlantIdHealth(req.file, options);
+      const fallbackResult = await this.fallbackToPlantIdHealth(imageFile, options);
       
       res.json({
         success: fallbackResult.success,
