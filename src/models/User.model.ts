@@ -105,6 +105,9 @@ export function initializeUserModel(sequelize: Sequelize) {
         validate: {
           isEmail: true,
         },
+        set(value: string) {
+          this.setDataValue('email', value?.toLowerCase());
+        },
       },
       phoneNumber: {
         type: DataTypes.STRING(20),

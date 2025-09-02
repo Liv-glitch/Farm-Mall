@@ -29,7 +29,7 @@ export class AuthService {
       const existingUser = await UserModel.findOne({
         where: {
           [Op.or]: [
-            ...(userData.email ? [{ email: userData.email }] : []),
+            ...(userData.email ? [{ email: userData.email.toLowerCase() }] : []),
             ...(userData.phoneNumber ? [{ phoneNumber: userData.phoneNumber }] : [])
           ]
         }
@@ -49,7 +49,7 @@ export class AuthService {
         });
         
         // Check which field conflicts and throw appropriate error
-        if (existingUser.email === userData.email) {
+        if (existingUser.email === userData.email?.toLowerCase()) {
           throw new Error(ERROR_CODES.EMAIL_ALREADY_EXISTS);
         }
         if (existingUser.phoneNumber === userData.phoneNumber) {
@@ -63,6 +63,7 @@ export class AuthService {
       // Create user
       const user = await UserModel.create({
         ...userData,
+        email: userData.email?.toLowerCase(),
         role: userData.role ?? 'user',
         passwordHash,
         subscriptionType: 'free',
@@ -142,7 +143,7 @@ export class AuthService {
       const user = await UserModel.findOne({
         where: {
           ...(loginData.identifier.includes('@')
-            ? { email: loginData.identifier }
+            ? { email: loginData.identifier.toLowerCase() }
             : { phoneNumber: loginData.identifier }),
         },
       });
@@ -312,7 +313,7 @@ export class AuthService {
       const user = await UserModel.findOne({
         where: {
           ...(requestData.identifier.includes('@')
-            ? { email: requestData.identifier }
+            ? { email: requestData.identifier.toLowerCase() }
             : { phoneNumber: requestData.identifier }),
         },
       });
