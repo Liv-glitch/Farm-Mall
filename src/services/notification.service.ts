@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
 
@@ -56,6 +57,36 @@ export interface EmailMessage {
 }
 
 export class NotificationService {
+  private transporter: nodemailer.Transporter | null = null;
+
+  constructor() {
+    this.initializeEmailTransporter();
+  }
+
+  private async initializeEmailTransporter(): Promise<void> {
+    try {
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        // Create transporter for Yahoo with App Password
+        this.transporter = nodemailer.createTransport({
+          service: 'yahoo',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        });
+
+        // Verify connection
+        await this.transporter?.verify();
+        logInfo('Yahoo SMTP connection verified successfully!');
+      } else {
+        logInfo('No email configuration found (EMAIL_USER/EMAIL_PASS), email sending will be mocked');
+      }
+    } catch (error) {
+      logError('Failed to initialize Yahoo email transporter', error as Error);
+      this.transporter = null;
+    }
+  }
+
   // Send WhatsApp message
   async sendWhatsAppMessage(message: WhatsAppMessage): Promise<{ messageId: string; status: string }> {
     try {
@@ -90,30 +121,50 @@ export class NotificationService {
   // Send email
   async sendEmail(email: EmailMessage): Promise<{ messageId: string; status: string }> {
     try {
-      // TODO: Integrate with email service
-      // - SendGrid
-      // - AWS SES
-      // - Mailgun
-      // - Nodemailer with SMTP
-      
       logInfo('Email sending started', { to: email.to, subject: email.subject });
 
-      // Simulate email sending
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!this.transporter) {
+        logInfo('No email transporter configured, using mock implementation');
+        // Fallback to mock implementation
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const result = {
+          messageId: `mock_email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          status: 'mocked',
+        };
+        logInfo('Mock email sent', { to: email.to, messageId: result.messageId });
+        return result;
+      }
+
+      // Prepare email options
+      const mailOptions = {
+        from: process.env.EMAIL_USER || 'noreply@farmmall.com',
+        to: email.to,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+        attachments: email.attachments
+      };
+
+      // Send email using nodemailer
+      const info = await this.transporter.sendMail(mailOptions);
 
       const result = {
-        messageId: `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        messageId: info.messageId,
         status: 'sent',
       };
 
       logInfo('Email sent successfully', { 
         to: email.to, 
-        messageId: result.messageId 
+        messageId: result.messageId,
+        response: info.response
       });
 
       return result;
     } catch (error) {
-      logError('Email sending failed', error as Error, email);
+      logError('Email sending failed', error as Error, { 
+        to: email.to, 
+        subject: email.subject 
+      });
       throw new Error(ERROR_CODES.EMAIL_SENDING_FAILED);
     }
   }

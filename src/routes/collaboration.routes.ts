@@ -111,6 +111,7 @@ router.post(
   collaborationController.acceptInvite
 );
 
+
 /**
  * @swagger
  * /api/v1/collaboration/invites/{token}/register:

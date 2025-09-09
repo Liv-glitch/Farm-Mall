@@ -84,7 +84,8 @@ export class CollaborationService {
   private async handleContactInfo(
     collaborator: FarmCollaboratorModel,
     inviteData: CollaboratorInviteData,
-    existingUser: UserModel | null
+    existingUser: UserModel | null,
+    farmName: string
   ): Promise<void> {
     const notificationData = {
       farmId: collaborator.farmId,
@@ -95,18 +96,36 @@ export class CollaborationService {
     if (this.hasValidId(existingUser)) {
       const notification = this.createPushNotification(
         existingUser.id,
-        `You've been invited to collaborate on a farm as a ${inviteData.role}`,
+        `You've been invited to collaborate on ${farmName} as a ${inviteData.role}`,
         notificationData
       );
       await this.notificationService.sendNotification(notification);
     }
 
+    // Build smart invitation URL with user info
+    const inviteUrl = this.buildInvitationUrl(collaborator.inviteToken!, {
+      email: inviteData.email,
+      phone: inviteData.phoneNumber,
+      role: inviteData.role,
+      farmName,
+      isExistingUser: !!existingUser,
+      userName: existingUser?.fullName
+    });
+
     // Send email notification if email is provided
     if (inviteData.email) {
+      const emailContent = this.createInvitationEmailContent(
+        farmName,
+        inviteData.role,
+        inviteUrl,
+        !!existingUser,
+        existingUser?.fullName
+      );
+
       const notification = this.createEmailNotification(
         inviteData.email,
         'Farm Collaboration Invitation',
-        `You've been invited to collaborate on a farm as a ${inviteData.role}. Click here to accept: [FRONTEND_URL]/collaborate/accept/${collaborator.inviteToken}`,
+        emailContent,
         notificationData
       );
       await this.notificationService.sendNotification(notification);
@@ -114,12 +133,73 @@ export class CollaborationService {
 
     // Send SMS notification if phone number is provided
     if (inviteData.phoneNumber) {
+      const smsContent = existingUser 
+        ? `Hi ${existingUser.fullName}! You've been invited to collaborate on ${farmName} as a ${inviteData.role}. Visit ${inviteUrl} to accept.`
+        : `You've been invited to collaborate on ${farmName} as a ${inviteData.role}. Visit ${inviteUrl} to join.`;
+
       const notification = this.createSMSNotification(
         inviteData.phoneNumber,
-        `You've been invited to collaborate on a farm as a ${inviteData.role}. Visit [FRONTEND_URL]/collaborate/accept/${collaborator.inviteToken} to accept.`,
+        smsContent,
         notificationData
       );
       await this.notificationService.sendNotification(notification);
+    }
+  }
+
+  // Build smart invitation URL with encoded user info
+  private buildInvitationUrl(token: string, info: {
+    email?: string;
+    phone?: string;
+    role: string;
+    farmName: string;
+    isExistingUser: boolean;
+    userName?: string;
+  }): string {
+    const params = new URLSearchParams({
+      role: info.role,
+      farm: info.farmName,
+      existing: info.isExistingUser.toString(),
+      ...(info.email && { email: info.email }),
+      ...(info.phone && { phone: info.phone }),
+      ...(info.userName && { name: info.userName })
+    });
+
+    return `${process.env.FRONTEND_URL}/collaborate/accept/${token}?${params.toString()}`;
+  }
+
+  // Create rich email content based on user status
+  private createInvitationEmailContent(
+    farmName: string,
+    role: string,
+    inviteUrl: string,
+    isExistingUser: boolean,
+    userName?: string
+  ): string {
+    if (isExistingUser) {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2E7D32;">Farm Collaboration Invitation</h2>
+          <p>Hi ${userName}!</p>
+          <p>You've been invited to collaborate on <strong>${farmName}</strong> as a <strong>${role}</strong>.</p>
+          <p>Since you already have an account with FarmMall, you can accept this invitation directly.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
+          </div>
+          <p style="color: #666; font-size: 14px;">This invitation will expire in 7 days.</p>
+        </div>
+      `;
+    } else {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2E7D32;">Welcome to FarmMall!</h2>
+          <p>You've been invited to collaborate on <strong>${farmName}</strong> as a <strong>${role}</strong>.</p>
+          <p>To get started, you'll need to create your FarmMall account and accept the invitation.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Join & Accept Invitation</a>
+          </div>
+          <p style="color: #666; font-size: 14px;">This invitation will expire in 7 days.</p>
+        </div>
+      `;
     }
   }
 
@@ -166,7 +246,7 @@ export class CollaborationService {
       await collaborator.save();
 
       // Handle notifications and contact information
-      await this.handleContactInfo(collaborator, inviteData, existingUser);
+      await this.handleContactInfo(collaborator, inviteData, existingUser, farm.name);
     } catch (error) {
       logError('Failed to invite collaborator', error as Error);
       throw error;
@@ -214,6 +294,7 @@ export class CollaborationService {
       throw error;
     }
   }
+
 
   // Register and accept invite (for new users)
   async registerAndAcceptInvite(inviteToken: string, userData: CollaboratorRegistrationData): Promise<User> {

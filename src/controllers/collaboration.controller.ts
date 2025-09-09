@@ -67,6 +67,7 @@ export class CollaborationController {
     }
   }
 
+
   // Register new user and accept invite
   async registerAndAcceptInvite(req: Request, res: Response): Promise<void> {
     try {
