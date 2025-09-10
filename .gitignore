@@ -129,3 +129,9 @@ temp/
 # Upload directories
 uploads/
 public/uploads/
+
+# Authentication tokens and secrets
+auth.json
+worker-auth.json
+*.jwt
+*token*.json
