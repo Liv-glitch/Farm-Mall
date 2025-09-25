@@ -5,7 +5,17 @@ export interface CropVariety {
   maturityPeriodDays: number;
   seedSize1BagsPerAcre: number;
   seedSize2BagsPerAcre: number;
-  seedCostPerBag: number;
+  seedSize1CostPerAcre: number;
+  seedSize2CostPerAcre: number;
+  fertilizerCostPerAcre: number;
+  herbicideCostPerAcre: number;
+  fungicideCostPerAcre: number;
+  insecticideCostPerAcre: number;
+  laborCostPerAcre: number;
+  landPreparationCostPerAcre: number;
+  miscellaneousCostPerAcre: number;
+  averageYieldPerAcre: number;
+  costDataUpdatedAt: Date;
   createdAt: Date;
 }
 
