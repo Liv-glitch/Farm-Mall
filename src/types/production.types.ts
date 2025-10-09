@@ -52,7 +52,7 @@ export interface Activity {
   completedDate?: Date;
   cost?: number;
   laborHours?: number;
-  laborType?: 'hired' | 'family' | 'cooperative';
+  laborType?: 'manual-family' | 'manual-hired' | 'mechanized';
   laborCost?: number; // legacy field
   inputs?: Array<{
     name: string;
@@ -117,7 +117,7 @@ export interface CreateActivityRequest {
   activityDate?: Date; // legacy field
   cost?: number;
   laborHours?: number;
-  laborType?: 'hired' | 'family' | 'cooperative';
+  laborType?: 'manual-family' | 'manual-hired' | 'mechanized';
   laborCost?: number; // legacy field
   inputs?: Array<{
     name: string;
@@ -145,7 +145,7 @@ export interface UpdateActivityRequest {
   activityDate?: Date; // legacy field
   cost?: number;
   laborHours?: number;
-  laborType?: 'hired' | 'family' | 'cooperative';
+  laborType?: 'manual-family' | 'manual-hired' | 'mechanized';
   laborCost?: number; // legacy field
   notes?: string;
 }

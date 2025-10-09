@@ -15,7 +15,7 @@ export class ActivityModel extends Model<Activity, ActivityCreationAttributes> i
   public completedDate?: Date;
   public cost?: number;
   public laborHours?: number;
-  public laborType?: 'hired' | 'family' | 'cooperative';
+  public laborType?: 'manual-family' | 'manual-hired' | 'mechanized';
   public inputs?: Array<{
     name: string;
     quantity: number;
@@ -133,7 +133,7 @@ ActivityModel.init(
       allowNull: true,
     },
     laborType: {
-      type: DataTypes.ENUM('hired', 'family', 'cooperative'),
+      type: DataTypes.ENUM('manual-family', 'manual-hired', 'mechanized'),
       allowNull: true,
     },
     inputs: {
