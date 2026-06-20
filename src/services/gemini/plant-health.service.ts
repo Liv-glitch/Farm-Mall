@@ -18,6 +18,7 @@ export interface Disease {
   treatment: {
     immediate: string[];
     preventive: string[];
+    prevention?: string[];
     organic: string[];
     chemical: string[];
     culturalPractices: string[];

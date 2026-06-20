@@ -121,6 +121,21 @@ router.get('/history',
   enhancedPlantController.getHistory.bind(enhancedPlantController)
 );
 
+router.get('/analysis/:id',
+  historyRateLimit,
+  enhancedPlantController.getAnalysis.bind(enhancedPlantController)
+);
+
+router.patch('/analysis/:id',
+  historyRateLimit,
+  enhancedPlantController.updateAnalysis.bind(enhancedPlantController)
+);
+
+router.delete('/analysis/:id',
+  historyRateLimit,
+  enhancedPlantController.deleteAnalysis.bind(enhancedPlantController)
+);
+
 /**
  * @swagger
  * /api/enhanced-plant/health-check:

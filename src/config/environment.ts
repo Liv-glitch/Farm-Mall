@@ -34,6 +34,10 @@ interface EnvironmentConfig {
   WEATHER_API_KEY?: string;
   PLANTID_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  HF_API_TOKEN?: string;
+  HF_POTATO_MODEL_ID: string;
+  HF_POTATO_MIN_CONFIDENCE: number;
+  HF_POTATO_HIGH_CONFIDENCE: number;
 
   // AWS S3
   AWS_S3_BUCKET?: string;
@@ -103,6 +107,10 @@ const validateEnvironment = (): EnvironmentConfig => {
     WEATHER_API_KEY: process.env.WEATHER_API_KEY,
     PLANTID_API_KEY: process.env.PLANTID_API_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    HF_API_TOKEN: process.env.HF_API_TOKEN,
+    HF_POTATO_MODEL_ID: process.env.HF_POTATO_MODEL_ID || '24f2004275/potato-disease-classifier',
+    HF_POTATO_MIN_CONFIDENCE: parseFloat(process.env.HF_POTATO_MIN_CONFIDENCE || '0.55'),
+    HF_POTATO_HIGH_CONFIDENCE: parseFloat(process.env.HF_POTATO_HIGH_CONFIDENCE || '0.80'),
 
     // AWS S3
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,

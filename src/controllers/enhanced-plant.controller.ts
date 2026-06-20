@@ -3,10 +3,15 @@ import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
 import { geminiWrapper } from '../services/gemini/gemini-wrapper.service';
 import { SmartYieldCalculatorService } from '../services/gemini/smart-yield-calculator.service';
+import { potatoDiseaseDetectionService } from '../services/potato-disease-detection.service';
+import { EnterpriseMediaService } from '../services/enterprise-media.service';
+import { PlantHealthAssessmentModel } from '../models/PlantHealthAssessment.model';
+import { MediaAssociation } from '../models/MediaAssociation.model';
 import multer from 'multer';
 
 // Initialize the smart yield calculator service (lazy initialization)
 let smartYieldCalculator: SmartYieldCalculatorService | null = null;
+const mediaService = new EnterpriseMediaService();
 
 const getSmartYieldCalculator = (): SmartYieldCalculatorService => {
   if (!smartYieldCalculator) {
@@ -306,37 +311,91 @@ export class EnhancedPlantController {
         return;
       }
 
-      let result;
+      const diagnosis = await potatoDiseaseDetectionService.diagnose(imageFile, {
+        latitude: options.latitude,
+        longitude: options.longitude,
+        plantType: options.plantType || 'potato',
+        location: options.location,
+        symptoms: options.diseaseDetails
+      });
 
-      // Try Gemini first
-      if (geminiWrapper.isAvailable()) {
-        result = await geminiWrapper.assessPlantHealth(userId, imageFile, options);
-        
-        if (result.success) {
-          res.json({
-            success: true,
-            data: result.data,
-            provider: 'gemini',
-            enhanced_features: {
-              treatment_prioritization: true,
-              cost_effective_solutions: true,
-              preventive_measures: true,
-              regional_disease_patterns: true
-            },
-            metadata: (result as any).metadata
-          });
-          return;
-        }
+      if (!diagnosis.success || !diagnosis.data) {
+        res.status(502).json({
+          success: false,
+          message: diagnosis.error || 'Plant health assessment failed',
+          provider: diagnosis.provider
+        });
+        return;
       }
 
-      // Fallback to Plant.id health API
-      const fallbackResult = await this.fallbackToPlantIdHealth(imageFile, options);
-      
+      const mediaContext = {
+        category: 'plant-health',
+        subcategory: 'diagnosis',
+        contextId: userId
+      };
+
+      const uploadedMedia = await mediaService.uploadMedia(userId, imageFile, {
+        context: mediaContext,
+        generateVariants: true,
+        isPublic: false,
+        metadata: {
+          analysisType: 'plant_health',
+          provider: diagnosis.provider,
+          model: diagnosis.model,
+          location: options.location,
+          plantType: options.plantType || 'potato'
+        }
+      });
+
+      const assessment = await PlantHealthAssessmentModel.create({
+        userId,
+        imageUrl: uploadedMedia.publicUrl || '',
+        thumbnailUrl: this.getThumbnailUrl(uploadedMedia) || '',
+        originalFilename: uploadedMedia.originalName,
+        latitude: options.latitude ? parseFloat(options.latitude) : undefined,
+        longitude: options.longitude ? parseFloat(options.longitude) : undefined,
+        healthAssessmentResult: diagnosis.data as any,
+        isHealthy: diagnosis.data.healthStatus?.isHealthy,
+        diseases: diagnosis.data.diseases as any,
+        treatmentSuggestions: diagnosis.data.treatmentPriority as any,
+        providerMetadata: diagnosis.providerMetadata as any
+      });
+
+      await mediaService.associateMedia(uploadedMedia.id!, {
+        associatableType: 'PlantHealthAssessment',
+        associatableId: assessment.id,
+        role: 'primary',
+        context: mediaContext
+      });
+
+      const responseData = {
+        ...diagnosis.data,
+        analysisId: assessment.id,
+        mediaId: uploadedMedia.id
+      };
+
       res.json({
-        success: fallbackResult.success,
-        data: fallbackResult.data || null,
-        provider: 'plantid',
-        fallback_reason: result?.message || 'Gemini unavailable'
+        success: true,
+        data: responseData,
+        provider: diagnosis.provider,
+        model: diagnosis.model,
+        enhanced_features: {
+          treatment_prioritization: true,
+          cost_effective_solutions: true,
+          preventive_measures: true,
+          regional_disease_patterns: true
+        },
+        metadata: {
+          analysisId: assessment.id,
+          mediaId: uploadedMedia.id,
+          confidence: diagnosis.confidence,
+          providerMetadata: diagnosis.providerMetadata,
+          mediaUrls: {
+            original: uploadedMedia.publicUrl,
+            thumbnail: this.getThumbnailUrl(uploadedMedia),
+            variants: this.getVariantUrls(uploadedMedia)
+          }
+        }
       });
 
     } catch (error: any) {
@@ -536,6 +595,30 @@ export class EnhancedPlantController {
         offset: parseInt(req.query.offset as string) || 0
       };
 
+      if (!options.type || options.type === 'plant_health') {
+        const healthRecords = await PlantHealthAssessmentModel.findAll({
+          where: { userId },
+          order: [['createdAt', 'DESC']],
+          limit: options.limit,
+          offset: options.offset
+        });
+
+        const records = [];
+        for (const record of healthRecords) {
+          const media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+          records.push(this.formatPlantHealthRecord(record, media[0] || null));
+        }
+
+        res.json({
+          success: true,
+          data: records,
+          records,
+          total: records.length,
+          message: 'History retrieved successfully'
+        });
+        return;
+      }
+
       const result = await geminiWrapper.getUserHistory(userId, options);
       
       res.json({
@@ -551,6 +634,131 @@ export class EnhancedPlantController {
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve history',
+        error: error.message
+      });
+    }
+  }
+
+  public async getAnalysis(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id || req.query.userId as string;
+      const analysisId = req.params.id;
+      const type = req.query.type as string;
+
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'User authentication required' });
+        return;
+      }
+
+      if (type !== 'plant_health') {
+        const result = await geminiWrapper.getAnalysis(analysisId, type as any, userId);
+        res.status(result.success ? 200 : 404).json(result);
+        return;
+      }
+
+      const record = await PlantHealthAssessmentModel.findOne({ where: { id: analysisId, userId } });
+      if (!record) {
+        res.status(404).json({ success: false, message: 'Analysis not found' });
+        return;
+      }
+
+      const media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+      res.json({
+        success: true,
+        data: this.formatPlantHealthRecord(record, media[0] || null)
+      });
+    } catch (error: any) {
+      logError('Failed to get analysis', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get analysis',
+        error: error.message
+      });
+    }
+  }
+
+  public async updateAnalysis(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id || req.body.userId;
+      const analysisId = req.params.id;
+      const type = req.body.type || req.query.type;
+
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'User authentication required' });
+        return;
+      }
+
+      if (type !== 'plant_health') {
+        res.status(400).json({ success: false, message: 'Only plant_health notes can be updated here' });
+        return;
+      }
+
+      const record = await PlantHealthAssessmentModel.findOne({ where: { id: analysisId, userId } });
+      if (!record) {
+        res.status(404).json({ success: false, message: 'Analysis not found' });
+        return;
+      }
+
+      const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : null;
+      await record.update({ notes });
+
+      res.json({
+        success: true,
+        message: 'Analysis updated successfully',
+        data: {
+          id: record.id,
+          notes
+        }
+      });
+    } catch (error: any) {
+      logError('Failed to update analysis', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update analysis',
+        error: error.message
+      });
+    }
+  }
+
+  public async deleteAnalysis(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id || req.query.userId as string;
+      const analysisId = req.params.id;
+      const type = req.query.type as string;
+
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'User authentication required' });
+        return;
+      }
+
+      if (type !== 'plant_health') {
+        res.status(400).json({ success: false, message: 'Only plant_health analyses can be deleted here' });
+        return;
+      }
+
+      const record = await PlantHealthAssessmentModel.findOne({ where: { id: analysisId, userId } });
+      if (!record) {
+        res.status(404).json({ success: false, message: 'Analysis not found' });
+        return;
+      }
+
+      await MediaAssociation.destroy({
+        where: {
+          associatableType: 'PlantHealthAssessment',
+          associatableId: record.id
+        }
+      });
+      await record.destroy();
+
+      res.json({
+        success: true,
+        message: 'Analysis deleted successfully'
+      });
+    } catch (error: any) {
+      logError('Failed to delete analysis', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete analysis',
         error: error.message
       });
     }
@@ -618,13 +826,32 @@ export class EnhancedPlantController {
     };
   }
 
-  private async fallbackToPlantIdHealth(_file: Express.Multer.File, _options: any) {
-    // Similar implementation for Plant.id health API
-    // Use your existing health assessment logic
+  private getThumbnailUrl(media: any): string | undefined {
+    if (Array.isArray(media?.variants)) {
+      return media.variants.find((variant: any) => variant.size === 'thumbnail')?.url;
+    }
+    return undefined;
+  }
+
+  private getVariantUrls(media: any): Array<{ size: string; url: string }> {
+    if (!Array.isArray(media?.variants)) return [];
+    return media.variants.map((variant: any) => ({
+      size: variant.size,
+      url: variant.url
+    }));
+  }
+
+  private formatPlantHealthRecord(record: any, media: any) {
     return {
-      success: false,
-      message: 'Plant.id health API fallback not implemented',
-      data: null
+      id: record.id,
+      type: 'plant_health',
+      result: record.healthAssessmentResult,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      isHealthy: record.isHealthy,
+      notes: record.notes,
+      providerMetadata: record.providerMetadata,
+      media
     };
   }
 }

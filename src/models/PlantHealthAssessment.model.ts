@@ -12,6 +12,8 @@ export class PlantHealthAssessmentModel extends Model {
   public isHealthy?: boolean;
   public diseases?: any;
   public treatmentSuggestions?: any;
+  public notes?: string;
+  public providerMetadata?: any;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -79,6 +81,15 @@ export function initializePlantHealthAssessmentModel(sequelize: any): void {
     type: DataTypes.JSONB,
     allowNull: true,
     field: 'treatment_suggestions'
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  providerMetadata: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    field: 'provider_metadata'
   },
   createdAt: {
     type: DataTypes.DATE,
