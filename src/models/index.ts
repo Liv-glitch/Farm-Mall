@@ -12,6 +12,9 @@ import { PlantIdentificationModel, initializePlantIdentificationModel } from './
 import { PlantHealthAssessmentModel, initializePlantHealthAssessmentModel } from './PlantHealthAssessment.model';
 import { Media } from './Media.model';
 import { MediaAssociation } from './MediaAssociation.model';
+import { PreproductionPlanModel, initializePreproductionPlanModel } from './PreproductionPlan.model';
+import { PreproductionStepModel, initializePreproductionStepModel } from './PreproductionStep.model';
+import { PreproductionTaskModel, initializePreproductionTaskModel } from './PreproductionTask.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -28,6 +31,11 @@ export function initializeModels(sequelize: Sequelize): void {
   // Initialize Media models
   Media.initModel(sequelize);
   MediaAssociation.initModel(sequelize);
+
+  // Initialize Pre-production planning models
+  initializePreproductionPlanModel(sequelize);
+  initializePreproductionStepModel(sequelize);
+  initializePreproductionTaskModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -104,6 +112,21 @@ function setupAssociations(): void {
   Media.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
   MediaAssociation.belongsTo(Media, { foreignKey: 'mediaId', as: 'Media' });
   Media.hasMany(MediaAssociation, { foreignKey: 'mediaId', as: 'associations' });
+
+  // Pre-production planning associations
+  PreproductionPlanModel.associate({
+    User: UserModel,
+    PreproductionStep: PreproductionStepModel,
+  });
+
+  PreproductionStepModel.associate({
+    PreproductionPlan: PreproductionPlanModel,
+    PreproductionTask: PreproductionTaskModel,
+  });
+
+  PreproductionTaskModel.associate({
+    PreproductionStep: PreproductionStepModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -121,6 +144,9 @@ export {
   PlantHealthAssessmentModel,
   Media,
   MediaAssociation,
+  PreproductionPlanModel,
+  PreproductionStepModel,
+  PreproductionTaskModel,
 };
 
 // Export types
@@ -131,3 +157,6 @@ export * from './Activity.model';
 export * from './SoilTest.model';
 export * from './Media.model';
 export * from './MediaAssociation.model';
+export * from './PreproductionPlan.model';
+export * from './PreproductionStep.model';
+export * from './PreproductionTask.model';

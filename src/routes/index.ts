@@ -10,6 +10,7 @@ import collaborationRoutes from './collaboration.routes';
 import soilAnalysisRoutes from './soilAnalysis.routes';
 import enterpriseMediaRoutes from './enterprise-media.routes';
 import enhancedPlantRoutes from './enhanced-plant.routes';
+import preproductionRoutes from './preproduction.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -49,6 +50,7 @@ router.use('/collaboration', collaborationRoutes);
 router.use('/soil-analysis', soilAnalysisRoutes);
 router.use('/media', enterpriseMediaRoutes);
 router.use('/enhanced-plant', enhancedPlantRoutes);
+router.use('/preproduction', preproductionRoutes);
 
 // API info route
 router.get('/', (_, res) => {

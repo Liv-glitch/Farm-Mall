@@ -147,4 +147,60 @@ export const validateUpdatePermissions = [
       return true;
     }),
   validateRequest
+];
+
+/**
+ * Validation rules for creating a pre-production plan
+ */
+export const validateCreatePreproductionPlan = [
+  body('name')
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Plan name is required'),
+  body('planting_date')
+    .notEmpty()
+    .withMessage('Planting date is required')
+    .isISO8601()
+    .withMessage('Planting date must be a valid date'),
+  body('location')
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Location is required'),
+  body('potato_variety')
+    .isIn(['Shangi', 'Sherekea', 'Unica', 'Markies'])
+    .withMessage('Invalid potato variety'),
+  validateRequest
+];
+
+/**
+ * Validation rules for updating a pre-production task
+ */
+export const validateUpdatePreproductionTask = [
+  param('id')
+    .isUUID()
+    .withMessage('Invalid task id'),
+  body('completed')
+    .optional()
+    .isBoolean()
+    .withMessage('completed must be a boolean'),
+  body('date_completed')
+    .optional({ nullable: true })
+    .isISO8601()
+    .withMessage('date_completed must be a valid date'),
+  body('cost')
+    .optional({ nullable: true })
+    .isNumeric()
+    .withMessage('cost must be a number'),
+  body('supplier')
+    .optional({ nullable: true })
+    .isString()
+    .withMessage('supplier must be a string'),
+  body()
+    .custom((value) => {
+      if (value.completed === true && !value.date_completed) {
+        throw new Error('date_completed is required when completing a task');
+      }
+      return true;
+    }),
+  validateRequest
 ]; 
