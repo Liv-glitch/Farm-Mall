@@ -112,6 +112,16 @@ class Application {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+    if (env.API_BASE_PATH) {
+      this.app.use((req, _res, next) => {
+        const basePath = env.API_BASE_PATH;
+        if (req.url === basePath || req.url.startsWith(`${basePath}/`) || req.url.startsWith(`${basePath}?`)) {
+          req.url = req.url.slice(basePath.length) || '/';
+        }
+        next();
+      });
+    }
+
     // Serve static files from uploads directory
     this.app.use('/uploads', express.static('uploads'));
 

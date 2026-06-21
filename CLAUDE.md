@@ -37,7 +37,7 @@ npm run lint:fix             # Fix ESLint issues automatically
 
 ### Backend Framework
 - **Node.js/Express**: RESTful API server with TypeScript
-- **MySQL/MariaDB**: Primary database with Sequelize ORM (`mysql` dialect, discrete `DB_*` credentials). Deployed on Namecheap cPanel. The schema is created by the consolidated baseline migration `src/migrations/20260101000000-baseline-mysql.js`; the original Postgres migrations are archived under `src/migrations/_postgres-legacy/`.
+- **MySQL/MariaDB**: Primary database with Sequelize ORM (`mysql` dialect, discrete `DB_*` credentials). Deployed on Namecheap cPanel. The schema is managed as raw SQL files in the top-level `migrations/` folder (`schema.sql` is the baseline, imported via phpMyAdmin); the original Postgres Sequelize migrations are archived under `src/migrations/_postgres-legacy/`.
 - **Redis**: Optional, OFF by default (`ENABLE_REDIS=false`). When disabled, queue-backed work (soil analysis, media variants) runs synchronously in-request. Queue constructors are only created when `ENABLE_REDIS=true`.
 - **BullMQ**: Queue processing for media/background tasks — only active when Redis is enabled.
 
@@ -89,14 +89,13 @@ Required environment variables (see `.env.example` for the complete annotated li
 - Storage: `ENABLE_UPLOADS` (default true) + `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` when uploads enabled
 - AI APIs (optional): `GEMINI_API_KEY`, `PLANTID_API_KEY`, `OPENAI_API_KEY`
 
-## Database Migrations
+## Database Schema & Migrations
 
-The project uses Sequelize migrations located in `src/migrations/`. Always run migrations before starting development:
-```bash
-npm run migrate
-```
+The schema is managed as raw **`.sql` files** in the top-level `migrations/` folder, imported via cPanel **phpMyAdmin** (no migration runner on shared hosting):
+- `migrations/schema.sql` — baseline; builds the full schema on a fresh DB.
+- Subsequent changes go in new numbered files (`0002-….sql`, …), imported in order. See `migrations/README.md`.
 
-Migration files are numbered sequentially and handle schema evolution including tables for users, farms, production cycles, pest analyses, soil tests, media, and collaboration features.
+For local development against MySQL, import `migrations/schema.sql` into your local database the same way (e.g. `mysql <db> < migrations/schema.sql`). Seed data still uses Sequelize seeders (`npm run seed`). The legacy Sequelize migration runner (`npm run migrate`) is retained only for the archived Postgres history under `src/migrations/_postgres-legacy/` and is **not** used to build the MySQL schema.
 
 ## Testing Strategy
 

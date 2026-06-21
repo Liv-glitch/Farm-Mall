@@ -9,6 +9,7 @@ interface EnvironmentConfig {
   API_VERSION: string;
   // Public URL of this backend (used in Swagger + startup logs)
   API_PUBLIC_URL: string;
+  API_BASE_PATH: string;
 
   // Database
   DATABASE_URL: string;
@@ -93,12 +94,27 @@ const parseBool = (value: string | undefined, defaultValue = false): boolean => 
   return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
 };
 
+const normalizeBasePath = (value: string | undefined): string => {
+  if (!value) return '';
+
+  const rawPath = value.trim();
+  const path = rawPath.startsWith('http://') || rawPath.startsWith('https://')
+    ? new URL(rawPath).pathname
+    : rawPath;
+  const normalized = `/${path.replace(/^\/+|\/+$/g, '')}`;
+
+  return normalized === '/' ? '' : normalized;
+};
+
 const validateEnvironment = (): EnvironmentConfig => {
+  const apiPublicUrl = process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || '3000'}`;
+
   const config: EnvironmentConfig = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: parseInt(process.env.PORT || '3000', 10),
     API_VERSION: process.env.API_VERSION || 'v1',
-    API_PUBLIC_URL: process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || '3000'}`,
+    API_PUBLIC_URL: apiPublicUrl,
+    API_BASE_PATH: normalizeBasePath(process.env.API_BASE_PATH || apiPublicUrl),
 
     // Database
     DATABASE_URL: process.env.DATABASE_URL || '',
@@ -140,7 +156,7 @@ const validateEnvironment = (): EnvironmentConfig => {
     AWS_REGION: process.env.AWS_REGION || 'us-east-1',
 
     // Supabase / uploads
-    ENABLE_UPLOADS: parseBool(process.env.ENABLE_UPLOADS, true),
+    ENABLE_UPLOADS: parseBool(process.env.ENABLE_UPLOADS, false),
     SUPABASE_URL: process.env.SUPABASE_URL || '',
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'farm-documents',
