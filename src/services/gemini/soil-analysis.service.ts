@@ -3,6 +3,7 @@ import { SoilTestModel } from '../../models/SoilTest.model';
 import { FileStorageService } from '../fileStorage.service';
 import { logInfo, logError } from '../../utils/logger';
 import { Queue, Worker, ConnectionOptions } from 'bullmq';
+import { env } from '../../config/environment';
 
 export interface SoilAnalysisResult {
   basicProperties: {
@@ -126,68 +127,33 @@ export interface SoilAnalysisResult {
 }
 
 export class SoilAnalysisService extends BaseGeminiService {
-  private queue: Queue;
+  private queue: Queue | null = null;
   private fileStorage: FileStorageService;
 
   constructor(config: GeminiConfig) {
     super(config);
     this.fileStorage = new FileStorageService();
 
-    const connection: ConnectionOptions = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      password: process.env.REDIS_PASSWORD,
-    };
+    // Only construct the BullMQ queue/worker when Redis is enabled.
+    // On shared hosting (ENABLE_REDIS=false) the analysis runs synchronously.
+    if (env.ENABLE_REDIS) {
+      const connection: ConnectionOptions = {
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD,
+      };
 
-    this.queue = new Queue('gemini-soil-analysis', { connection });
-    this.initializeWorker(connection);
+      this.queue = new Queue('gemini-soil-analysis', { connection });
+      this.initializeWorker(connection);
+    } else {
+      logInfo('Gemini SoilAnalysisService: Redis disabled, soil tests processed synchronously');
+    }
   }
 
   private initializeWorker(connection: ConnectionOptions) {
     const worker = new Worker('gemini-soil-analysis', async (job) => {
       const { soilTestId, documentBuffer, analysisOptions } = job.data;
-      
-      try {
-        const soilTest = await SoilTestModel.findByPk(soilTestId);
-        if (!soilTest) {
-          throw new Error('Soil test not found');
-        }
-
-        // Analyze the document using Gemini
-        const analysis = await this.analyzeSoilDocument(
-          Buffer.from(documentBuffer, 'base64'),
-          analysisOptions
-        );
-
-        if (analysis.success && analysis.data) {
-          // Update soil test record with Gemini analysis results
-          await soilTest.update({
-            analysisResult: this.convertToLegacyFormat(analysis.data),
-            status: 'analyzed',
-            aiModelVersion: this.config.model
-          });
-
-          logInfo('✅ Gemini soil analysis completed', {
-            soilTestId,
-            overallScore: analysis.data.soilHealth.overallScore,
-            cropRecommendations: analysis.data.cropRecommendations.length
-          });
-        } else {
-          throw new Error(analysis.error || 'Analysis failed');
-        }
-
-      } catch (error: any) {
-        const soilTest = await SoilTestModel.findByPk(soilTestId);
-        if (soilTest) {
-          await soilTest.update({
-            status: 'failed',
-            analysisResult: {
-              recommendations: []
-            }
-          });
-        }
-        throw error;
-      }
+      await this.processSoilTestJob(soilTestId, documentBuffer, analysisOptions);
     }, { connection });
 
     worker.on('completed', (job) => {
@@ -197,6 +163,59 @@ export class SoilAnalysisService extends BaseGeminiService {
     worker.on('failed', (job, error) => {
       logError('❌ Soil analysis job failed', error, { jobId: job?.id });
     });
+  }
+
+  /**
+   * Run the Gemini soil-document analysis and persist results. Used by both the
+   * BullMQ worker (Redis enabled) and the synchronous fallback path.
+   * @param documentBuffer base64-encoded document
+   */
+  private async processSoilTestJob(
+    soilTestId: string,
+    documentBuffer: string,
+    analysisOptions: any
+  ): Promise<void> {
+    try {
+      const soilTest = await SoilTestModel.findByPk(soilTestId);
+      if (!soilTest) {
+        throw new Error('Soil test not found');
+      }
+
+      // Analyze the document using Gemini
+      const analysis = await this.analyzeSoilDocument(
+        Buffer.from(documentBuffer, 'base64'),
+        analysisOptions
+      );
+
+      if (analysis.success && analysis.data) {
+        // Update soil test record with Gemini analysis results
+        await soilTest.update({
+          analysisResult: this.convertToLegacyFormat(analysis.data),
+          status: 'analyzed',
+          aiModelVersion: this.config.model
+        });
+
+        logInfo('✅ Gemini soil analysis completed', {
+          soilTestId,
+          overallScore: analysis.data.soilHealth.overallScore,
+          cropRecommendations: analysis.data.cropRecommendations.length
+        });
+      } else {
+        throw new Error(analysis.error || 'Analysis failed');
+      }
+
+    } catch (error: any) {
+      const soilTest = await SoilTestModel.findByPk(soilTestId);
+      if (soilTest) {
+        await soilTest.update({
+          status: 'failed',
+          analysisResult: {
+            recommendations: []
+          }
+        });
+      }
+      throw error;
+    }
   }
 
   async analyzeSoilDocument(
@@ -551,31 +570,49 @@ Provide practical, actionable recommendations that are appropriate for the regio
       aiModelVersion: this.config.model
     });
 
-    // Convert file buffer to base64 for queue
+    // Convert file buffer to base64 (queue payload / inline arg)
     const documentBuffer = file.buffer.toString('base64');
+    const jobOptions = {
+      ...analysisOptions,
+      region: 'Kenya'
+    };
 
-    // Queue analysis job
-    await this.queue.add('analyze-soil-test', {
-      soilTestId: soilTest.id,
-      documentBuffer,
-      analysisOptions: {
-        ...analysisOptions,
-        region: 'Kenya'
-      }
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000
-      }
-    });
+    if (this.queue) {
+      // Queue analysis job (Redis enabled)
+      await this.queue.add('analyze-soil-test', {
+        soilTestId: soilTest.id,
+        documentBuffer,
+        analysisOptions: jobOptions
+      }, {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000
+        }
+      });
 
-    logInfo('📋 Soil analysis queued', {
-      soilTestId: soilTest.id,
-      userId,
-      farmId,
-      fileName: uploadResult.originalName
-    });
+      logInfo('📋 Soil analysis queued', {
+        soilTestId: soilTest.id,
+        userId,
+        farmId,
+        fileName: uploadResult.originalName
+      });
+    } else {
+      // Synchronous fallback (shared hosting, no Redis). Don't fail the upload
+      // if analysis errors — status is persisted as 'failed' by processSoilTestJob.
+      logInfo('📋 Soil analysis running synchronously', {
+        soilTestId: soilTest.id,
+        userId,
+        farmId,
+        fileName: uploadResult.originalName
+      });
+      try {
+        await this.processSoilTestJob(soilTest.id, documentBuffer, jobOptions);
+        await soilTest.reload();
+      } catch (err) {
+        logError('Synchronous Gemini soil analysis failed', err as Error, { soilTestId: soilTest.id });
+      }
+    }
 
     return soilTest;
   }

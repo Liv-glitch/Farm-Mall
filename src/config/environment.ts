@@ -7,6 +7,8 @@ interface EnvironmentConfig {
   NODE_ENV: string;
   PORT: number;
   API_VERSION: string;
+  // Public URL of this backend (used in Swagger + startup logs)
+  API_PUBLIC_URL: string;
 
   // Database
   DATABASE_URL: string;
@@ -15,8 +17,10 @@ interface EnvironmentConfig {
   DB_NAME: string;
   DB_USER: string;
   DB_PASSWORD: string;
+  DB_SSL: boolean;
 
-  // Redis
+  // Redis (optional on shared hosting)
+  ENABLE_REDIS: boolean;
   REDIS_URL: string;
   REDIS_HOST: string;
   REDIS_PORT: number;
@@ -45,7 +49,8 @@ interface EnvironmentConfig {
   AWS_SECRET_ACCESS_KEY?: string;
   AWS_REGION: string;
 
-  // Supabase
+  // Supabase / uploads
+  ENABLE_UPLOADS: boolean;
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   SUPABASE_STORAGE_BUCKET: string;
@@ -76,27 +81,36 @@ interface EnvironmentConfig {
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
   CORS_ORIGIN: string;
+  CORS_ORIGINS: string;
 
   // Logging
   LOG_LEVEL: string;
   LOG_FILE: string;
 }
 
+const parseBool = (value: string | undefined, defaultValue = false): boolean => {
+  if (value === undefined) return defaultValue;
+  return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
+};
+
 const validateEnvironment = (): EnvironmentConfig => {
   const config: EnvironmentConfig = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: parseInt(process.env.PORT || '3000', 10),
     API_VERSION: process.env.API_VERSION || 'v1',
+    API_PUBLIC_URL: process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || '3000'}`,
 
     // Database
     DATABASE_URL: process.env.DATABASE_URL || '',
     DB_HOST: process.env.DB_HOST || 'localhost',
-    DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),
+    DB_PORT: parseInt(process.env.DB_PORT || '3306', 10),
     DB_NAME: process.env.DB_NAME || 'agriculture_db',
     DB_USER: process.env.DB_USER || 'user',
     DB_PASSWORD: process.env.DB_PASSWORD || 'password',
+    DB_SSL: parseBool(process.env.DB_SSL, false),
 
-    // Redis
+    // Redis (disabled by default on shared hosting)
+    ENABLE_REDIS: parseBool(process.env.ENABLE_REDIS, false),
     REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
     REDIS_HOST: process.env.REDIS_HOST || 'localhost',
     REDIS_PORT: parseInt(process.env.REDIS_PORT || '6379', 10),
@@ -125,7 +139,8 @@ const validateEnvironment = (): EnvironmentConfig => {
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION || 'us-east-1',
 
-    // Supabase
+    // Supabase / uploads
+    ENABLE_UPLOADS: parseBool(process.env.ENABLE_UPLOADS, true),
     SUPABASE_URL: process.env.SUPABASE_URL || '',
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'farm-documents',
@@ -155,26 +170,29 @@ const validateEnvironment = (): EnvironmentConfig => {
     BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),
     RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
-    CORS_ORIGIN: process.env.CORS_ORIGIN || 'farmmall-front.vercel.app',
+    CORS_ORIGIN: process.env.CORS_ORIGIN || '',
+    CORS_ORIGINS: process.env.CORS_ORIGINS || '',
 
     // Logging
     LOG_LEVEL: process.env.LOG_LEVEL || 'info',
     LOG_FILE: process.env.LOG_FILE || 'logs/app.log',
   };
 
-  // Validate required environment variables
+  // Validate required environment variables. Check the RAW process.env (not the
+  // defaulted config) so fallback defaults don't mask a missing value in prod.
   const requiredVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
-  
+
   if (config.NODE_ENV === 'production') {
-    requiredVars.push(
-      'DATABASE_URL',
-      'REDIS_URL',
-      'SUPABASE_URL',
-      'SUPABASE_SERVICE_ROLE_KEY'
-    );
+    // Shared-hosting MySQL uses discrete DB credentials (no DATABASE_URL, no Redis).
+    requiredVars.push('DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD');
+
+    // Uploads (Supabase) only required when the feature is enabled.
+    if (config.ENABLE_UPLOADS) {
+      requiredVars.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
+    }
   }
 
-  const missingVars = requiredVars.filter(varName => !config[varName as keyof EnvironmentConfig]);
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);

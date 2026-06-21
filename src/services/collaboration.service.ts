@@ -7,7 +7,7 @@ import { validateKenyaPhoneNumber } from '../utils/validators';
 import { logError } from '../utils/logger';
 import { User } from '../types/auth.types';
 import { CollaboratorPermissions } from '../models/FarmCollaborator.model';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 interface CollaboratorInviteData {
   email?: string;

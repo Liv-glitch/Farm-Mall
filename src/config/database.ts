@@ -7,12 +7,11 @@ const databaseConfig: Options = {
   database: env.DB_NAME,
   username: env.DB_USER,
   password: env.DB_PASSWORD,
-  dialect: 'postgres',
+  dialect: 'mysql',
   dialectOptions: {
-    ssl: env.NODE_ENV === 'production' ? {
-      require: true,
-      rejectUnauthorized: false,
-    } : false,
+    // cPanel MySQL runs on localhost without TLS. Only enable SSL when explicitly
+    // connecting to a remote DB that requires it (DB_SSL=true).
+    ...(env.DB_SSL ? { ssl: { require: true, rejectUnauthorized: false } } : {}),
   },
   pool: {
     max: 10,
@@ -29,8 +28,9 @@ const databaseConfig: Options = {
   timezone: '+03:00', // EAT timezone for Kenya
 };
 
-// Create Sequelize instance
-export const sequelize = env.DATABASE_URL 
+// Create Sequelize instance.
+// Prefer discrete DB_* credentials (cPanel MySQL); DATABASE_URL is an optional override.
+export const sequelize = env.DATABASE_URL
   ? new Sequelize(env.DATABASE_URL, databaseConfig)
   : new Sequelize(databaseConfig);
 

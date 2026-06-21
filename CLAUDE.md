@@ -37,9 +37,9 @@ npm run lint:fix             # Fix ESLint issues automatically
 
 ### Backend Framework
 - **Node.js/Express**: RESTful API server with TypeScript
-- **PostgreSQL**: Primary database with Sequelize ORM
-- **Redis**: Caching and session management (optional, gracefully degrades)
-- **BullMQ**: Queue processing for media and background tasks
+- **MySQL/MariaDB**: Primary database with Sequelize ORM (`mysql` dialect, discrete `DB_*` credentials). Deployed on Namecheap cPanel. The schema is created by the consolidated baseline migration `src/migrations/20260101000000-baseline-mysql.js`; the original Postgres migrations are archived under `src/migrations/_postgres-legacy/`.
+- **Redis**: Optional, OFF by default (`ENABLE_REDIS=false`). When disabled, queue-backed work (soil analysis, media variants) runs synchronously in-request. Queue constructors are only created when `ENABLE_REDIS=true`.
+- **BullMQ**: Queue processing for media/background tasks — only active when Redis is enabled.
 
 ### AI Services Integration
 The system integrates multiple AI services through a modular service architecture:
@@ -81,11 +81,13 @@ Enterprise media system with:
 
 ## Environment Setup
 
-Required environment variables (see README.md for complete list):
-- Database: `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-- Redis: `REDIS_HOST`, `REDIS_PORT` (optional)
-- AI APIs: `PLANT_ID_API_KEY`, `OPENAI_API_KEY`
-- Storage: Supabase credentials for file storage
+Required environment variables (see `.env.example` for the complete annotated list):
+- Database (required in prod): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (+ optional `DB_SSL` for remote TLS DBs)
+- Auth (always required): `JWT_SECRET`, `JWT_REFRESH_SECRET`
+- Public URL / CORS: `API_PUBLIC_URL`, `CORS_ORIGINS` (comma-separated)
+- Redis: `ENABLE_REDIS` (default false); `REDIS_*` only when enabled
+- Storage: `ENABLE_UPLOADS` (default true) + `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` when uploads enabled
+- AI APIs (optional): `GEMINI_API_KEY`, `PLANTID_API_KEY`, `OPENAI_API_KEY`
 
 ## Database Migrations
 

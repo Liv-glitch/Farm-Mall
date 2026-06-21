@@ -2,7 +2,7 @@ import { UserModel } from '../models';
 import { User, ChangePasswordRequest } from '../types/auth.types';
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { env } from '../config/environment';
 
 export interface UpdateUserProfileRequest {

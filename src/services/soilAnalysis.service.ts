@@ -4,6 +4,8 @@ import { FileStorageService } from './fileStorage.service';
 import { MediaContext } from '../models/Media.model';
 import { CropVarietyModel } from '../models/CropVariety.model';
 import OpenAI from 'openai';
+import { env } from '../config/environment';
+import { logError, logInfo } from '../utils/logger';
 
 interface SoilAnalysisResult {
   ph?: number;
@@ -21,85 +23,107 @@ interface SoilAnalysisResult {
 }
 
 export class SoilAnalysisService {
-  private queue: Queue;
+  private queue: Queue | null = null;
   private fileStorage: FileStorageService;
-  private openai: OpenAI;
+  private _openai: OpenAI | null = null;
 
   constructor() {
-    const connection: ConnectionOptions = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      password: process.env.REDIS_PASSWORD,
-    };
-
-    this.queue = new Queue('soil-analysis', { connection });
     this.fileStorage = new FileStorageService();
-    
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
-    // Initialize worker
-    this.initializeWorker(connection);
+    // Only construct the BullMQ queue/worker when Redis is enabled.
+    // On shared hosting (ENABLE_REDIS=false) the analysis runs synchronously.
+    if (env.ENABLE_REDIS) {
+      const connection: ConnectionOptions = {
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD,
+      };
+
+      this.queue = new Queue('soil-analysis', { connection });
+      this.initializeWorker(connection);
+    } else {
+      logInfo('SoilAnalysisService: Redis disabled, soil tests processed synchronously');
+    }
+  }
+
+  // Lazily construct the OpenAI client so the app boots without OPENAI_API_KEY
+  // (AI keys are optional on shared hosting). A clear error surfaces only if a
+  // soil analysis is actually run without a key — caught and stored as 'failed'.
+  private get openai(): OpenAI {
+    if (!this._openai) {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY is not configured; soil analysis is unavailable.');
+      }
+      this._openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return this._openai;
   }
 
   private initializeWorker(connection: ConnectionOptions) {
     const worker = new Worker('soil-analysis', async (job) => {
       const { soilTestId } = job.data;
-      const soilTest = await SoilTestModel.findByPk(soilTestId);
-
-      if (!soilTest) {
-        throw new Error('Soil test not found');
-      }
-
-      try {
-        // Get the document content
-        // Use OCR or PDF parsing here depending on document type
-        // For this example, we'll simulate getting text content
-        const textContent = "Sample soil test results: pH 6.5, Nitrogen 45 ppm, Phosphorus 30 ppm...";
-
-        // Use OpenAI to analyze the soil test
-        const analysis = await this.analyzeSoilTest(textContent);
-
-        // Update soil test record with analysis results
-        await soilTest.update({
-          analysisResult: analysis,
-          status: 'analyzed',
-          aiModelVersion: 'gpt-4-1106-preview'
-        });
-
-        // Get crop recommendations based on soil analysis
-        const cropRecommendations = await this.getCropRecommendations(analysis);
-        
-        // Update analysis with crop recommendations
-        await soilTest.update({
-          analysisResult: {
-            ...analysis,
-            suitableCrops: cropRecommendations
-          }
-        });
-
-      } catch (err) {
-        const failedResult: SoilAnalysisResult = {
-          recommendations: [],
-          error: err instanceof Error ? err.message : 'Unknown error'
-        };
-        
-        await soilTest.update({
-          status: 'failed',
-          analysisResult: failedResult
-        });
-        throw err;
-      }
+      await this.processSoilTest(soilTestId);
     }, { connection });
 
     worker.on('completed', (job) => {
-      console.log(`Soil analysis completed for job ${job.id}`);
+      logInfo(`Soil analysis completed for job ${job.id}`);
     });
 
     worker.on('failed', (job, error) => {
-      console.error(`Soil analysis failed for job ${job?.id}:`, error);
+      logError(`Soil analysis failed for job ${job?.id}`, error as Error);
     });
+  }
+
+  /**
+   * Run the full soil-test analysis. Used by both the BullMQ worker (when Redis
+   * is enabled) and the synchronous fallback path.
+   */
+  private async processSoilTest(soilTestId: string): Promise<void> {
+    const soilTest = await SoilTestModel.findByPk(soilTestId);
+
+    if (!soilTest) {
+      throw new Error('Soil test not found');
+    }
+
+    try {
+      // Get the document content
+      // Use OCR or PDF parsing here depending on document type
+      // For this example, we'll simulate getting text content
+      const textContent = "Sample soil test results: pH 6.5, Nitrogen 45 ppm, Phosphorus 30 ppm...";
+
+      // Use OpenAI to analyze the soil test
+      const analysis = await this.analyzeSoilTest(textContent);
+
+      // Update soil test record with analysis results
+      await soilTest.update({
+        analysisResult: analysis,
+        status: 'analyzed',
+        aiModelVersion: 'gpt-4-1106-preview'
+      });
+
+      // Get crop recommendations based on soil analysis
+      const cropRecommendations = await this.getCropRecommendations(analysis);
+
+      // Update analysis with crop recommendations
+      await soilTest.update({
+        analysisResult: {
+          ...analysis,
+          suitableCrops: cropRecommendations
+        }
+      });
+
+    } catch (err) {
+      const failedResult: SoilAnalysisResult = {
+        recommendations: [],
+        error: err instanceof Error ? err.message : 'Unknown error'
+      };
+
+      await soilTest.update({
+        status: 'failed',
+        analysisResult: failedResult
+      });
+      throw err;
+    }
   }
 
   private async analyzeSoilTest(textContent: string): Promise<SoilAnalysisResult> {
@@ -246,16 +270,27 @@ export class SoilAnalysisService {
       status: 'pending'
     });
 
-    // Queue analysis job
-    await this.queue.add('analyze-soil-test', {
-      soilTestId: soilTest.id
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000
+    if (this.queue) {
+      // Queue analysis job (Redis enabled)
+      await this.queue.add('analyze-soil-test', {
+        soilTestId: soilTest.id
+      }, {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000
+        }
+      });
+    } else {
+      // Synchronous fallback (shared hosting, no Redis). Run inline but don't
+      // fail the upload if analysis errors — status is persisted as 'failed'.
+      try {
+        await this.processSoilTest(soilTest.id);
+        await soilTest.reload();
+      } catch (err) {
+        logError('Synchronous soil analysis failed', err as Error, { soilTestId: soilTest.id });
       }
-    });
+    }
 
     return soilTest;
   }

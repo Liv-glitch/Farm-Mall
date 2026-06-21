@@ -31,14 +31,11 @@ const swaggerOptions = {
       description: 'Comprehensive API for potato farming management in Kenya',
       contact: {
         name: 'API Support',
-        email: 'support@farmmall.onrender.com',
       },
     },
     servers: [
       {
-        url: isDevelopment 
-          ? `http://localhost:${env.PORT}` 
-          : 'https://farmmall.onrender.com',
+        url: env.API_PUBLIC_URL,
         description: isDevelopment ? 'Development server' : 'Production server',
       },
     ],
@@ -80,25 +77,27 @@ class Application {
       contentSecurityPolicy: isDevelopment ? false : undefined,
     }));
 
-    // CORS configuration
+    // CORS configuration — explicit allowlist from CORS_ORIGINS (comma-separated).
+    const allowedOrigins = [env.CORS_ORIGINS, env.CORS_ORIGIN]
+      .filter(Boolean)
+      .flatMap((value) => value.split(','))
+      .map((value) => value.trim())
+      .filter(Boolean);
+
     this.app.use(cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, etc.)
+        // Allow requests with no origin (mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
-        
-        // Allow configured origin and its subdomains
-        if (origin === env.CORS_ORIGIN || origin.endsWith('.vercel.app')) return callback(null, true);
-        
-        // Allow ngrok URLs in development
+
+        // Allow explicitly configured production origins
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+
+        // Development conveniences only
         if (isDevelopment && origin.includes('ngrok')) return callback(null, true);
-        
-        // Allow localhost variants in development
         if (isDevelopment && origin.includes('localhost')) return callback(null, true);
-        
-        // In development, allow all origins for debugging
         if (isDevelopment) return callback(null, true);
-        
-        // In production, reject other origins (don't throw error, just return false)
+
+        // In production, reject unlisted origins (don't throw, just deny)
         callback(null, false);
       },
       credentials: true,
@@ -197,13 +196,17 @@ class Application {
 
   public async start(): Promise<void> {
     try {
-      // Try to connect to Redis (optional)
-      logger.info('Connecting to Redis...');
-      try {
-        await connectRedis();
-        logger.info('Redis connection successful');
-      } catch (redisError) {
-        logger.warn('Redis connection failed, continuing without Redis', redisError);
+      // Connect to Redis only when explicitly enabled (disabled on shared hosting)
+      if (env.ENABLE_REDIS) {
+        logger.info('Connecting to Redis...');
+        try {
+          await connectRedis();
+          logger.info('Redis connection successful');
+        } catch (redisError) {
+          logger.warn('Redis connection failed, continuing without Redis', redisError);
+        }
+      } else {
+        logger.info('Redis disabled (ENABLE_REDIS=false), queue work runs synchronously');
       }
 
       // Try to connect to database (required for full functionality)
@@ -217,17 +220,14 @@ class Application {
       }
 
       const port = parseInt(process.env.PORT || '3000', 10);
-      const isProduction = env.NODE_ENV === 'production';
-      const host = isProduction ? 'farmmall.onrender.com' : 'localhost';
-      const protocol = isProduction ? 'https' : 'http';
 
       this.server = this.app.listen(port, '0.0.0.0', () => {
         logger.info(`🚀 Agriculture API server started`, {
           port,
           environment: env.NODE_ENV,
-          documentation: `${protocol}://${host}/api-docs`,
+          documentation: `${env.API_PUBLIC_URL}/api-docs`,
           host: '0.0.0.0',
-          redis_url: env.REDIS_URL.replace(/\/\/.*@/, '//***:***@')  // Log Redis URL with credentials masked
+          redisEnabled: env.ENABLE_REDIS,
         });
       });
 

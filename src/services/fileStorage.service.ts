@@ -5,18 +5,28 @@ import { env } from '../config/environment';
 import { MediaContext } from '../models/Media.model';
 
 export class FileStorageService {
-  private supabase: SupabaseClient<any, 'public', any>;
+  private _supabase: SupabaseClient<any, 'public', any> | null = null;
   private bucketName: string;
 
   constructor() {
-    if (!env.SUPABASE_URL) {
-      throw new Error('SUPABASE_URL environment variable is required');
+    this.bucketName = env.SUPABASE_STORAGE_BUCKET;
+    // Initialize eagerly only when uploads are enabled AND configured. This lets
+    // the app boot on shared hosting with uploads disabled (ENABLE_UPLOADS=false)
+    // without crashing at import time. Misuse surfaces a clear error on first use.
+    if (env.ENABLE_UPLOADS && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      this.initClient();
     }
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
+  }
+
+  private initClient(): void {
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error(
+        'File storage is not configured. Set ENABLE_UPLOADS=true and provide ' +
+        'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable uploads.'
+      );
     }
 
-    this.supabase = createClient(
+    this._supabase = createClient(
       env.SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY,
       {
@@ -26,8 +36,16 @@ export class FileStorageService {
         }
       }
     );
-    this.bucketName = env.SUPABASE_STORAGE_BUCKET;
     this.initializeBucket();
+  }
+
+  // Lazily create the Supabase client on first use so module-load instantiation
+  // never crashes when uploads are disabled.
+  private get supabase(): SupabaseClient<any, 'public', any> {
+    if (!this._supabase) {
+      this.initClient();
+    }
+    return this._supabase!;
   }
 
   private async initializeBucket() {

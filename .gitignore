@@ -57,11 +57,11 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variables file — ignore everything except the example template
 .env
-.env.test
-.env.local
-.env.production
+.env.*
+.env.bak
+!.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

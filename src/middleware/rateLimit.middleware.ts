@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { redisClient } from '../config/redis';
+import { env } from '../config/environment';
 import { APIError } from './error.middleware';
 import { HTTP_STATUS, ERROR_CODES } from '../utils/constants';
 
@@ -9,6 +10,27 @@ interface RateLimitOptions {
   message?: string;
   keyGenerator?: (req: Request) => string;
 }
+
+// In-memory fallback used when Redis is disabled (shared hosting). Single-process
+// only — fine for a Passenger Node app — and avoids a per-request Redis error storm.
+const memoryStore = new Map<string, { count: number; resetAt: number }>();
+
+const incrementInMemory = (identifier: string, windowMs: number): { count: number; ttl: number } => {
+  const now = Date.now();
+  if (memoryStore.size >= 5000) {
+    // Opportunistically drop expired entries so the map can't grow unbounded.
+    for (const [k, e] of memoryStore) {
+      if (e.resetAt <= now) memoryStore.delete(k);
+    }
+  }
+  const entry = memoryStore.get(identifier);
+  if (!entry || entry.resetAt <= now) {
+    memoryStore.set(identifier, { count: 1, resetAt: now + windowMs });
+    return { count: 1, ttl: Math.ceil(windowMs / 1000) };
+  }
+  entry.count += 1;
+  return { count: entry.count, ttl: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) };
+};
 
 /**
  * Rate limiting middleware factory
@@ -26,14 +48,22 @@ export const createRateLimit = (options: RateLimitOptions) => {
       const key = keyGenerator(req);
       const identifier = `ratelimit:${key}`;
 
-      // Get current count for this identifier
-      const currentCount = await redisClient.incrementRateLimit(identifier, windowMs);
+      // Use Redis only when enabled and connected; otherwise an in-memory counter.
+      const useRedis = env.ENABLE_REDIS && redisClient.isClientConnected();
+
+      let currentCount: number;
+      let ttl: number;
+      if (useRedis) {
+        currentCount = await redisClient.incrementRateLimit(identifier, windowMs);
+        ttl = await redisClient.getClient().ttl(identifier);
+      } else {
+        const result = incrementInMemory(identifier, windowMs);
+        currentCount = result.count;
+        ttl = result.ttl;
+      }
 
       // Check if limit exceeded
       if (currentCount > maxRequests) {
-        const ttl = await redisClient.getClient().ttl(identifier);
-        
-        // Set rate limit headers
         res.set({
           'X-RateLimit-Limit': maxRequests.toString(),
           'X-RateLimit-Remaining': '0',
@@ -54,8 +84,6 @@ export const createRateLimit = (options: RateLimitOptions) => {
 
       // Set success rate limit headers
       const remaining = Math.max(0, maxRequests - currentCount);
-      const ttl = await redisClient.getClient().ttl(identifier);
-      
       res.set({
         'X-RateLimit-Limit': maxRequests.toString(),
         'X-RateLimit-Remaining': remaining.toString(),
