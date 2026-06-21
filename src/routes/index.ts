@@ -11,6 +11,7 @@ import soilAnalysisRoutes from './soilAnalysis.routes';
 import enterpriseMediaRoutes from './enterprise-media.routes';
 import enhancedPlantRoutes from './enhanced-plant.routes';
 import preproductionRoutes from './preproduction.routes';
+import eventRoutes from './event.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -51,6 +52,7 @@ router.use('/soil-analysis', soilAnalysisRoutes);
 router.use('/media', enterpriseMediaRoutes);
 router.use('/enhanced-plant', enhancedPlantRoutes);
 router.use('/preproduction', preproductionRoutes);
+router.use('/events', eventRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -81,7 +83,8 @@ router.get('/', (_, res) => {
       collaboration: '/collaboration',
       'soil-analysis': '/soil-analysis',
       media: '/media',
-      'enhanced-plant': '/enhanced-plant'
+      'enhanced-plant': '/enhanced-plant',
+      events: '/events'
     }
   });
 });

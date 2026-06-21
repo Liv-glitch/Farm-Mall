@@ -58,6 +58,13 @@ interface EnvironmentConfig {
   // Bot Authentication
   BOT_API_KEY?: string;
 
+  // Admin bootstrap
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
+  ADMIN_FULL_NAME?: string;
+  ADMIN_COUNTY?: string;
+  ADMIN_SUB_COUNTY?: string;
+
   // Email
   SMTP_HOST?: string;
   SMTP_PORT: number | undefined;
@@ -130,6 +137,13 @@ const validateEnvironment = (): EnvironmentConfig => {
 
     // Bot Authentication
     BOT_API_KEY: process.env.BOT_API_KEY,
+
+    // Admin bootstrap
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+    ADMIN_FULL_NAME: process.env.ADMIN_FULL_NAME,
+    ADMIN_COUNTY: process.env.ADMIN_COUNTY,
+    ADMIN_SUB_COUNTY: process.env.ADMIN_SUB_COUNTY,
 
     // Email
     SMTP_HOST: process.env.SMTP_HOST,

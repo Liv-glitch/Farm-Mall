@@ -64,7 +64,7 @@ export class AuthService {
       const user = await UserModel.create({
         ...userData,
         email: userData.email?.toLowerCase(),
-        role: userData.role ?? 'user',
+        role: 'user',
         passwordHash,
         subscriptionType: 'free',
         emailVerified: false,

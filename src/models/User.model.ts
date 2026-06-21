@@ -39,6 +39,11 @@ export class UserModel extends Model<UserInterface, UserCreationAttributes> impl
       foreignKey: 'userId',
       as: 'weatherRequests',
     });
+
+    UserModel.hasMany(models.Event, {
+      foreignKey: 'createdBy',
+      as: 'events',
+    });
   }
 
   // Instance methods

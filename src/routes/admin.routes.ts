@@ -2,9 +2,16 @@ import { Router } from 'express';
 import { requireAdmin, authenticate } from '../middleware/auth.middleware';
 import { ProductionService } from '../services/production.service';
 import { UserModel } from '../models/User.model';
+import { eventController } from '../controllers/event.controller';
 
 const router = Router();
 const productionService = new ProductionService();
+
+router.get('/events', authenticate, requireAdmin, eventController.getAdminEvents.bind(eventController));
+router.get('/events/:id', authenticate, requireAdmin, eventController.getAdminEvent.bind(eventController));
+router.post('/events', authenticate, requireAdmin, eventController.createEvent.bind(eventController));
+router.patch('/events/:id', authenticate, requireAdmin, eventController.updateEvent.bind(eventController));
+router.delete('/events/:id', authenticate, requireAdmin, eventController.deleteEvent.bind(eventController));
 
 // Admin dashboard stats
 router.get('/dashboard/stats', authenticate, requireAdmin, async (_req, res) => {

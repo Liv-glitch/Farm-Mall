@@ -27,7 +27,6 @@ export interface RegisterRequest {
   subCounty: string;
   locationLat?: number;
   locationLng?: number;
-  role?: 'user' | 'admin';
 }
 
 export interface LoginRequest {

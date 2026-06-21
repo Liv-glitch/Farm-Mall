@@ -15,6 +15,7 @@ import { MediaAssociation } from './MediaAssociation.model';
 import { PreproductionPlanModel, initializePreproductionPlanModel } from './PreproductionPlan.model';
 import { PreproductionStepModel, initializePreproductionStepModel } from './PreproductionStep.model';
 import { PreproductionTaskModel, initializePreproductionTaskModel } from './PreproductionTask.model';
+import { EventModel } from './Event.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -54,6 +55,7 @@ function setupAssociations(): void {
     WeatherRequest: WeatherRequestModel,
     Farm: FarmModel,
     SoilTest: SoilTestModel,
+    Event: EventModel,
   });
 
   ProductionCycleModel.associate({
@@ -127,6 +129,10 @@ function setupAssociations(): void {
   PreproductionTaskModel.associate({
     PreproductionStep: PreproductionStepModel,
   });
+
+  EventModel.associate({
+    User: UserModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -147,6 +153,7 @@ export {
   PreproductionPlanModel,
   PreproductionStepModel,
   PreproductionTaskModel,
+  EventModel,
 };
 
 // Export types
@@ -160,3 +167,4 @@ export * from './MediaAssociation.model';
 export * from './PreproductionPlan.model';
 export * from './PreproductionStep.model';
 export * from './PreproductionTask.model';
+export * from './Event.model';

@@ -182,6 +182,39 @@ export const weatherRequestSchema = Joi.object({
   forecastType: Joi.string().valid('current', 'daily', 'extended', 'seasonal').required(),
 });
 
+export const eventSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required().messages({
+    'any.required': 'name is required',
+    'string.empty': 'name is required',
+  }),
+  date: Joi.date().required().messages({
+    'any.required': 'date is required',
+    'date.base': 'date must be a valid date',
+  }),
+  mode: Joi.string().valid('online', 'physical').required().messages({
+    'any.required': 'mode is required',
+    'any.only': 'mode must be either online or physical',
+  }),
+  location: Joi.when('mode', {
+    is: 'physical',
+    then: Joi.string().trim().min(1).required().messages({
+      'any.required': 'location is required for physical events',
+      'string.empty': 'location is required for physical events',
+    }),
+    otherwise: Joi.string().allow('', null).optional(),
+  }),
+  registration_link: Joi.string().uri({ scheme: ['http', 'https'] }).required().messages({
+    'any.required': 'registration_link is required',
+    'string.empty': 'registration_link is required',
+    'string.uri': 'registration_link must be a valid URL',
+  }),
+  registrationLink: Joi.string().uri({ scheme: ['http', 'https'] }).optional(),
+  description: Joi.string().trim().min(1).required().messages({
+    'any.required': 'description is required',
+    'string.empty': 'description is required',
+  }),
+}).or('registration_link', 'registrationLink');
+
 // Image upload validation
 export const imageUploadSchema = Joi.object({
   file: Joi.object({
@@ -269,6 +302,27 @@ export const validateWithSchema = (schema: Joi.ObjectSchema, data: any): Validat
     };
   }
   
+  return { isValid: true };
+};
+
+export const validateEventRequest = (data: any): ValidationResult => {
+  const normalized = {
+    ...data,
+    registration_link: data.registration_link ?? data.registrationLink,
+  };
+
+  const { error } = eventSchema.validate(normalized, { abortEarly: false });
+
+  if (error) {
+    return {
+      isValid: false,
+      errors: error.details.map(detail => {
+        const field = detail.path.join('.') || 'event';
+        return `${field}: ${detail.message.replace(/"/g, '')}`;
+      }),
+    };
+  }
+
   return { isValid: true };
 };
 
