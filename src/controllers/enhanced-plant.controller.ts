@@ -371,7 +371,11 @@ export class EnhancedPlantController {
       const responseData = {
         ...diagnosis.data,
         analysisId: assessment.id,
-        mediaId: uploadedMedia.id
+        mediaId: uploadedMedia.id,
+        provider: diagnosis.provider,
+        model: diagnosis.model,
+        confidence: diagnosis.confidence,
+        providerMetadata: diagnosis.providerMetadata
       };
 
       res.json({
@@ -842,10 +846,20 @@ export class EnhancedPlantController {
   }
 
   private formatPlantHealthRecord(record: any, media: any) {
+    const result = {
+      ...(record.healthAssessmentResult || {}),
+      analysisId: record.id,
+      providerMetadata: record.providerMetadata,
+      confidence:
+        record.providerMetadata?.normalized?.confidence ??
+        record.healthAssessmentResult?.confidence ??
+        record.healthAssessmentResult?.healthStatus?.confidence
+    };
+
     return {
       id: record.id,
       type: 'plant_health',
-      result: record.healthAssessmentResult,
+      result,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       isHealthy: record.isHealthy,

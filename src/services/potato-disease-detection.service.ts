@@ -3,7 +3,7 @@ import { logError } from '../utils/logger';
 import { PlantHealthService, PlantHealthResponse } from './gemini/plant-health.service';
 
 type PotatoDiseaseKey = 'healthy' | 'early_blight' | 'late_blight' | 'unknown';
-type DiagnosisProvider = 'huggingface' | 'huggingface+gemini' | 'gemini' | 'rules';
+type DiagnosisProvider = 'huggingface' | 'gemini';
 
 interface HuggingFacePrediction {
   label: string;
@@ -274,38 +274,52 @@ export class PotatoDiseaseDetectionService {
       hfMetadata.predictions = hfPredictions;
       hfMetadata.normalized = normalized;
 
-      if (normalized.key === 'unknown' || normalized.confidence < env.HF_POTATO_MIN_CONFIDENCE) {
+      if (normalized.key !== 'unknown' && normalized.confidence >= env.HF_POTATO_MIN_CONFIDENCE) {
+        const diagnosis = this.ensureFrontendFields(this.buildRuleDiagnosis(normalized.key, normalized.confidence));
+        const provider: DiagnosisProvider = 'huggingface';
+
+        return {
+          success: true,
+          data: {
+            ...diagnosis,
+            provider,
+            model: env.HF_POTATO_MODEL_ID,
+            recommendations: this.collectRecommendations(diagnosis)
+          },
+          provider,
+          model: env.HF_POTATO_MODEL_ID,
+          confidence: normalized.confidence,
+          providerMetadata: {
+            ...hfMetadata,
+            processingTime: Date.now() - startedAt,
+            fallbackUsed: false,
+            ruleSetApplied: normalized.key
+          }
+        };
+      }
+
+      {
         const geminiFallback = await this.diagnoseWithGemini(file, options, {
-          reason: 'low_confidence_huggingface',
+          reason: normalized.key === 'unknown' ? 'unknown_huggingface_label' : 'low_confidence_huggingface',
           hfMetadata
         });
 
         if (geminiFallback.success) {
           return geminiFallback;
         }
+
+        return this.buildFailureResult(
+          normalized.key === 'unknown'
+            ? 'Hugging Face returned an unsupported potato disease label and Gemini fallback was unavailable.'
+            : 'Hugging Face confidence was below 70% and Gemini fallback was unavailable.',
+          startedAt,
+          {
+            ...hfMetadata,
+            fallbackReason: geminiFallback.error,
+            geminiError: geminiFallback.error
+          }
+        );
       }
-
-      const baseDiagnosis = this.buildRuleDiagnosis(normalized.key, normalized.confidence);
-      const enriched = await this.enrichWithGemini(baseDiagnosis, file, options, hfMetadata);
-      const provider: DiagnosisProvider = enriched.usedGemini ? 'huggingface+gemini' : 'huggingface';
-
-      return {
-        success: true,
-        data: {
-          ...enriched.data,
-          provider,
-          model: env.HF_POTATO_MODEL_ID,
-          recommendations: this.collectRecommendations(enriched.data)
-        },
-        provider,
-        model: env.HF_POTATO_MODEL_ID,
-        confidence: normalized.confidence,
-        providerMetadata: {
-          ...hfMetadata,
-          processingTime: Date.now() - startedAt,
-          geminiEnriched: enriched.usedGemini
-        }
-      };
     } catch (error: any) {
       logError('Hugging Face potato diagnosis failed; trying Gemini fallback', error, {
         model: env.HF_POTATO_MODEL_ID
@@ -321,26 +335,16 @@ export class PotatoDiseaseDetectionService {
         return geminiFallback;
       }
 
-      const fallback = this.buildRuleDiagnosis('unknown', 0);
-      return {
-        success: true,
-        data: {
-          ...fallback,
-          provider: 'rules',
-          model: 'potato-rules',
-          recommendations: this.collectRecommendations(fallback)
-        },
-        provider: 'rules',
-        model: 'potato-rules',
-        confidence: 0,
-        providerMetadata: {
+      return this.buildFailureResult(
+        'Hugging Face failed and Gemini fallback was unavailable.',
+        startedAt,
+        {
           ...hfMetadata,
           fallbackReason: 'hf_and_gemini_unavailable',
           hfError: error.message,
-          geminiError: geminiFallback.error,
-          processingTime: Date.now() - startedAt
+          geminiError: geminiFallback.error
         }
-      };
+      );
     }
   }
 
@@ -463,44 +467,6 @@ export class PotatoDiseaseDetectionService {
     };
   }
 
-  private async enrichWithGemini(
-    baseDiagnosis: PlantHealthResponse,
-    file: Express.Multer.File,
-    options: PotatoDiagnosisOptions,
-    hfMetadata: Record<string, any>
-  ): Promise<{ data: PlantHealthResponse; usedGemini: boolean }> {
-    if (!env.GEMINI_API_KEY || process.env.USE_GEMINI !== 'true') {
-      return { data: baseDiagnosis, usedGemini: false };
-    }
-
-    const gemini = this.getGeminiHealthService();
-    if (!gemini) {
-      return { data: baseDiagnosis, usedGemini: false };
-    }
-
-    const result = await gemini.assessPlantHealth(file.buffer, {
-      plantType: options.plantType || 'potato',
-      region: options.location || 'Central Kenya',
-      symptomDescription: options.symptoms,
-      additionalContext: [
-        'Use this as enrichment for an existing potato disease classifier result.',
-        `Classifier label: ${hfMetadata.normalized?.label || hfMetadata.normalized?.key}`,
-        `Classifier confidence: ${hfMetadata.normalized?.confidence}`,
-        'Keep the primary disease consistent unless the image clearly contradicts it.',
-        'Return concise, practical recommendations for Kenyan potato farmers.'
-      ].join(' ')
-    });
-
-    if (!result.success || !result.data || typeof result.data !== 'object') {
-      return { data: baseDiagnosis, usedGemini: false };
-    }
-
-    return {
-      data: this.mergeGeminiIntoBase(baseDiagnosis, result.data),
-      usedGemini: true
-    };
-  }
-
   private async diagnoseWithGemini(
     file: Express.Multer.File,
     options: PotatoDiagnosisOptions,
@@ -579,48 +545,6 @@ export class PotatoDiseaseDetectionService {
     return this.geminiHealthService;
   }
 
-  private mergeGeminiIntoBase(base: PlantHealthResponse, geminiData: PlantHealthResponse): PlantHealthResponse {
-    const baseDisease = base.diseases?.[0];
-    const geminiDisease = geminiData.diseases?.[0];
-
-    const mergedDisease = baseDisease ? {
-      ...baseDisease,
-      severity: geminiDisease?.severity || baseDisease.severity,
-      symptoms: this.preferArray(geminiDisease?.symptoms, baseDisease.symptoms),
-      causes: this.preferArray(geminiDisease?.causes, baseDisease.causes),
-      description: geminiDisease?.description || baseDisease.description,
-      treatment: {
-        ...baseDisease.treatment,
-        immediate: this.preferArray(geminiDisease?.treatment?.immediate, baseDisease.treatment.immediate),
-        organic: this.preferArray(geminiDisease?.treatment?.organic, baseDisease.treatment.organic),
-        chemical: this.preferArray(geminiDisease?.treatment?.chemical, baseDisease.treatment.chemical),
-        prevention: this.preferArray(
-          (geminiDisease?.treatment as any)?.prevention || geminiDisease?.treatment?.preventive,
-          (baseDisease.treatment as any).prevention || baseDisease.treatment.preventive
-        ),
-        preventive: this.preferArray(geminiDisease?.treatment?.preventive, baseDisease.treatment.preventive),
-        culturalPractices: this.preferArray(geminiDisease?.treatment?.culturalPractices, baseDisease.treatment.culturalPractices)
-      },
-      regionalConsiderations: geminiDisease?.regionalConsiderations || baseDisease.regionalConsiderations
-    } : undefined;
-
-    const merged: PlantHealthResponse = {
-      ...base,
-      healthStatus: {
-        ...base.healthStatus,
-        assessment: geminiData.healthStatus?.assessment || base.healthStatus.assessment,
-        urgency: geminiData.healthStatus?.urgency || base.healthStatus.urgency
-      },
-      diseases: mergedDisease ? [mergedDisease] : base.diseases,
-      preventiveMeasures: this.preferArray(geminiData.preventiveMeasures, base.preventiveMeasures),
-      followUpRecommendations: this.preferArray(geminiData.followUpRecommendations, base.followUpRecommendations),
-      analysisNotes: `${base.analysisNotes} Gemini enrichment applied for localized recommendations.`,
-      regionalFactors: geminiData.regionalFactors || base.regionalFactors
-    };
-
-    return this.ensureFrontendFields(merged);
-  }
-
   private ensureFrontendFields(data: PlantHealthResponse): PlantHealthResponse {
     const diseases = (data.diseases || []).map((disease: any) => ({
       ...disease,
@@ -651,10 +575,6 @@ export class PotatoDiseaseDetectionService {
     };
   }
 
-  private preferArray(primary: any, fallback: string[]): string[] {
-    return Array.isArray(primary) && primary.length > 0 ? primary : fallback || [];
-  }
-
   private collectRecommendations(data: PlantHealthResponse): string[] {
     const disease = data.diseases?.[0];
     return [
@@ -664,6 +584,24 @@ export class PotatoDiseaseDetectionService {
       ...(disease?.treatment?.prevention || []),
       ...(data.followUpRecommendations || [])
     ].filter(Boolean).slice(0, 12);
+  }
+
+  private buildFailureResult(
+    error: string,
+    startedAt: number,
+    metadata: Record<string, any>
+  ): PotatoDiagnosisResult {
+    return {
+      success: false,
+      provider: 'gemini',
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      confidence: metadata?.normalized?.confidence || 0,
+      providerMetadata: {
+        ...metadata,
+        processingTime: Date.now() - startedAt
+      },
+      error
+    };
   }
 }
 

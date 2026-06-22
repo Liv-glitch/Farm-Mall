@@ -146,7 +146,7 @@ const validateEnvironment = (): EnvironmentConfig => {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     HF_API_TOKEN: process.env.HF_API_TOKEN,
     HF_POTATO_MODEL_ID: process.env.HF_POTATO_MODEL_ID || '24f2004275/potato-disease-classifier',
-    HF_POTATO_MIN_CONFIDENCE: parseFloat(process.env.HF_POTATO_MIN_CONFIDENCE || '0.55'),
+    HF_POTATO_MIN_CONFIDENCE: parseFloat(process.env.HF_POTATO_MIN_CONFIDENCE || '0.70'),
     HF_POTATO_HIGH_CONFIDENCE: parseFloat(process.env.HF_POTATO_HIGH_CONFIDENCE || '0.80'),
 
     // AWS S3
