@@ -339,48 +339,92 @@ export class EnhancedPlantController {
         contextId: userId
       };
 
-      const uploadedMedia = await mediaService.uploadMedia(userId, imageFile, {
-        context: mediaContext,
-        generateVariants: true,
-        isPublic: false,
-        metadata: {
-          analysisType: 'plant_health',
+      let uploadedMedia: any = null;
+      let assessment: any = null;
+      const persistence = {
+        mediaUploadFailed: false,
+        dbSaveFailed: false,
+        mediaAssociationFailed: false,
+        warnings: [] as string[]
+      };
+
+      try {
+        uploadedMedia = await mediaService.uploadMedia(userId, imageFile, {
+          context: mediaContext,
+          generateVariants: true,
+          isPublic: false,
+          metadata: {
+            analysisType: 'plant_health',
+            provider: diagnosis.provider,
+            model: diagnosis.model,
+            location: options.location,
+            plantType: options.plantType || 'potato'
+          }
+        });
+      } catch (mediaError: any) {
+        persistence.mediaUploadFailed = true;
+        persistence.warnings.push('Diagnosis completed, but media upload failed.');
+        logError('Plant health media upload failed after successful diagnosis', mediaError, {
+          userId,
+          fileName: imageFile.originalname,
           provider: diagnosis.provider,
-          model: diagnosis.model,
-          location: options.location,
-          plantType: options.plantType || 'potato'
+          model: diagnosis.model
+        });
+      }
+
+      try {
+        assessment = await PlantHealthAssessmentModel.create({
+          userId,
+          imageUrl: uploadedMedia?.publicUrl || '',
+          thumbnailUrl: this.getThumbnailUrl(uploadedMedia) || '',
+          originalFilename: uploadedMedia?.originalName || imageFile.originalname,
+          latitude: options.latitude ? parseFloat(options.latitude) : undefined,
+          longitude: options.longitude ? parseFloat(options.longitude) : undefined,
+          healthAssessmentResult: diagnosis.data as any,
+          isHealthy: diagnosis.data.healthStatus?.isHealthy,
+          diseases: diagnosis.data.diseases as any,
+          treatmentSuggestions: diagnosis.data.treatmentPriority as any,
+          providerMetadata: diagnosis.providerMetadata as any
+        });
+      } catch (dbError: any) {
+        persistence.dbSaveFailed = true;
+        persistence.warnings.push('Diagnosis completed, but history could not be saved.');
+        logError('Plant health assessment save failed after successful diagnosis', dbError, {
+          userId,
+          mediaId: uploadedMedia?.id,
+          provider: diagnosis.provider,
+          model: diagnosis.model
+        });
+      }
+
+      if (uploadedMedia?.id && assessment?.id) {
+        try {
+          await mediaService.associateMedia(uploadedMedia.id, {
+            associatableType: 'PlantHealthAssessment',
+            associatableId: assessment.id,
+            role: 'primary',
+            context: mediaContext
+          });
+        } catch (associationError: any) {
+          persistence.mediaAssociationFailed = true;
+          persistence.warnings.push('Diagnosis and history were saved, but media could not be linked to the record.');
+          logError('Plant health media association failed after successful diagnosis', associationError, {
+            userId,
+            mediaId: uploadedMedia.id,
+            analysisId: assessment.id
+          });
         }
-      });
-
-      const assessment = await PlantHealthAssessmentModel.create({
-        userId,
-        imageUrl: uploadedMedia.publicUrl || '',
-        thumbnailUrl: this.getThumbnailUrl(uploadedMedia) || '',
-        originalFilename: uploadedMedia.originalName,
-        latitude: options.latitude ? parseFloat(options.latitude) : undefined,
-        longitude: options.longitude ? parseFloat(options.longitude) : undefined,
-        healthAssessmentResult: diagnosis.data as any,
-        isHealthy: diagnosis.data.healthStatus?.isHealthy,
-        diseases: diagnosis.data.diseases as any,
-        treatmentSuggestions: diagnosis.data.treatmentPriority as any,
-        providerMetadata: diagnosis.providerMetadata as any
-      });
-
-      await mediaService.associateMedia(uploadedMedia.id!, {
-        associatableType: 'PlantHealthAssessment',
-        associatableId: assessment.id,
-        role: 'primary',
-        context: mediaContext
-      });
+      }
 
       const responseData = {
         ...diagnosis.data,
-        analysisId: assessment.id,
-        mediaId: uploadedMedia.id,
+        analysisId: assessment?.id || null,
+        mediaId: uploadedMedia?.id || null,
         provider: diagnosis.provider,
         model: diagnosis.model,
         confidence: diagnosis.confidence,
-        providerMetadata: diagnosis.providerMetadata
+        providerMetadata: diagnosis.providerMetadata,
+        persistence
       };
 
       res.json({
@@ -395,12 +439,13 @@ export class EnhancedPlantController {
           regional_disease_patterns: true
         },
         metadata: {
-          analysisId: assessment.id,
-          mediaId: uploadedMedia.id,
+          analysisId: assessment?.id || null,
+          mediaId: uploadedMedia?.id || null,
           confidence: diagnosis.confidence,
           providerMetadata: diagnosis.providerMetadata,
+          persistence,
           mediaUrls: {
-            original: uploadedMedia.publicUrl,
+            original: uploadedMedia?.publicUrl || '',
             thumbnail: this.getThumbnailUrl(uploadedMedia),
             variants: this.getVariantUrls(uploadedMedia)
           }

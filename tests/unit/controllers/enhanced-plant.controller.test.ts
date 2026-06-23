@@ -111,7 +111,14 @@ const diagnosisData = {
 
 describe('EnhancedPlantController plant health persistence', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDiagnose.mockReset();
+    mockUploadMedia.mockReset();
+    mockAssociateMedia.mockReset();
+    mockGetMediaByAssociation.mockReset();
+    mockCreateAssessment.mockReset();
+    mockFindAllAssessments.mockReset();
+    mockFindOneAssessment.mockReset();
+    mockDestroyMediaAssociation.mockReset();
   });
 
   it('saves a successful diagnosis with media association and returns normalized metadata', async () => {
@@ -163,6 +170,198 @@ describe('EnhancedPlantController plant health persistence', () => {
         mediaId: 'media-1',
         provider: 'huggingface',
         confidence: 0.76
+      })
+    }));
+  });
+
+  it('returns a successful diagnosis and saves history when media upload fails', async () => {
+    const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
+    mockDiagnose.mockResolvedValue({
+      success: true,
+      data: diagnosisData,
+      provider: 'huggingface',
+      model: 'test/potato-model',
+      confidence: 0.76,
+      providerMetadata: { normalized: { key: 'early_blight', confidence: 0.76 } }
+    });
+    mockUploadMedia.mockRejectedValue(new Error('Failed to upload media'));
+    mockCreateAssessment.mockResolvedValue({
+      id: 'analysis-1'
+    });
+
+    const req = {
+      user: { id: 'user-1' },
+      body: { location: 'Nakuru' },
+      file: makeFile(),
+      headers: {}
+    } as any;
+    const res = makeResponse();
+
+    await enhancedPlantController.assessHealth(req, res);
+
+    expect(mockCreateAssessment).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-1',
+      imageUrl: '',
+      thumbnailUrl: '',
+      originalFilename: 'potato.jpg',
+      healthAssessmentResult: diagnosisData
+    }));
+    expect(mockAssociateMedia).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({
+        analysisId: 'analysis-1',
+        mediaId: null,
+        persistence: expect.objectContaining({
+          mediaUploadFailed: true,
+          dbSaveFailed: false,
+          mediaAssociationFailed: false
+        })
+      }),
+      metadata: expect.objectContaining({
+        analysisId: 'analysis-1',
+        mediaId: null,
+        persistence: expect.objectContaining({
+          mediaUploadFailed: true
+        })
+      })
+    }));
+  });
+
+  it('returns a successful diagnosis when media association fails after saving history', async () => {
+    const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
+    mockDiagnose.mockResolvedValue({
+      success: true,
+      data: diagnosisData,
+      provider: 'huggingface',
+      model: 'test/potato-model',
+      confidence: 0.76,
+      providerMetadata: { normalized: { key: 'early_blight', confidence: 0.76 } }
+    });
+    mockUploadMedia.mockResolvedValue({
+      id: 'media-1',
+      publicUrl: 'https://cdn.test/original.jpg',
+      originalName: 'potato.jpg',
+      variants: [{ size: 'thumbnail', url: 'https://cdn.test/thumb.jpg' }]
+    });
+    mockCreateAssessment.mockResolvedValue({
+      id: 'analysis-1'
+    });
+    mockAssociateMedia.mockRejectedValue(new Error('Association failed'));
+
+    const req = {
+      user: { id: 'user-1' },
+      body: { location: 'Nakuru' },
+      file: makeFile(),
+      headers: {}
+    } as any;
+    const res = makeResponse();
+
+    await enhancedPlantController.assessHealth(req, res);
+
+    expect(mockAssociateMedia).toHaveBeenCalledWith('media-1', expect.objectContaining({
+      associatableType: 'PlantHealthAssessment',
+      associatableId: 'analysis-1',
+      role: 'primary'
+    }));
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({
+        analysisId: 'analysis-1',
+        mediaId: 'media-1',
+        persistence: expect.objectContaining({
+          mediaAssociationFailed: true
+        })
+      }),
+      metadata: expect.objectContaining({
+        persistence: expect.objectContaining({
+          mediaUploadFailed: false,
+          dbSaveFailed: false,
+          mediaAssociationFailed: true
+        })
+      })
+    }));
+  });
+
+  it('returns the diagnosis even when both media upload and history save fail', async () => {
+    const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
+    mockDiagnose.mockResolvedValue({
+      success: true,
+      data: diagnosisData,
+      provider: 'huggingface',
+      model: 'test/potato-model',
+      confidence: 0.76,
+      providerMetadata: { normalized: { key: 'early_blight', confidence: 0.76 } }
+    });
+    mockUploadMedia.mockRejectedValue(new Error('Failed to upload media'));
+    mockCreateAssessment.mockRejectedValue(new Error('Database unavailable'));
+
+    const req = {
+      user: { id: 'user-1' },
+      body: { location: 'Nakuru' },
+      file: makeFile(),
+      headers: {}
+    } as any;
+    const res = makeResponse();
+
+    await enhancedPlantController.assessHealth(req, res);
+
+    expect(mockAssociateMedia).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({
+        analysisId: null,
+        mediaId: null,
+        persistence: expect.objectContaining({
+          mediaUploadFailed: true,
+          dbSaveFailed: true
+        })
+      }),
+      metadata: expect.objectContaining({
+        analysisId: null,
+        mediaId: null,
+        persistence: expect.objectContaining({
+          mediaUploadFailed: true,
+          dbSaveFailed: true
+        })
+      })
+    }));
+  });
+
+  it('keeps actual diagnosis provider failures as request failures', async () => {
+    const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
+    mockDiagnose.mockResolvedValue({
+      success: false,
+      data: null,
+      provider: 'huggingface',
+      model: 'test/potato-model',
+      confidence: 0,
+      providerMetadata: { hfError: { message: 'Model unavailable' } },
+      error: 'Plant health assessment failed'
+    });
+
+    const req = {
+      user: { id: 'user-1' },
+      body: { location: 'Nakuru' },
+      file: makeFile(),
+      headers: {}
+    } as any;
+    const res = makeResponse();
+
+    await enhancedPlantController.assessHealth(req, res);
+
+    expect(mockUploadMedia).not.toHaveBeenCalled();
+    expect(mockCreateAssessment).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(502);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      message: 'Plant health assessment failed',
+      provider: 'huggingface',
+      metadata: expect.objectContaining({
+        providerMetadata: { hfError: { message: 'Model unavailable' } }
       })
     }));
   });
