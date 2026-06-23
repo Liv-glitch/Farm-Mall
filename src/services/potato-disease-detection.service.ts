@@ -267,6 +267,32 @@ export class PotatoDiseaseDetectionService {
     return 'Gemini service unavailable';
   }
 
+  private serializeError(error: any): Record<string, any> {
+    const serialized: Record<string, any> = {
+      message: error?.message || String(error)
+    };
+
+    if (error?.name) serialized.name = error.name;
+    if (error?.status) serialized.status = error.status;
+    if (error?.payload) serialized.payload = error.payload;
+
+    const cause = error?.cause;
+    if (cause) {
+      serialized.cause = {
+        message: cause.message || String(cause),
+        name: cause.name,
+        code: cause.code,
+        errno: cause.errno,
+        syscall: cause.syscall,
+        hostname: cause.hostname,
+        host: cause.host,
+        port: cause.port
+      };
+    }
+
+    return serialized;
+  }
+
   async diagnose(
     file: Express.Multer.File,
     options: PotatoDiagnosisOptions = {}
@@ -336,11 +362,7 @@ export class PotatoDiseaseDetectionService {
         model: env.HF_POTATO_MODEL_ID
       });
 
-      const hfError = {
-        message: error.message,
-        status: error.status,
-        payload: error.payload
-      };
+      const hfError = this.serializeError(error);
 
       const geminiFallback = await this.diagnoseWithGemini(file, options, {
         reason: 'huggingface_error',
@@ -380,7 +402,8 @@ export class PotatoDiseaseDetectionService {
           Authorization: `Bearer ${env.HF_API_TOKEN}`,
           'Content-Type': file.mimetype || 'application/octet-stream'
         },
-        body: file.buffer
+        body: file.buffer,
+        signal: AbortSignal.timeout(30000)
       }
     );
 

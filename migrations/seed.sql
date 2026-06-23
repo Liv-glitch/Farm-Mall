@@ -47,7 +47,7 @@ INSERT INTO `users` (
 INSERT INTO `crop_varieties` (
   `id`, `name`, `crop_type`, `maturity_period_days`,
   `seed_size_1_bags_per_acre`, `seed_size_2_bags_per_acre`,
-  `seed_size_1_cost_per_bag`, `seed_size_2_cost_per_bag`,
+  `seed_size_1_cost_per_acre`, `seed_size_2_cost_per_acre`,
   `fertilizer_cost_per_acre`, `herbicide_cost_per_acre`, `fungicide_cost_per_acre`,
   `insecticide_cost_per_acre`, `labor_cost_per_acre`, `land_preparation_cost_per_acre`,
   `miscellaneous_cost_per_acre`, `average_yield_per_acre`,

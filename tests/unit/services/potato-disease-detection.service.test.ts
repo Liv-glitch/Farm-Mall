@@ -204,6 +204,31 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(mockAssessPlantHealth).not.toHaveBeenCalled();
   });
 
+  it('preserves the underlying Hugging Face fetch failure cause', async () => {
+    process.env.USE_GEMINI = 'false';
+    const fetchError: any = new Error('fetch failed');
+    fetchError.cause = {
+      message: 'getaddrinfo ENOTFOUND api-inference.huggingface.co',
+      code: 'ENOTFOUND',
+      errno: -3008,
+      syscall: 'getaddrinfo',
+      hostname: 'api-inference.huggingface.co'
+    };
+    (global.fetch as jest.Mock).mockRejectedValue(fetchError);
+
+    const { potatoDiseaseDetectionService } = await loadService();
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(false);
+    expect(result.providerMetadata.hfError.message).toBe('fetch failed');
+    expect(result.providerMetadata.hfError.cause).toMatchObject({
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'api-inference.huggingface.co'
+    });
+    expect(mockAssessPlantHealth).not.toHaveBeenCalled();
+  });
+
   it('returns a clear failure when Hugging Face and Gemini are both unavailable', async () => {
     process.env.GEMINI_API_KEY = '';
     process.env.USE_GEMINI = 'false';
