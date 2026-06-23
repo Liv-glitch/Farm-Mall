@@ -68,6 +68,7 @@ export const createRateLimit = (options: RateLimitOptions) => {
           'X-RateLimit-Limit': maxRequests.toString(),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': new Date(Date.now() + (ttl * 1000)).toISOString(),
+          'Retry-After': ttl.toString(),
         });
 
         throw new APIError(
@@ -78,6 +79,7 @@ export const createRateLimit = (options: RateLimitOptions) => {
             limit: maxRequests,
             windowMs,
             retryAfter: ttl,
+            key: key.replace(/Bearer\s+\S+/gi, 'Bearer [redacted]'),
           }
         );
       }
@@ -127,6 +129,7 @@ export const aiRateLimit = createRateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   maxRequests: 50, // 50 AI requests per hour (premium users might have higher limits)
   message: 'Too many AI requests, please try again later',
+  keyGenerator: (req: Request) => `ai:${req.user?.id || req.ip || 'unknown'}`,
 });
 
 // Premium user rate limits (higher limits)
