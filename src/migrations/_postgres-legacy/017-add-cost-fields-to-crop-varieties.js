@@ -3,16 +3,16 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Add production cost fields to crop_varieties table
-    await queryInterface.addColumn('crop_varieties', 'seed_size_1_cost_per_bag', {
+    await queryInterface.addColumn('crop_varieties', 'seed_size_1_cost_per_acre', {
       type: Sequelize.DECIMAL(10, 2),
       allowNull: true, // Allow null during migration, will be updated with seeder
-      comment: 'Cost per bag for size 1 seeds in KES'
+      comment: 'Cost per acre for size 1 seeds in KES'
     });
 
-    await queryInterface.addColumn('crop_varieties', 'seed_size_2_cost_per_bag', {
+    await queryInterface.addColumn('crop_varieties', 'seed_size_2_cost_per_acre', {
       type: Sequelize.DECIMAL(10, 2),
       allowNull: true, // Allow null during migration, will be updated with seeder
-      comment: 'Cost per bag for size 2 seeds in KES'
+      comment: 'Cost per acre for size 2 seeds in KES'
     });
 
     await queryInterface.addColumn('crop_varieties', 'fertilizer_cost_per_acre', {
@@ -95,8 +95,8 @@ module.exports = {
     });
 
     // Remove all the new cost columns
-    await queryInterface.removeColumn('crop_varieties', 'seed_size_1_cost_per_bag');
-    await queryInterface.removeColumn('crop_varieties', 'seed_size_2_cost_per_bag');
+    await queryInterface.removeColumn('crop_varieties', 'seed_size_1_cost_per_acre');
+    await queryInterface.removeColumn('crop_varieties', 'seed_size_2_cost_per_acre');
     await queryInterface.removeColumn('crop_varieties', 'fertilizer_cost_per_acre');
     await queryInterface.removeColumn('crop_varieties', 'herbicide_cost_per_acre');
     await queryInterface.removeColumn('crop_varieties', 'fungicide_cost_per_acre');

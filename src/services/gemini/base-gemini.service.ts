@@ -3,7 +3,7 @@ import { logInfo, logError } from '../../utils/logger';
 
 export interface GeminiConfig {
   apiKey: string;
-  model?: 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
+  model?: 'gemini-3.1-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
   temperature?: number;
   topK?: number;
   topP?: number;

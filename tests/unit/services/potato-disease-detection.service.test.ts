@@ -62,6 +62,7 @@ const geminiResult = {
 describe('PotatoDiseaseDetectionService', () => {
   const originalEnv = { ...process.env };
   let mockAssessPlantHealth: jest.Mock;
+  let mockPlantHealthServiceConstructor: jest.Mock;
 
   const loadService = async () => {
     jest.resetModules();
@@ -70,10 +71,11 @@ describe('PotatoDiseaseDetectionService', () => {
       logInfo: jest.fn()
     }));
     mockAssessPlantHealth = jest.fn();
+    mockPlantHealthServiceConstructor = jest.fn().mockImplementation(() => ({
+      assessPlantHealth: mockAssessPlantHealth
+    }));
     jest.doMock('../../../src/services/gemini/plant-health.service', () => ({
-      PlantHealthService: jest.fn().mockImplementation(() => ({
-        assessPlantHealth: mockAssessPlantHealth
-      }))
+      PlantHealthService: mockPlantHealthServiceConstructor
     }));
     return import('../../../src/services/potato-disease-detection.service');
   };
@@ -84,7 +86,9 @@ describe('PotatoDiseaseDetectionService', () => {
       HF_API_TOKEN: 'hf-token',
       HF_POTATO_MODEL_ID: 'test/potato-model',
       HF_POTATO_MIN_CONFIDENCE: '0.70',
-      GEMINI_API_KEY: 'gemini-key'
+      GEMINI_API_KEY: 'gemini-key',
+      GEMINI_MODEL: '',
+      GEMINI_FALLBACK_MODEL: ''
     };
     global.fetch = jest.fn();
   });
@@ -186,7 +190,111 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.success).toBe(true);
     expect(result.provider).toBe('gemini');
     expect(result.providerMetadata.geminiEnabled).toBe(true);
+    expect(result.providerMetadata.geminiAttemptedModels).toEqual([
+      'gemini-2.5-flash',
+      'gemini-3.1-flash-lite'
+    ]);
     expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
+    expect(mockPlantHealthServiceConstructor).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'gemini-2.5-flash'
+    }));
+  });
+
+  it('uses the configured primary Gemini model before the Flash-Lite fallback model', async () => {
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth.mockResolvedValue({
+      success: true,
+      data: geminiResult,
+      modelVersion: 'gemini-2.5-flash',
+      processingTime: 61
+    });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.model).toBe('gemini-2.5-flash');
+    expect(result.providerMetadata.geminiErrors).toEqual([]);
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
+    expect(mockPlantHealthServiceConstructor).toHaveBeenCalledTimes(1);
+    expect(mockPlantHealthServiceConstructor).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'gemini-2.5-flash'
+    }));
+  });
+
+  it('tries Gemini Flash-Lite when the primary Gemini model fails', async () => {
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth
+      .mockResolvedValueOnce({
+        success: false,
+        error: 'Gemini model overloaded',
+        modelVersion: 'gemini-2.5-flash',
+        processingTime: 22
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: geminiResult,
+        modelVersion: 'gemini-3.1-flash-lite',
+        processingTime: 44
+      });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.model).toBe('gemini-3.1-flash-lite');
+    expect(result.providerMetadata.geminiAttemptedModels).toEqual([
+      'gemini-2.5-flash',
+      'gemini-3.1-flash-lite'
+    ]);
+    expect(result.providerMetadata.geminiErrors).toEqual([
+      { model: 'gemini-2.5-flash', error: 'Gemini model overloaded' }
+    ]);
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(2);
+    expect(mockPlantHealthServiceConstructor).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      model: 'gemini-2.5-flash'
+    }));
+    expect(mockPlantHealthServiceConstructor).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      model: 'gemini-3.1-flash-lite'
+    }));
+  });
+
+  it('returns both Gemini model errors when primary and fallback fail', async () => {
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth
+      .mockResolvedValueOnce({
+        success: false,
+        error: 'Primary overloaded',
+        modelVersion: 'gemini-2.5-flash',
+        processingTime: 22
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        error: 'Fallback unavailable',
+        modelVersion: 'gemini-3.1-flash-lite',
+        processingTime: 44
+      });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Hugging Face failed');
+    expect(result.providerMetadata.geminiAttemptedModels).toEqual([
+      'gemini-2.5-flash',
+      'gemini-3.1-flash-lite'
+    ]);
+    expect(result.providerMetadata.geminiErrors).toEqual([
+      { model: 'gemini-2.5-flash', error: 'Primary overloaded' },
+      { model: 'gemini-3.1-flash-lite', error: 'Fallback unavailable' }
+    ]);
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(2);
   });
 
   it('disables Gemini fallback only when USE_GEMINI=false', async () => {

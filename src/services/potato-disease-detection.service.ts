@@ -255,7 +255,7 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
 };
 
 export class PotatoDiseaseDetectionService {
-  private geminiHealthService: PlantHealthService | null = null;
+  private geminiHealthServices = new Map<string, PlantHealthService>();
 
   private isGeminiEnabled(): boolean {
     return !!env.GEMINI_API_KEY && process.env.USE_GEMINI !== 'false';
@@ -265,6 +265,13 @@ export class PotatoDiseaseDetectionService {
     if (!env.GEMINI_API_KEY) return 'GEMINI_API_KEY not configured';
     if (process.env.USE_GEMINI === 'false') return 'USE_GEMINI=false';
     return 'Gemini service unavailable';
+  }
+
+  private getGeminiModelChain(): string[] {
+    return [
+      process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.1-flash-lite'
+    ].filter((model, index, models) => model && models.indexOf(model) === index);
   }
 
   private serializeError(error: any): Record<string, any> {
@@ -353,7 +360,9 @@ export class PotatoDiseaseDetectionService {
           {
             ...hfMetadata,
             fallbackReason: geminiFallback.error,
-            geminiError: geminiFallback.error
+            geminiError: geminiFallback.error,
+            geminiAttemptedModels: geminiFallback.providerMetadata?.geminiAttemptedModels,
+            geminiErrors: geminiFallback.providerMetadata?.geminiErrors
           }
         );
       }
@@ -381,7 +390,9 @@ export class PotatoDiseaseDetectionService {
           ...hfMetadata,
           fallbackReason: 'hf_and_gemini_unavailable',
           hfError,
-          geminiError: geminiFallback.error
+          geminiError: geminiFallback.error,
+          geminiAttemptedModels: geminiFallback.providerMetadata?.geminiAttemptedModels,
+          geminiErrors: geminiFallback.providerMetadata?.geminiErrors
         }
       );
     }
@@ -519,95 +530,102 @@ export class PotatoDiseaseDetectionService {
     options: PotatoDiagnosisOptions,
     metadata: Record<string, any>
   ): Promise<PotatoDiagnosisResult> {
+    const geminiModels = this.getGeminiModelChain();
+
     if (!this.isGeminiEnabled()) {
       return {
         success: false,
         provider: 'gemini',
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        model: geminiModels[0],
         providerMetadata: {
           ...metadata,
           geminiConfigured: !!env.GEMINI_API_KEY,
           geminiEnabled: false,
           geminiDisabledReason: this.getGeminiUnavailableReason(),
-          geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+          geminiModel: geminiModels[0],
+          geminiAttemptedModels: geminiModels
         },
         error: this.getGeminiUnavailableReason()
       };
     }
 
-    const gemini = this.getGeminiHealthService();
-    if (!gemini) {
+    const geminiErrors: Array<{ model: string; error: string }> = [];
+
+    for (const model of geminiModels) {
+      const gemini = this.getGeminiHealthService(model);
+      if (!gemini) {
+        geminiErrors.push({ model, error: 'Gemini service unavailable' });
+        continue;
+      }
+
+      const result = await gemini.assessPlantHealth(file.buffer, {
+        plantType: options.plantType || 'potato',
+        region: options.location || 'Central Kenya',
+        symptomDescription: options.symptoms,
+        additionalContext: 'Hugging Face potato classifier was unavailable or low-confidence. Diagnose potato disease from the image and return JSON in the expected schema.'
+      });
+
+      if (!result.success || !result.data) {
+        geminiErrors.push({
+          model: result.modelVersion || model,
+          error: result.error || 'Gemini diagnosis failed'
+        });
+        continue;
+      }
+
+      const normalized = this.ensureFrontendFields(result.data);
       return {
-        success: false,
-        provider: 'gemini',
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-        providerMetadata: {
-          ...metadata,
-          geminiConfigured: !!env.GEMINI_API_KEY,
-          geminiEnabled: true,
-          geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+        success: true,
+        data: {
+          ...normalized,
+          provider: 'gemini',
+          model: result.modelVersion,
+          recommendations: this.collectRecommendations(normalized)
         },
-        error: 'Gemini service unavailable'
-      };
-    }
-
-    const result = await gemini.assessPlantHealth(file.buffer, {
-      plantType: options.plantType || 'potato',
-      region: options.location || 'Central Kenya',
-      symptomDescription: options.symptoms,
-      additionalContext: 'Hugging Face potato classifier was unavailable or low-confidence. Diagnose potato disease from the image and return JSON in the expected schema.'
-    });
-
-    if (!result.success || !result.data) {
-      return {
-        success: false,
         provider: 'gemini',
         model: result.modelVersion,
+        confidence: normalized.healthStatus?.confidence,
         providerMetadata: {
           ...metadata,
           geminiConfigured: !!env.GEMINI_API_KEY,
           geminiEnabled: true,
-          geminiModel: result.modelVersion
-        },
-        error: result.error || 'Gemini diagnosis failed'
+          geminiModel: result.modelVersion,
+          geminiAttemptedModels: geminiModels,
+          geminiErrors,
+          geminiProcessingTime: result.processingTime
+        }
       };
     }
 
-    const normalized = this.ensureFrontendFields(result.data);
     return {
-      success: true,
-      data: {
-        ...normalized,
-        provider: 'gemini',
-        model: result.modelVersion,
-        recommendations: this.collectRecommendations(normalized)
-      },
+      success: false,
       provider: 'gemini',
-      model: result.modelVersion,
-      confidence: normalized.healthStatus?.confidence,
+      model: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash',
       providerMetadata: {
         ...metadata,
         geminiConfigured: !!env.GEMINI_API_KEY,
         geminiEnabled: true,
-        geminiModel: result.modelVersion,
-        geminiProcessingTime: result.processingTime
-      }
+        geminiModel: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash',
+        geminiAttemptedModels: geminiModels,
+        geminiErrors
+      },
+      error: geminiErrors[geminiErrors.length - 1]?.error || 'Gemini diagnosis failed'
     };
   }
 
-  private getGeminiHealthService(): PlantHealthService | null {
+  private getGeminiHealthService(model: string): PlantHealthService | null {
     if (!this.isGeminiEnabled()) return null;
 
-    if (!this.geminiHealthService) {
-      this.geminiHealthService = new PlantHealthService({
+    if (!this.geminiHealthServices.has(model)) {
+      this.geminiHealthServices.set(model, new PlantHealthService({
         apiKey: env.GEMINI_API_KEY!,
-        model: (process.env.GEMINI_MODEL as any) || 'gemini-2.5-flash',
+        model: model as any,
         temperature: parseFloat(process.env.GEMINI_TEMPERATURE || '0.25'),
         maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '8192')
-      });
+      }));
     }
 
-    return this.geminiHealthService;
+    return this.geminiHealthServices.get(model) || null;
   }
 
   private ensureFrontendFields(data: PlantHealthResponse): PlantHealthResponse {
@@ -656,17 +674,21 @@ export class PotatoDiseaseDetectionService {
     startedAt: number,
     metadata: Record<string, any>
   ): PotatoDiagnosisResult {
+    const geminiModels = this.getGeminiModelChain();
+
     return {
       success: false,
       provider: 'gemini',
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      model: geminiModels[0],
       confidence: metadata?.normalized?.confidence || 0,
       providerMetadata: {
         ...metadata,
         geminiConfigured: !!env.GEMINI_API_KEY,
         geminiEnabled: this.isGeminiEnabled(),
         geminiDisabledReason: this.isGeminiEnabled() ? undefined : this.getGeminiUnavailableReason(),
-        geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        geminiModel: geminiModels[0],
+        geminiAttemptedModels: metadata.geminiAttemptedModels || geminiModels,
+        geminiErrors: metadata.geminiErrors,
         processingTime: Date.now() - startedAt
       },
       error
