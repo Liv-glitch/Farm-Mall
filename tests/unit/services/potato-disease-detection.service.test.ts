@@ -84,8 +84,7 @@ describe('PotatoDiseaseDetectionService', () => {
       HF_API_TOKEN: 'hf-token',
       HF_POTATO_MODEL_ID: 'test/potato-model',
       HF_POTATO_MIN_CONFIDENCE: '0.70',
-      GEMINI_API_KEY: 'gemini-key',
-      USE_GEMINI: 'true'
+      GEMINI_API_KEY: 'gemini-key'
     };
     global.fetch = jest.fn();
   });
@@ -168,7 +167,41 @@ describe('PotatoDiseaseDetectionService', () => {
 
     expect(result.success).toBe(true);
     expect(result.provider).toBe('gemini');
-    expect(result.providerMetadata.hfError).toBe('HF unavailable');
+    expect(result.providerMetadata.hfError.message).toBe('HF unavailable');
+  });
+
+  it('uses Gemini fallback by default when GEMINI_API_KEY exists and USE_GEMINI is unset', async () => {
+    delete process.env.USE_GEMINI;
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth.mockResolvedValue({
+      success: true,
+      data: geminiResult,
+      modelVersion: 'gemini-test',
+      processingTime: 61
+    });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('gemini');
+    expect(result.providerMetadata.geminiEnabled).toBe(true);
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Gemini fallback only when USE_GEMINI=false', async () => {
+    process.env.USE_GEMINI = 'false';
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
+
+    const { potatoDiseaseDetectionService } = await loadService();
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Hugging Face failed');
+    expect(result.providerMetadata.hfError.message).toBe('HF unavailable');
+    expect(result.providerMetadata.geminiEnabled).toBe(false);
+    expect(result.providerMetadata.geminiDisabledReason).toBe('USE_GEMINI=false');
+    expect(mockAssessPlantHealth).not.toHaveBeenCalled();
   });
 
   it('returns a clear failure when Hugging Face and Gemini are both unavailable', async () => {
@@ -181,6 +214,7 @@ describe('PotatoDiseaseDetectionService', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Hugging Face failed');
-    expect(result.providerMetadata.hfError).toBe('HF unavailable');
+    expect(result.providerMetadata.hfError.message).toBe('HF unavailable');
+    expect(result.providerMetadata.geminiDisabledReason).toBe('GEMINI_API_KEY not configured');
   });
 });

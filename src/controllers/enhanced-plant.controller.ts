@@ -323,7 +323,12 @@ export class EnhancedPlantController {
         res.status(502).json({
           success: false,
           message: diagnosis.error || 'Plant health assessment failed',
-          provider: diagnosis.provider
+          provider: diagnosis.provider,
+          model: diagnosis.model,
+          metadata: {
+            confidence: diagnosis.confidence,
+            providerMetadata: diagnosis.providerMetadata
+          }
         });
         return;
       }

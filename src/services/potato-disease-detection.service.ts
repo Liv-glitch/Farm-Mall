@@ -257,6 +257,16 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
 export class PotatoDiseaseDetectionService {
   private geminiHealthService: PlantHealthService | null = null;
 
+  private isGeminiEnabled(): boolean {
+    return !!env.GEMINI_API_KEY && process.env.USE_GEMINI !== 'false';
+  }
+
+  private getGeminiUnavailableReason(): string {
+    if (!env.GEMINI_API_KEY) return 'GEMINI_API_KEY not configured';
+    if (process.env.USE_GEMINI === 'false') return 'USE_GEMINI=false';
+    return 'Gemini service unavailable';
+  }
+
   async diagnose(
     file: Express.Multer.File,
     options: PotatoDiagnosisOptions = {}
@@ -265,7 +275,8 @@ export class PotatoDiseaseDetectionService {
     const hfMetadata: Record<string, any> = {
       model: env.HF_POTATO_MODEL_ID,
       minConfidence: env.HF_POTATO_MIN_CONFIDENCE,
-      highConfidence: env.HF_POTATO_HIGH_CONFIDENCE
+      highConfidence: env.HF_POTATO_HIGH_CONFIDENCE,
+      configured: !!env.HF_API_TOKEN
     };
 
     try {
@@ -325,9 +336,15 @@ export class PotatoDiseaseDetectionService {
         model: env.HF_POTATO_MODEL_ID
       });
 
+      const hfError = {
+        message: error.message,
+        status: error.status,
+        payload: error.payload
+      };
+
       const geminiFallback = await this.diagnoseWithGemini(file, options, {
         reason: 'huggingface_error',
-        hfError: error.message,
+        hfError,
         hfMetadata
       });
 
@@ -341,7 +358,7 @@ export class PotatoDiseaseDetectionService {
         {
           ...hfMetadata,
           fallbackReason: 'hf_and_gemini_unavailable',
-          hfError: error.message,
+          hfError,
           geminiError: geminiFallback.error
         }
       );
@@ -350,7 +367,9 @@ export class PotatoDiseaseDetectionService {
 
   private async classifyWithHuggingFace(file: Express.Multer.File): Promise<HuggingFacePrediction[]> {
     if (!env.HF_API_TOKEN) {
-      throw new Error('HF_API_TOKEN not configured');
+      const error: any = new Error('HF_API_TOKEN not configured');
+      error.status = 'missing_configuration';
+      throw error;
     }
 
     const response = await fetch(
@@ -369,12 +388,17 @@ export class PotatoDiseaseDetectionService {
 
     if (!response.ok) {
       const message = typeof payload === 'string' ? payload : payload?.error || response.statusText;
-      throw new Error(`Hugging Face API error ${response.status}: ${message}`);
+      const error: any = new Error(`Hugging Face API error ${response.status}: ${message}`);
+      error.status = response.status;
+      error.payload = payload;
+      throw error;
     }
 
     const predictions = Array.isArray(payload) ? payload : payload?.[0];
     if (!Array.isArray(predictions)) {
-      throw new Error('Unexpected Hugging Face response format');
+      const error: any = new Error('Unexpected Hugging Face response format');
+      error.payload = payload;
+      throw error;
     }
 
     return predictions
@@ -472,13 +496,19 @@ export class PotatoDiseaseDetectionService {
     options: PotatoDiagnosisOptions,
     metadata: Record<string, any>
   ): Promise<PotatoDiagnosisResult> {
-    if (!env.GEMINI_API_KEY || process.env.USE_GEMINI !== 'true') {
+    if (!this.isGeminiEnabled()) {
       return {
         success: false,
         provider: 'gemini',
         model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-        providerMetadata: metadata,
-        error: 'Gemini not configured'
+        providerMetadata: {
+          ...metadata,
+          geminiConfigured: !!env.GEMINI_API_KEY,
+          geminiEnabled: false,
+          geminiDisabledReason: this.getGeminiUnavailableReason(),
+          geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+        },
+        error: this.getGeminiUnavailableReason()
       };
     }
 
@@ -488,7 +518,12 @@ export class PotatoDiseaseDetectionService {
         success: false,
         provider: 'gemini',
         model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-        providerMetadata: metadata,
+        providerMetadata: {
+          ...metadata,
+          geminiConfigured: !!env.GEMINI_API_KEY,
+          geminiEnabled: true,
+          geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+        },
         error: 'Gemini service unavailable'
       };
     }
@@ -505,7 +540,12 @@ export class PotatoDiseaseDetectionService {
         success: false,
         provider: 'gemini',
         model: result.modelVersion,
-        providerMetadata: metadata,
+        providerMetadata: {
+          ...metadata,
+          geminiConfigured: !!env.GEMINI_API_KEY,
+          geminiEnabled: true,
+          geminiModel: result.modelVersion
+        },
         error: result.error || 'Gemini diagnosis failed'
       };
     }
@@ -524,6 +564,8 @@ export class PotatoDiseaseDetectionService {
       confidence: normalized.healthStatus?.confidence,
       providerMetadata: {
         ...metadata,
+        geminiConfigured: !!env.GEMINI_API_KEY,
+        geminiEnabled: true,
         geminiModel: result.modelVersion,
         geminiProcessingTime: result.processingTime
       }
@@ -531,11 +573,11 @@ export class PotatoDiseaseDetectionService {
   }
 
   private getGeminiHealthService(): PlantHealthService | null {
-    if (!env.GEMINI_API_KEY) return null;
+    if (!this.isGeminiEnabled()) return null;
 
     if (!this.geminiHealthService) {
       this.geminiHealthService = new PlantHealthService({
-        apiKey: env.GEMINI_API_KEY,
+        apiKey: env.GEMINI_API_KEY!,
         model: (process.env.GEMINI_MODEL as any) || 'gemini-2.5-flash',
         temperature: parseFloat(process.env.GEMINI_TEMPERATURE || '0.25'),
         maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '8192')
@@ -598,6 +640,10 @@ export class PotatoDiseaseDetectionService {
       confidence: metadata?.normalized?.confidence || 0,
       providerMetadata: {
         ...metadata,
+        geminiConfigured: !!env.GEMINI_API_KEY,
+        geminiEnabled: this.isGeminiEnabled(),
+        geminiDisabledReason: this.isGeminiEnabled() ? undefined : this.getGeminiUnavailableReason(),
+        geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
         processingTime: Date.now() - startedAt
       },
       error
