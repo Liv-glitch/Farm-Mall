@@ -5,6 +5,8 @@ import { PlantHealthService, PlantHealthResponse } from './gemini/plant-health.s
 type PotatoDiseaseKey = 'healthy' | 'early_blight' | 'late_blight' | 'unknown';
 type DiagnosisProvider = 'huggingface' | 'gemini';
 
+const TEMP_DISABLE_HUGGINGFACE_POTATO_DIAGNOSIS = true;
+
 interface HuggingFacePrediction {
   label: string;
   score: number;
@@ -60,8 +62,8 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
     severity: 'low',
     symptoms: [
       'Leaves appear generally green and intact',
-      'No strong blight lesions are visible',
-      'No obvious spreading necrotic patches are detected'
+      'No clear blight spots are visible',
+      'No obvious dead or spreading brown patches are detected'
     ],
     causes: [
       'No disease cause detected from the supplied image'
@@ -69,11 +71,11 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
     treatment: {
       immediate: [
         'Continue regular scouting, especially after rain or heavy dew',
-        'Remove any leaves that later show spreading spots or water-soaked lesions'
+        'Remove any leaves that later show spreading spots or wet-looking patches'
       ],
       organic: [
         'Use compost and balanced nutrition to keep plants vigorous',
-        'Apply approved copper-based protectants only when disease pressure is high'
+        'Use approved copper sprays only when blight risk is high in your area'
       ],
       chemical: [
         'No curative fungicide is recommended from this image alone',
@@ -91,8 +93,8 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
         'Keep enough spacing for airflow'
       ],
       culturalPractices: [
-        'Rotate away from potato and other solanaceous crops',
-        'Destroy volunteer potato plants and cull piles'
+        'Avoid planting potatoes in the same field season after season',
+        'Remove potatoes that grow on their own from last season and throw away rotten tubers'
       ]
     },
     healthScore: 92,
@@ -102,16 +104,16 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
     key: 'early_blight',
     name: 'Early blight',
     scientificName: 'Alternaria solani',
-    description: 'Early blight is a fungal potato disease that commonly starts on older leaves and can reduce yield when foliage loss becomes severe.',
+    description: 'Early blight is a potato leaf disease that often starts on older lower leaves. If many leaves dry up, the crop can give a lower yield.',
     severity: 'moderate',
     symptoms: [
       'Brown leaf spots with concentric ring or target-like patterns',
-      'Yellowing around older leaf lesions',
-      'Lower leaves affected before upper canopy',
-      'Dry, brittle necrotic tissue as spots expand'
+      'Yellowing around older leaf spots',
+      'Lower leaves affected before the top leaves',
+      'Spots become dry and the leaf tissue dies as they grow'
     ],
     causes: [
-      'Alternaria solani spores surviving on crop debris or infected volunteer plants',
+      'Disease germs surviving on old potato leaves, stems, or potatoes growing from last season',
       'Leaf wetness from rain, dew, or overhead irrigation',
       'Plant stress from poor nutrition, drought, or crop age'
     ],
@@ -119,27 +121,27 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
       immediate: [
         'Remove heavily infected lower leaves where practical',
         'Avoid working in the crop while foliage is wet',
-        'Improve airflow around the canopy'
+        'Improve airflow by avoiding overcrowding'
       ],
       organic: [
-        'Apply approved copper or Bacillus-based fungicides as protectants',
-        'Use compost tea or biological products only as support, not as a rescue treatment',
+        'Apply approved copper or biological disease-control sprays before the disease spreads far',
+        'Use compost tea or biological products only as support; do not rely on them alone when disease is spreading',
         'Mulch to reduce soil splash onto lower leaves'
       ],
       chemical: [
-        'Use a registered protectant fungicide such as mancozeb or chlorothalonil where permitted',
-        'Rotate fungicide groups to reduce resistance risk',
-        'Follow local label rates, pre-harvest intervals, and extension guidance'
+        'Use a registered potato blight fungicide where permitted, such as products recommended by a qualified agrovet',
+        'Do not use the same fungicide type every time; alternate products as advised to keep them working',
+        'Follow the label, especially the dose and the waiting time before harvest'
       ],
       prevention: [
         'Rotate fields for at least two seasons away from potato, tomato, and related crops',
-        'Remove crop debris and volunteer potatoes',
+        'Remove old potato plant remains and potatoes growing on their own from last season',
         'Maintain balanced fertility, especially potassium and nitrogen',
-        'Start protectant sprays before disease builds during warm, humid periods'
+        'Start preventive sprays before disease builds during warm, humid periods'
       ],
       preventive: [
         'Rotate fields for at least two seasons away from potato, tomato, and related crops',
-        'Remove crop debris and volunteer potatoes',
+        'Remove old potato plant remains and potatoes growing on their own from last season',
         'Maintain balanced fertility'
       ],
       culturalPractices: [
@@ -158,15 +160,15 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
     description: 'Late blight is an aggressive potato disease that can spread quickly in cool, wet conditions and needs urgent management.',
     severity: 'high',
     symptoms: [
-      'Water-soaked dark lesions on leaves or stems',
+      'Wet-looking dark spots on leaves or stems',
       'Rapidly expanding brown to black patches',
-      'Pale green margins around fresh lesions',
+      'Pale green edges around new spots',
       'White fuzzy growth on leaf undersides in humid conditions'
     ],
     causes: [
-      'Phytophthora infestans spores from infected seed, volunteers, cull piles, or nearby fields',
+      'Disease germs from infected seed potatoes, potatoes growing from last season, rotten tuber piles, or nearby fields',
       'Cool wet weather, high humidity, rain, mist, or prolonged dew',
-      'Dense canopy and poor airflow'
+      'Crowded plants and poor airflow'
     ],
     treatment: {
       immediate: [
@@ -176,28 +178,28 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
         'Avoid overhead irrigation and field work while wet'
       ],
       organic: [
-        'Use approved copper protectants early and repeat according to label during wet periods',
-        'Remove infected volunteers and cull piles immediately',
+        'Use approved copper sprays early and repeat according to the label during wet periods',
+        'Remove infected potatoes growing from last season and rotten tuber piles immediately',
         'Improve drainage and airflow where possible'
       ],
       chemical: [
         'Apply a registered late-blight fungicide promptly through a qualified agrovet or extension recommendation',
-        'Use systemic or translaminar products where disease pressure is active and labels permit',
-        'Rotate fungicide modes of action and observe pre-harvest intervals'
+        'Use products recommended for active late blight when labels permit',
+        'Alternate fungicide types as advised and follow the waiting time before harvest'
       ],
       prevention: [
         'Plant certified disease-free seed',
-        'Destroy volunteer potatoes and cull piles',
+        'Destroy potatoes growing from last season and rotten tuber piles',
         'Use resistant varieties where locally available',
         'Begin preventive fungicide programs when local late-blight alerts or wet weather indicate high risk'
       ],
       preventive: [
         'Plant certified disease-free seed',
-        'Destroy volunteer potatoes and cull piles',
+        'Destroy potatoes growing from last season and rotten tuber piles',
         'Use resistant varieties where locally available'
       ],
       culturalPractices: [
-        'Increase spacing and avoid dense canopy',
+        'Increase spacing and avoid overcrowded plants',
         'Irrigate early in the day only when needed',
         'Harvest only after vines are dead and skins are set'
       ]
@@ -226,7 +228,7 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
       organic: [
         'Remove badly affected leaves only when disease is localized',
         'Improve airflow and avoid wetting foliage',
-        'Use approved biological or copper protectants only after confirming disease pressure'
+        'Use approved biological or copper sprays only after confirming disease risk'
       ],
       chemical: [
         'Do not apply a curative chemical based on this low-confidence result alone',
@@ -245,7 +247,7 @@ const POTATO_RULES: Record<PotatoDiseaseKey, PotatoRule> = {
       ],
       culturalPractices: [
         'Avoid overhead irrigation',
-        'Remove volunteer potatoes',
+        'Remove potatoes that grow on their own from last season',
         'Keep records of symptom spread'
       ]
     },
@@ -311,6 +313,40 @@ export class PotatoDiseaseDetectionService {
       highConfidence: env.HF_POTATO_HIGH_CONFIDENCE,
       configured: !!env.HF_API_TOKEN
     };
+
+    if (TEMP_DISABLE_HUGGINGFACE_POTATO_DIAGNOSIS) {
+      const geminiDiagnosis = await this.diagnoseWithGemini(file, options, {
+        reason: 'huggingface_temporarily_disabled',
+        hfMetadata: {
+          ...hfMetadata,
+          skipped: true,
+          skipReason: 'Hugging Face potato diagnosis is temporarily disabled.'
+        }
+      });
+
+      if (geminiDiagnosis.success) {
+        return {
+          ...geminiDiagnosis,
+          providerMetadata: {
+            ...geminiDiagnosis.providerMetadata,
+            processingTime: Date.now() - startedAt
+          }
+        };
+      }
+
+      return this.buildFailureResult(
+        'Gemini diagnosis was unavailable while Hugging Face is temporarily disabled.',
+        startedAt,
+        {
+          ...hfMetadata,
+          fallbackReason: 'huggingface_temporarily_disabled',
+          hfSkipped: true,
+          geminiError: geminiDiagnosis.error,
+          geminiAttemptedModels: geminiDiagnosis.providerMetadata?.geminiAttemptedModels,
+          geminiErrors: geminiDiagnosis.providerMetadata?.geminiErrors
+        }
+      );
+    }
 
     try {
       const hfPredictions = await this.classifyWithHuggingFace(file);

@@ -166,9 +166,17 @@ export class PlantHealthService extends BaseGeminiService {
     const seasonInfo = options.season ? `season: ${options.season}` : '';
     const symptomInfo = options.symptomDescription ? `reported symptoms: ${options.symptomDescription}` : '';
 
-    return `You are an expert plant pathologist and agricultural extension specialist with deep knowledge of plant diseases, pests, and health issues, particularly in ${regionInfo}.
+    return `You are an agricultural extension officer explaining plant health to a lay farmer in ${regionInfo}. You understand plant diseases, pests, and crop stress, but your response must be easy for a farmer with no technical training to understand.
 
 Analyze the provided plant image for health issues. ${plantInfo} ${stageInfo} ${seasonInfo} ${symptomInfo}
+
+Language rules for every farmer-facing string in the JSON:
+- Use simple, practical words a lay farmer would use.
+- Keep descriptions, symptoms, causes, and recommendations short and clear.
+- Explain any scientific name or technical term in plain words the first time you use it.
+- Avoid jargon such as lesion, necrosis, inoculum, canopy, etiology, pathogen pressure, translaminar, systemic activity, mode of action, and economic threshold unless you also explain it simply.
+- Say what the farmer should do, when to do it, and what warning signs to watch for.
+- Do not recommend restricted chemicals as a first step. If chemicals may be needed, tell the farmer to use a registered product through a qualified agrovet or extension officer and follow the label.
 
 Provide a comprehensive health assessment including:
 
@@ -179,25 +187,25 @@ Provide a comprehensive health assessment including:
 
 2. **Disease Analysis:**
    - Identify any visible diseases with confidence scores
-   - Disease type (fungal, bacterial, viral, etc.)
+   - Disease type in plain language, for example fungus disease, bacteria disease, virus disease, nutrition problem, pest damage, or weather/water stress
    - Severity assessment
    - Affected plant parts
-   - Development stage and progression
-   - Treatment recommendations (organic and chemical)
+   - How the problem is likely to spread
+   - Treatment recommendations in simple steps
    - Prevention strategies
 
 3. **Pest Detection:**
    - Identify visible pests or pest damage
-   - Pest type and lifecycle stage
-   - Damage severity and economic impact
-   - Control strategies (IPM approach)
-   - Monitoring recommendations
+   - Pest type and visible damage signs
+   - How serious the damage looks
+   - Control steps: field hygiene, hand removal, biological options, and safe chemical options where needed
+   - Simple monitoring recommendations
 
 4. **Nutritional Assessment:**
    - Identify nutrient deficiency symptoms
-   - Affected nutrients (macro/micronutrients)
+   - Affected nutrients, explained in simple words
    - Severity of deficiencies
-   - Correction methods and fertilizer recommendations
+   - Correction methods and fertilizer recommendations that a farmer can understand
    - Prevention strategies
 
 5. **Environmental Stress Indicators:**
@@ -336,7 +344,7 @@ Please format your response as a valid JSON object with this structure:
   "regionalFactors": "string"
 }
 
-Be thorough in your analysis. Focus on actionable, practical recommendations suitable for farmers in the region.`;
+Be thorough in your analysis, but keep the wording simple. The JSON keys must stay exactly as shown, but the text values should sound like clear advice from a local extension officer to a farmer.`;
   }
 
   private buildHealthContext(options: any): string {
@@ -348,8 +356,8 @@ Be thorough in your analysis. Focus on actionable, practical recommendations sui
     
     if (options.season) {
       const seasonalContext = {
-        'rainy': 'High humidity and moisture favor fungal diseases. Consider waterlogging and poor drainage issues.',
-        'dry': 'Water stress, heat stress, and dust-related issues are common. Pest pressure may increase.',
+        'rainy': 'Wet leaves and humid air help leaf diseases spread. Also check for waterlogging and poor drainage.',
+        'dry': 'Plants may suffer from lack of water, heat, and dust. Some pests may increase.',
         'transitional': 'Mixed conditions with varying stress factors. Disease pressure may be building.'
       };
       context += seasonalContext[options.season as keyof typeof seasonalContext] || '';
