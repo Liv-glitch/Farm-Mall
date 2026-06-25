@@ -118,12 +118,6 @@ const router = Router();
  *           type: string
  *           format: date
  *           example: "2025-07-15"
- *         expectedYield:
- *           type: number
- *           example: 8000
- *         expectedPricePerKg:
- *           type: number
- *           example: 45
  *     
  *     Activity:
  *       type: object

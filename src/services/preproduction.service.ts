@@ -22,6 +22,10 @@ export interface UpdatePreproductionTaskRequest {
 
 interface TaskTemplate {
   title: string;
+  activityType: 'informational' | 'task';
+  importance: string;
+  recommendations?: string[];
+  serviceLinks?: { label: string; href: string }[];
   whatYouNeed?: string;
   whatYouNeedLink?: string;
   expertTip?: string;
@@ -45,78 +49,121 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
   {
     title: 'Land Selection',
     daysBeforeStart: 60,
-    daysBeforeEnd: 53,
+    daysBeforeEnd: 45,
     tasks: [
-      { title: 'Select a well-drained field' },
       {
-        title: 'Check crop rotation history',
-        expertTip:
-          'Skip fields where potatoes, tomatoes, peppers or eggplant grew in the last 2 seasons (disease build-up).',
+        title: 'Land Selection',
+        activityType: 'informational',
+        importance:
+          'Choose a well-drained field with a suitable crop rotation history to reduce disease pressure and improve yields.',
+        recommendations: [
+          'Select well-drained land.',
+          'Avoid fields where potatoes, tomatoes, peppers, or eggplant were planted in the last 2 seasons.',
+          'Review crop rotation history.',
+        ],
       },
     ],
   },
   {
     title: 'Soil Testing',
-    daysBeforeStart: 50,
-    daysBeforeEnd: 40,
+    daysBeforeStart: 42,
+    daysBeforeEnd: 21,
     tasks: [
       {
-        title: 'Collect soil samples',
-        expertTip: 'Sample in a W-pattern across the field at 0–20 cm depth and mix into one composite sample.',
-      },
-      {
-        title: 'Submit sample for testing',
-        whatYouNeed: 'Accredited soil testing lab',
+        title: 'Soil Testing',
+        activityType: 'task',
+        importance:
+          'Soil testing helps determine nutrient requirements and pH levels, ensuring accurate fertilizer recommendations and reducing unnecessary input costs.',
+        serviceLinks: [
+          {
+            label: 'Access Soil Testing Services here',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=soil-testing',
+          },
+        ],
       },
     ],
   },
   {
     title: 'Land Preparation',
-    daysBeforeStart: 35,
-    daysBeforeEnd: 21,
+    daysBeforeStart: 28,
+    daysBeforeEnd: 7,
     tasks: [
       {
-        title: 'First ploughing',
-        whatYouNeed: 'Tractor / ox-plough hire',
-        expertTip: 'Plough to ~25 cm depth, ideally 3–4 weeks before planting.',
+        title: 'Residue and Weed Clearance',
+        activityType: 'informational',
+        importance:
+          'Removing previous crop residues and weeds reduces pest and disease carryover while improving field preparation.',
+      },
+      {
+        title: 'First Plowing',
+        activityType: 'task',
+        importance: 'Breaks compacted soil and improves aeration for root development.',
+        recommendations: ['Plow to approximately 12 cm depth.', 'Ideally complete this 3–4 weeks before planting.'],
+        serviceLinks: [
+          {
+            label: 'Access tractor or ox-plowing services',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+          },
+        ],
+      },
+      {
+        title: 'Second Plowing',
+        activityType: 'task',
+        importance: 'Creates a finer seedbed and improves soil structure for planting.',
+        recommendations: ['Conduct after initial soil settling.', 'Ensure clods are adequately broken down.'],
+        serviceLinks: [
+          {
+            label: 'Access plowing services',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+          },
+        ],
+      },
+      {
+        title: 'Harrowing',
+        activityType: 'task',
+        importance: 'Produces a fine, level seedbed and helps incorporate amendments.',
+        recommendations: ['Ensure soil is loose and level before planting.'],
+        serviceLinks: [
+          {
+            label: 'Access harrowing services',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+          },
+        ],
+      },
+      {
+        title: 'Organic Manure Application',
+        activityType: 'task',
+        importance: 'Improves soil organic matter, water retention, and nutrient availability.',
+        recommendations: ['Use well-decomposed manure.', 'Apply based on soil fertility needs.'],
+        serviceLinks: [
+          {
+            label: 'Purchase manure through Farm Mall',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+          },
+        ],
       },
     ],
   },
   {
-    title: 'Seed Sourcing',
-    daysBeforeStart: 20,
-    daysBeforeEnd: 10,
-    tasks: [
-      {
-        title: 'Buy certified seed potato',
-        whatYouNeed: 'Certified seed potato supplier',
-        expertTip: 'Use clean, well-sprouted certified seed of your chosen variety to reduce disease risk.',
-      },
-    ],
-  },
-  {
-    title: 'Planting Readiness',
-    daysBeforeStart: 9,
-    daysBeforeEnd: 2,
-    tasks: [
-      {
-        title: 'Confirm planting inputs ready',
-        whatYouNeed: 'Fertilizer & labour',
-      },
-      {
-        title: 'Check weather window',
-        expertTip: 'Aim to plant into moist, warm soil at the onset of the rains.',
-      },
-    ],
-  },
-  {
-    title: 'Final Review',
-    daysBeforeStart: 1,
+    title: 'Soil Fertility Management',
+    daysBeforeStart: 14,
     daysBeforeEnd: 0,
     tasks: [
       {
-        title: 'Final readiness check',
-        expertTip: 'Confirm field, seed, inputs and labour are all in place before planting day.',
+        title: 'Soil Fertility Management',
+        activityType: 'task',
+        importance: 'Proper fertility management improves plant growth, yield, and tuber quality.',
+        recommendations: ['Based on your soil test results, apply the recommended nutrients and amendments.'],
+        serviceLinks: [
+          {
+            label: 'Purchase recommended fertilizers',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+          },
+          {
+            label: 'Access agronomy support',
+            href: 'https://farmflow-platform.onrender.com/marketplace?category=advisory',
+          },
+        ],
       },
     ],
   },
@@ -164,6 +211,10 @@ export class PreproductionService {
               stepId: step.id,
               order: t + 1,
               title: taskTemplate.title,
+              activityType: taskTemplate.activityType,
+              importance: taskTemplate.importance,
+              recommendations: taskTemplate.recommendations ?? null,
+              serviceLinks: taskTemplate.serviceLinks ?? null,
               whatYouNeed: taskTemplate.whatYouNeed ?? null,
               whatYouNeedLink: taskTemplate.whatYouNeedLink ?? null,
               expertTip: taskTemplate.expertTip ?? null,
@@ -247,6 +298,10 @@ export class PreproductionService {
       throw new Error(ERROR_CODES.NOT_FOUND);
     }
 
+    if (task.activityType === 'informational') {
+      throw new Error(ERROR_CODES.INVALID_REQUEST);
+    }
+
     const completed = data.completed ?? task.completed;
 
     if (completed) {
@@ -282,8 +337,9 @@ export class PreproductionService {
       ],
     });
 
-    const total = tasks.length;
-    const completed = tasks.filter((t) => t.completed).length;
+    const actionableTasks = tasks.filter((t) => t.activityType === 'task');
+    const total = actionableTasks.length;
+    const completed = actionableTasks.filter((t) => t.completed).length;
 
     let status: 'not_started' | 'in_progress' | 'completed' = 'not_started';
     if (total > 0 && completed === total) {
@@ -300,7 +356,8 @@ export class PreproductionService {
     tasks: PreproductionTaskModel[],
     today: string
   ): StepStatus {
-    if (tasks.length > 0 && tasks.every((t) => t.completed)) {
+    const actionableTasks = tasks.filter((t) => t.activityType === 'task');
+    if (actionableTasks.length > 0 && actionableTasks.every((t) => t.completed)) {
       return 'done';
     }
     const start = step.dateRangeStart;
@@ -316,7 +373,10 @@ export class PreproductionService {
     const steps = ((plan as any).steps ?? []) as PreproductionStepModel[];
     const sortedSteps = [...steps].sort((a, b) => a.order - b.order);
 
-    const totalSteps = sortedSteps.length;
+    const totalSteps = sortedSteps.filter((step) => {
+      const tasks = (((step as any).tasks ?? []) as PreproductionTaskModel[]);
+      return tasks.some((task) => task.activityType === 'task');
+    }).length;
     let completedSteps = 0;
     let totalTasks = 0;
     let completedTasks = 0;
@@ -325,10 +385,11 @@ export class PreproductionService {
       const tasks = (((step as any).tasks ?? []) as PreproductionTaskModel[]).sort(
         (a, b) => a.order - b.order
       );
+      const actionableTasks = tasks.filter((task) => task.activityType === 'task');
       const stepStatus = this.computeStepStatus(step, tasks, today);
-      if (stepStatus === 'done') completedSteps++;
-      totalTasks += tasks.length;
-      completedTasks += tasks.filter((t) => t.completed).length;
+      if (actionableTasks.length > 0 && stepStatus === 'done') completedSteps++;
+      totalTasks += actionableTasks.length;
+      completedTasks += actionableTasks.filter((t) => t.completed).length;
 
       const base = {
         id: step.id,
@@ -349,6 +410,10 @@ export class PreproductionService {
           stepId: task.stepId,
           order: task.order,
           title: task.title,
+          activityType: task.activityType,
+          importance: task.importance,
+          recommendations: task.recommendations ?? [],
+          serviceLinks: task.serviceLinks ?? [],
           whatYouNeed: task.whatYouNeed,
           whatYouNeedLink: task.whatYouNeedLink,
           expertTip: task.expertTip,

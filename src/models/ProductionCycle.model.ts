@@ -12,14 +12,22 @@ export class ProductionCycleModel extends Model<ProductionCycleInterface, Produc
   public cropVarietyId!: string;
   public landSizeAcres!: number;
   public farmLocation?: string;
+  public farmCounty?: string;
+  public farmSubcounty?: string;
+  public farmLocationName?: string;
   public farmLocationLat?: number;
   public farmLocationLng?: number;
+  public farmBoundaryCoordinates?: Array<{ lat: number; lng: number }>;
   public plantingDate?: Date;
   public estimatedHarvestDate?: Date;
   public actualHarvestDate?: Date;
   public status!: 'planning' | 'active' | 'harvested' | 'archived';
   public totalCost!: number;
   public totalYieldKg?: number;
+  public expectedYield?: number | null;
+  public expectedPricePerKg?: number | null;
+  public actualYield?: number | null;
+  public actualPricePerKg?: number | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -171,6 +179,21 @@ ProductionCycleModel.init(
       allowNull: true,
       field: 'farm_location',
     },
+    farmCounty: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'farm_county',
+    },
+    farmSubcounty: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'farm_subcounty',
+    },
+    farmLocationName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'farm_location_name',
+    },
     farmLocationLat: {
       type: DataTypes.DECIMAL(10, 8),
       allowNull: true,
@@ -188,6 +211,11 @@ ProductionCycleModel.init(
         min: -180,
         max: 180,
       },
+    },
+    farmBoundaryCoordinates: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: 'farm_boundary_coordinates',
     },
     plantingDate: {
       type: DataTypes.DATEONLY,
@@ -223,6 +251,42 @@ ProductionCycleModel.init(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
       field: 'total_yield_kg',
+      validate: {
+        min: 0,
+        isDecimal: true,
+      },
+    },
+    expectedYield: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: 'expected_yield',
+      validate: {
+        min: 0,
+        isDecimal: true,
+      },
+    },
+    expectedPricePerKg: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: 'expected_price_per_kg',
+      validate: {
+        min: 0,
+        isDecimal: true,
+      },
+    },
+    actualYield: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: 'actual_yield',
+      validate: {
+        min: 0,
+        isDecimal: true,
+      },
+    },
+    actualPricePerKg: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      field: 'actual_price_per_kg',
       validate: {
         min: 0,
         isDecimal: true,

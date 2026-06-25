@@ -659,7 +659,15 @@ export class EnhancedPlantController {
 
         const records = [];
         for (const record of healthRecords) {
-          const media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+          let media: any[] = [];
+          try {
+            media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+          } catch (mediaError: any) {
+            logError('Plant health history media lookup failed', mediaError, {
+              userId,
+              analysisId: record.id
+            });
+          }
           records.push(this.formatPlantHealthRecord(record, media[0] || null));
         }
 
@@ -716,7 +724,15 @@ export class EnhancedPlantController {
         return;
       }
 
-      const media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+      let media: any[] = [];
+      try {
+        media = await mediaService.getMediaByAssociation('PlantHealthAssessment', record.id, 'primary');
+      } catch (mediaError: any) {
+        logError('Plant health analysis media lookup failed', mediaError, {
+          userId,
+          analysisId: record.id
+        });
+      }
       res.json({
         success: true,
         data: this.formatPlantHealthRecord(record, media[0] || null)
@@ -898,6 +914,12 @@ export class EnhancedPlantController {
   private formatPlantHealthRecord(record: any, media: any) {
     const result = {
       ...(record.healthAssessmentResult || {}),
+      diseases: record.healthAssessmentResult?.diseases || record.diseases || [],
+      treatmentSuggestions:
+        record.healthAssessmentResult?.treatmentSuggestions ||
+        record.healthAssessmentResult?.treatmentPriority ||
+        record.treatmentSuggestions ||
+        {},
       analysisId: record.id,
       providerMetadata: record.providerMetadata,
       confidence:

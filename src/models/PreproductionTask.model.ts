@@ -6,6 +6,10 @@ interface PreproductionTaskAttributes {
   stepId: string;
   order: number;
   title: string;
+  activityType: 'informational' | 'task';
+  importance: string;
+  recommendations: string[] | null;
+  serviceLinks: { label: string; href: string }[] | null;
   whatYouNeed: string | null;
   whatYouNeedLink: string | null;
   expertTip: string | null;
@@ -30,6 +34,10 @@ export class PreproductionTaskModel
   public stepId!: string;
   public order!: number;
   public title!: string;
+  public activityType!: 'informational' | 'task';
+  public importance!: string;
+  public recommendations!: string[] | null;
+  public serviceLinks!: { label: string; href: string }[] | null;
   public whatYouNeed!: string | null;
   public whatYouNeedLink!: string | null;
   public expertTip!: string | null;
@@ -75,6 +83,25 @@ export function initializePreproductionTaskModel(sequelize: Sequelize): void {
       title: {
         type: DataTypes.STRING(255),
         allowNull: false,
+      },
+      activityType: {
+        type: DataTypes.ENUM('informational', 'task'),
+        allowNull: false,
+        defaultValue: 'task',
+        field: 'activity_type',
+      },
+      importance: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      recommendations: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      serviceLinks: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        field: 'service_links',
       },
       whatYouNeed: {
         type: DataTypes.TEXT,

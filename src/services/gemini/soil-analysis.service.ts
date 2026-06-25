@@ -314,7 +314,7 @@ Extract and analyze the following information from the document:
 5. **Crop Suitability Analysis:**
    - Recommend suitable crops for this soil
    - Suitability scores for different crop options
-   - Expected yield potential
+   - Estimated yield potential
    - Profitability considerations for the region
 
 6. **Fertilization Strategy:**
@@ -328,7 +328,7 @@ Extract and analyze the following information from the document:
    - Soil amendments needed (lime, gypsum, organic matter)
    - Management practices for soil health
    - Timeline for improvements
-   - Expected benefits and outcomes
+   - Estimated benefits and outcomes
 
 8. **Regional Considerations:**
    - Climate-specific recommendations
@@ -675,7 +675,7 @@ Provide practical, actionable recommendations that are appropriate for the regio
     3. Total quantities needed for ${farmSize} acres
     4. Cost breakdown within the $${budget} budget
     5. Application timing and methods
-    6. Expected yield improvements
+    6. Estimated yield improvements
     7. Return on investment calculations
 
     Format as a detailed JSON object with practical, implementable recommendations.`;

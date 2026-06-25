@@ -327,7 +327,7 @@ Be thorough but concise. Prioritize accuracy over quantity of information.`;
         - Fertilization schedules and recommendations
         - Irrigation requirements and timing
         - Common cultivation challenges and solutions
-        - Expected yield and harvest timing
+        - Estimated yield and harvest timing
         - Post-harvest handling`,
       
       nutrition: `Provide comprehensive nutritional information for ${plantName}, including:

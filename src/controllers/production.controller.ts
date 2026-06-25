@@ -87,7 +87,12 @@ export class ProductionController {
         body: req.body 
       });
       
-      const statusCode = err.message.includes('not found') ? 404 : 500;
+      const statusCode =
+        err.message.includes('not found') || err.message.includes('could not be found')
+          ? 404
+          : err.message.includes('do not have access')
+            ? 403
+            : 500;
       res.status(statusCode).json({
         success: false,
         message: err.message || 'Failed to create production cycle',

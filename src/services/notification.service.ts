@@ -273,7 +273,7 @@ export class NotificationService {
   ): Promise<void> {
     try {
       const messages = {
-        rain: `🌧️ Weather Alert: Heavy rainfall expected in ${location}. Consider protecting your crops and ensure proper drainage.`,
+        rain: `🌧️ Weather Alert: Heavy rainfall estimated in ${location}. Consider protecting your crops and ensure proper drainage.`,
         drought: `☀️ Weather Alert: Extended dry period forecasted for ${location}. Plan irrigation and water conservation measures.`,
         frost: `❄️ Weather Alert: Frost warning for ${location}. Protect sensitive crops and consider covering plants.`,
         storm: `⛈️ Weather Alert: Storm warning for ${location}. Secure farm equipment and protect crops from wind damage.`,
@@ -419,7 +419,7 @@ export class NotificationService {
           message: `
             <h2>Harvest Reminder</h2>
             <p><strong>Crop:</strong> ${cropVariety}</p>
-            <p><strong>Expected Harvest Date:</strong> ${expectedDate.toLocaleDateString()}</p>
+            <p><strong>Estimated Harvest Date:</strong> ${expectedDate.toLocaleDateString()}</p>
             <p><strong>Days Left:</strong> ${daysLeft}</p>
             <p>Start preparing your harvest equipment and storage facilities.</p>
           `

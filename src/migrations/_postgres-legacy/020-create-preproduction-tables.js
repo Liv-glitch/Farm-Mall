@@ -128,6 +128,24 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: false,
       },
+      activity_type: {
+        type: Sequelize.ENUM('informational', 'task'),
+        allowNull: false,
+        defaultValue: 'task',
+      },
+      importance: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+        defaultValue: '',
+      },
+      recommendations: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
+      service_links: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
       what_you_need: {
         type: Sequelize.TEXT,
         allowNull: true,

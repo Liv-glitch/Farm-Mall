@@ -26,14 +26,22 @@ export interface ProductionCycle {
   cropVarietyId: string;
   landSizeAcres: number;
   farmLocation?: string;
+  farmCounty?: string;
+  farmSubcounty?: string;
+  farmLocationName?: string;
   farmLocationLat?: number;
   farmLocationLng?: number;
+  farmBoundaryCoordinates?: Array<{ lat: number; lng: number }>;
   plantingDate?: Date;
   estimatedHarvestDate?: Date;
   actualHarvestDate?: Date;
   status: 'planning' | 'active' | 'harvested' | 'archived';
   totalCost: number;
   totalYieldKg?: number;
+  expectedYield?: number | null;
+  expectedPricePerKg?: number | null;
+  actualYield?: number | null;
+  actualPricePerKg?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
   cropVariety?: CropVariety;
@@ -85,28 +93,40 @@ export interface ActivityInput {
 
 export interface CreateProductionCycleRequest {
   cropVarietyId: string;
-  farmId: string;
+  farmId?: string;
   landSizeAcres: number;
   farmLocation?: string;
+  farmCounty?: string;
+  farmSubcounty?: string;
+  farmLocationName?: string;
   farmLocationLat?: number;
   farmLocationLng?: number;
+  farmBoundaryCoordinates?: Array<{ lat: number; lng: number }>;
   plantingDate?: Date;
   estimatedHarvestDate?: Date;
-  expectedYield?: number;
-  expectedPricePerKg?: number;
+  expectedYield?: number | null;
+  expectedPricePerKg?: number | null;
 }
 
 export interface UpdateProductionCycleRequest {
   cropVarietyId?: string;
   landSizeAcres?: number;
   farmLocation?: string;
+  farmCounty?: string;
+  farmSubcounty?: string;
+  farmLocationName?: string;
   farmLocationLat?: number;
   farmLocationLng?: number;
+  farmBoundaryCoordinates?: Array<{ lat: number; lng: number }>;
   plantingDate?: Date;
   estimatedHarvestDate?: Date;
   actualHarvestDate?: Date;
   status?: 'planning' | 'active' | 'harvested' | 'archived';
   totalYieldKg?: number;
+  expectedYield?: number | null;
+  expectedPricePerKg?: number | null;
+  actualYield?: number | null;
+  actualPricePerKg?: number | null;
 }
 
 export interface CreateActivityRequest {

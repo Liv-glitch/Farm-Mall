@@ -530,7 +530,7 @@ export class PotatoDiseaseDetectionService {
           prognosis: {
             treatability: rule.key === 'late_blight' ? 'difficult' : 'moderate',
             timeline: rule.key === 'late_blight' ? 'Act within 24 hours' : 'Review within 3-5 days',
-            expectedOutcome: 'Better control is expected when action starts early and wet-leaf periods are reduced.'
+            expectedOutcome: 'Better control is estimated when action starts early and wet-leaf periods are reduced.'
           },
           similarDiseases: rule.key === 'early_blight' ? ['Late blight', 'Nutrient stress'] : ['Early blight', 'Bacterial wilt'],
           regionalConsiderations: 'In Kenya potato areas, wet and humid periods increase blight pressure.'

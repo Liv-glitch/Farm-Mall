@@ -100,12 +100,17 @@ export class PreproductionController {
     } catch (error) {
       const err = error as Error;
       const isNotFound = err.message === ERROR_CODES.NOT_FOUND;
+      const isInvalidRequest = err.message === ERROR_CODES.INVALID_REQUEST;
       if (!isNotFound) {
         logError('Failed to update pre-production task', err, { userId: req.user?.id });
       }
-      res.status(isNotFound ? 404 : 500).json({
+      res.status(isNotFound ? 404 : isInvalidRequest ? 400 : 500).json({
         success: false,
-        message: isNotFound ? 'Task not found' : 'Failed to update task',
+        message: isNotFound
+          ? 'Task not found'
+          : isInvalidRequest
+            ? 'Informational activities cannot be marked as done'
+            : 'Failed to update task',
         error: process.env.NODE_ENV === 'development' ? err.message : undefined,
       });
     }

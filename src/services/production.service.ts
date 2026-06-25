@@ -18,25 +18,83 @@ import { Op } from 'sequelize';
 
 export interface ProductionCycleWithStats extends ProductionCycle {
   totalCost: number;
-  expectedRevenue: number;
-  profitability: number;
+  expectedRevenue: number | null;
+  profitability: number | null;
   activitiesCount: number;
 }
 
+function calculateExpectedRevenue(cycleData: any): number | null {
+  const expectedYield = Number(cycleData.expectedYield);
+  const expectedPricePerKg = Number(cycleData.expectedPricePerKg);
+
+  if (!Number.isFinite(expectedYield) || expectedYield <= 0 || !Number.isFinite(expectedPricePerKg) || expectedPricePerKg <= 0) {
+    return null;
+  }
+
+  return expectedYield * expectedPricePerKg;
+}
+
 export class ProductionService {
-  // Create new production cycle
-  async createProductionCycle(
+  private async getAccessibleFarms(userId: string): Promise<FarmModel[]> {
+    return FarmModel.findAll({
+      where: {
+        [Op.or]: [
+          { ownerId: userId },
+          {
+            '$collaborators.collaborator_id$': userId,
+            '$collaborators.status$': 'active'
+          }
+        ]
+      },
+      include: [{
+        model: FarmCollaboratorModel,
+        as: 'collaborators',
+        required: false
+      }]
+    });
+  }
+
+  private composeFarmLocation(cycleData: CreateProductionCycleRequest): string {
+    const explicitLocation = cycleData.farmLocation?.trim();
+    if (explicitLocation) return explicitLocation;
+
+    return [
+      cycleData.farmLocationName?.trim(),
+      cycleData.farmSubcounty?.trim(),
+      cycleData.farmCounty?.trim(),
+    ].filter(Boolean).join(', ') || 'Farm location';
+  }
+
+  private async createDefaultFarmForCycle(
     userId: string,
     cycleData: CreateProductionCycleRequest
-  ): Promise<ProductionCycle> {
-    try {
-      // Verify crop variety exists
-      const cropVariety = await CropVarietyModel.findByPk(cycleData.cropVarietyId);
-      if (!cropVariety) {
-        throw new Error(ERROR_CODES.CROP_VARIETY_NOT_FOUND);
-      }
+  ): Promise<FarmModel> {
+    const user = await UserModel.findByPk(userId);
+    const userName = user?.fullName?.trim();
 
-      // Verify farm exists and user has access
+    const farm = await FarmModel.create({
+      ownerId: userId,
+      name: userName ? `${userName}'s Farm` : 'Default Farm',
+      location: this.composeFarmLocation(cycleData),
+      locationLat: cycleData.farmLocationLat,
+      locationLng: cycleData.farmLocationLng,
+      sizeAcres: cycleData.landSizeAcres,
+    });
+
+    logInfo('Default farm created for production cycle', {
+      userId,
+      farmId: farm.id,
+      location: farm.location,
+    });
+
+    return farm;
+  }
+
+  private async resolveFarmForCycle(
+    userId: string,
+    cycleData: CreateProductionCycleRequest
+  ): Promise<FarmModel> {
+    if (cycleData.farmId) {
       const farm = await FarmModel.findOne({
         where: { id: cycleData.farmId },
         include: [{
@@ -50,20 +108,46 @@ export class ProductionService {
         }]
       });
 
-      if (!farm) {
-        throw new Error(ERROR_CODES.FARM_NOT_FOUND);
+      if (farm && (farm.ownerId === userId || farm.collaborators?.length)) {
+        return farm;
       }
 
-      if (farm.ownerId !== userId && !farm.collaborators?.length) {
-        throw new Error(ERROR_CODES.UNAUTHORIZED);
+      const accessibleFarms = await this.getAccessibleFarms(userId);
+      if (accessibleFarms.length === 0) {
+        return this.createDefaultFarmForCycle(userId, cycleData);
       }
+
+      throw new Error('The selected farm could not be found or you do not have access to it. Please choose another farm.');
+    }
+
+    const accessibleFarms = await this.getAccessibleFarms(userId);
+    if (accessibleFarms.length > 0) {
+      return accessibleFarms[0];
+    }
+
+    return this.createDefaultFarmForCycle(userId, cycleData);
+  }
+
+  // Create new production cycle
+  async createProductionCycle(
+    userId: string,
+    cycleData: CreateProductionCycleRequest
+  ): Promise<ProductionCycle> {
+    try {
+      // Verify crop variety exists
+      const cropVariety = await CropVarietyModel.findByPk(cycleData.cropVarietyId);
+      if (!cropVariety) {
+        throw new Error(ERROR_CODES.CROP_VARIETY_NOT_FOUND);
+      }
+
+      const farm = await this.resolveFarmForCycle(userId, cycleData);
 
       // TODO: Check subscription limits based on user type
       
       const cycle = await ProductionCycleModel.create({
         ...cycleData,
         userId,
-        farmId: cycleData.farmId,
+        farmId: farm.id,
         status: 'active',
         totalCost: 0,
       });
@@ -71,7 +155,7 @@ export class ProductionService {
       logInfo('Production cycle created', { 
         userId, 
         cycleId: cycle.id,
-        farmId: cycleData.farmId,
+        farmId: farm.id,
         cropVarietyId: cycleData.cropVarietyId 
       });
 
@@ -151,8 +235,8 @@ export class ProductionService {
           sum + (activity.cost || 0), cycleData.totalCostActual || 0
         );
         
-        const expectedRevenue = cycleData.expectedYield * (cycleData.expectedPricePerKg || 0);
-        const profitability = expectedRevenue - totalCost;
+        const expectedRevenue = calculateExpectedRevenue(cycleData);
+        const profitability = expectedRevenue === null ? null : expectedRevenue - totalCost;
 
         return {
           ...cycleData,
@@ -223,8 +307,8 @@ export class ProductionService {
         sum + (activity.cost || 0), cycleData.totalCostActual || 0
       );
       
-      const expectedRevenue = cycleData.expectedYield * (cycleData.expectedPricePerKg || 0);
-      const profitability = expectedRevenue - totalCost;
+      const expectedRevenue = calculateExpectedRevenue(cycleData);
+      const profitability = expectedRevenue === null ? null : expectedRevenue - totalCost;
 
       const result: ProductionCycleWithStats = {
         ...cycleData,
