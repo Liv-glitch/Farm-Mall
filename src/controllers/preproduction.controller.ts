@@ -84,6 +84,32 @@ export class PreproductionController {
     }
   }
 
+  // Delete a pre-production plan and its generated checklist.
+  async deletePlan(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      await preproductionService.deletePlan(userId, req.params.id);
+
+      logInfo('Pre-production plan deleted via API', { userId, planId: req.params.id });
+
+      res.json({
+        success: true,
+        message: 'Pre-production plan deleted successfully',
+      });
+    } catch (error) {
+      const err = error as Error;
+      const isNotFound = err.message === ERROR_CODES.NOT_FOUND;
+      if (!isNotFound) {
+        logError('Failed to delete pre-production plan', err, { userId: req.user?.id, planId: req.params.id });
+      }
+      res.status(isNotFound ? 404 : 500).json({
+        success: false,
+        message: isNotFound ? 'Pre-production plan not found' : 'Failed to delete pre-production plan',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      });
+    }
+  }
+
   // Update a task (mark complete/incomplete, capture date/cost/supplier)
   async updateTask(req: Request, res: Response): Promise<void> {
     try {

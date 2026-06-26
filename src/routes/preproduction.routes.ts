@@ -19,6 +19,7 @@ router.post(
   preproductionController.createPlan.bind(preproductionController)
 );
 router.get('/plans/:id', preproductionController.getPlan.bind(preproductionController));
+router.delete('/plans/:id', preproductionController.deletePlan.bind(preproductionController));
 
 // Tasks
 router.patch(

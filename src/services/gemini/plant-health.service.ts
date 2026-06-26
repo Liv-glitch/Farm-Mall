@@ -171,6 +171,9 @@ export class PlantHealthService extends BaseGeminiService {
 Analyze the provided plant image for health issues. ${plantInfo} ${stageInfo} ${seasonInfo} ${symptomInfo}
 
 Language rules for every farmer-facing string in the JSON:
+- Always write in English only. Do not write Kiswahili, Swahili, Sheng, or any other language.
+- If the image, location, crop name, or user context suggests another language, still answer in English.
+- Translate any local-language disease, pest, symptom, or treatment wording into clear English before returning JSON.
 - Use simple, practical words a lay farmer would use.
 - Keep descriptions, symptoms, causes, and recommendations short and clear.
 - Explain any scientific name or technical term in plain words the first time you use it.

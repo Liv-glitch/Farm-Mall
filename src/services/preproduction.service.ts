@@ -57,8 +57,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         importance:
           'Choose a well-drained field with a suitable crop rotation history to reduce disease pressure and improve yields.',
         recommendations: [
-          'Select well-drained land.',
-          'Avoid fields where potatoes, tomatoes, peppers, or eggplant were planted in the last 2 seasons.',
+          'Select well-drained land, avoiding fields where potatoes, tomatoes, peppers, or eggplant were planted in the last 2 seasons.',
           'Review crop rotation history.',
         ],
       },
@@ -276,6 +275,19 @@ export class PreproductionService {
     }
 
     return this.serializePlan(plan, true);
+  }
+
+  /**
+   * Delete a user's plan. Steps and tasks are removed by database cascades.
+   */
+  async deletePlan(userId: string, planId: string): Promise<void> {
+    const deleted = await PreproductionPlanModel.destroy({
+      where: { id: planId, userId },
+    });
+
+    if (deleted === 0) {
+      throw new Error(ERROR_CODES.NOT_FOUND);
+    }
   }
 
   /**
