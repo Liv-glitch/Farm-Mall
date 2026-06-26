@@ -40,6 +40,21 @@ interface StepTemplate {
   tasks: TaskTemplate[];
 }
 
+export function parseJsonColumn<T = unknown>(value: unknown): T | unknown {
+  if (typeof value !== 'string') return value;
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return value;
+  }
+}
+
+export function jsonArrayColumn<T = unknown>(value: unknown): T[] {
+  const parsed = parseJsonColumn<T[]>(value);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 /**
  * Fixed pre-production checklist template. Kept as a single hardcoded const so
  * variety/region-specific variation can be layered on later (e.g. by selecting a
@@ -424,8 +439,8 @@ export class PreproductionService {
           title: task.title,
           activityType: task.activityType,
           importance: task.importance,
-          recommendations: task.recommendations ?? [],
-          serviceLinks: task.serviceLinks ?? [],
+          recommendations: jsonArrayColumn<string>(task.recommendations),
+          serviceLinks: jsonArrayColumn<{ label: string; href: string }>(task.serviceLinks),
           whatYouNeed: task.whatYouNeed,
           whatYouNeedLink: task.whatYouNeedLink,
           expertTip: task.expertTip,

@@ -10,6 +10,11 @@ export const locationSchema = Joi.object({
   longitude: Joi.number().min(-180).max(180).required(),
 });
 
+const boundaryPointSchema = Joi.object({
+  lat: Joi.number().min(-90).max(90).required(),
+  lng: Joi.number().min(-180).max(180).required(),
+});
+
 // Authentication validation schemas
 export const registerSchema = Joi.object({
   fullName: Joi.string().min(2).max(255).required(),
@@ -68,6 +73,7 @@ export const createProductionCycleSchema = Joi.object({
   farmLocation: Joi.string().max(255).optional(),
   farmLocationLat: Joi.number().min(-90).max(90).optional(),
   farmLocationLng: Joi.number().min(-180).max(180).optional(),
+  farmBoundaryCoordinates: Joi.array().items(boundaryPointSchema).min(3).optional(),
   plantingDate: Joi.date().optional(),
 });
 
@@ -77,6 +83,7 @@ export const updateProductionCycleSchema = Joi.object({
   farmLocation: Joi.string().max(255).optional(),
   farmLocationLat: Joi.number().min(-90).max(90).optional(),
   farmLocationLng: Joi.number().min(-180).max(180).optional(),
+  farmBoundaryCoordinates: Joi.array().items(boundaryPointSchema).min(3).optional(),
   plantingDate: Joi.date().optional(),
   estimatedHarvestDate: Joi.date().optional(),
   actualHarvestDate: Joi.date().max('now').optional(),

@@ -34,7 +34,66 @@ function calculateExpectedRevenue(cycleData: any): number | null {
   return expectedYield * expectedPricePerKg;
 }
 
+function parseJsonColumn<T = unknown>(value: unknown): T | unknown {
+  if (typeof value !== 'string') return value;
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return value;
+  }
+}
+
 export class ProductionService {
+  private normalizeBoundaryCoordinates(value: unknown): Array<{ lat: number; lng: number }> | undefined {
+    if (value === undefined || value === null || value === '') return undefined;
+
+    const parsed = parseJsonColumn(value);
+    if (!Array.isArray(parsed)) {
+      throw new Error('Farm boundary coordinates must be an array of latitude/longitude points.');
+    }
+
+    const points = parsed.map((point: any) => ({
+      lat: Number(point?.lat),
+      lng: Number(point?.lng),
+    }));
+
+    const invalidPoint = points.find(
+      (point) =>
+        !Number.isFinite(point.lat) ||
+        !Number.isFinite(point.lng) ||
+        point.lat < -90 ||
+        point.lat > 90 ||
+        point.lng < -180 ||
+        point.lng > 180
+    );
+
+    if (invalidPoint) {
+      throw new Error('Each farm boundary point must include valid lat and lng values.');
+    }
+
+    if (points.length > 0 && points.length < 3) {
+      throw new Error('Farm boundary must include at least 3 points.');
+    }
+
+    return points.length >= 3 ? points : undefined;
+  }
+
+  private normalizeCycleLocationData<T extends CreateProductionCycleRequest | UpdateProductionCycleRequest>(
+    data: T
+  ): T {
+    const boundary = this.normalizeBoundaryCoordinates(data.farmBoundaryCoordinates);
+    const normalized = { ...data } as T;
+
+    if (boundary) {
+      normalized.farmBoundaryCoordinates = boundary;
+    } else if ('farmBoundaryCoordinates' in normalized) {
+      delete (normalized as any).farmBoundaryCoordinates;
+    }
+
+    return normalized;
+  }
+
   private async getAccessibleFarms(userId: string): Promise<FarmModel[]> {
     return FarmModel.findAll({
       where: {
@@ -134,18 +193,19 @@ export class ProductionService {
     cycleData: CreateProductionCycleRequest
   ): Promise<ProductionCycle> {
     try {
+      const normalizedCycleData = this.normalizeCycleLocationData(cycleData);
       // Verify crop variety exists
-      const cropVariety = await CropVarietyModel.findByPk(cycleData.cropVarietyId);
+      const cropVariety = await CropVarietyModel.findByPk(normalizedCycleData.cropVarietyId);
       if (!cropVariety) {
         throw new Error(ERROR_CODES.CROP_VARIETY_NOT_FOUND);
       }
 
-      const farm = await this.resolveFarmForCycle(userId, cycleData);
+      const farm = await this.resolveFarmForCycle(userId, normalizedCycleData);
 
       // TODO: Check subscription limits based on user type
       
       const cycle = await ProductionCycleModel.create({
-        ...cycleData,
+        ...normalizedCycleData,
         userId,
         farmId: farm.id,
         status: 'active',
@@ -156,7 +216,7 @@ export class ProductionService {
         userId, 
         cycleId: cycle.id,
         farmId: farm.id,
-        cropVarietyId: cycleData.cropVarietyId 
+        cropVarietyId: normalizedCycleData.cropVarietyId
       });
 
       return cycle.toJSON();
@@ -375,9 +435,10 @@ export class ProductionService {
         }
       }
 
-      await cycle.update(updateData);
+      const normalizedUpdateData = this.normalizeCycleLocationData(updateData);
+      await cycle.update(normalizedUpdateData);
 
-      logInfo('Production cycle updated', { userId, cycleId, updateData });
+      logInfo('Production cycle updated', { userId, cycleId, updateData: normalizedUpdateData });
       return cycle.toJSON();
     } catch (error) {
       logError('Failed to update production cycle', error as Error, { userId, cycleId });

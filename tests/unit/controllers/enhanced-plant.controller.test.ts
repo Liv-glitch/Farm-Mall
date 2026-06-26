@@ -414,6 +414,64 @@ describe('EnhancedPlantController plant health persistence', () => {
     }));
   });
 
+  it('parses JSON-string plant health history columns', async () => {
+    const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
+    const record = {
+      id: 'analysis-json-1',
+      healthAssessmentResult: JSON.stringify({
+        healthStatus: {
+          overall: 'diseased',
+          isHealthy: false,
+          confidence: 0.81
+        },
+        diseases: [
+          {
+            name: 'Late blight',
+            severity: 'high',
+            treatment: {
+              immediate: ['Remove infected leaves']
+            }
+          }
+        ]
+      }),
+      diseases: JSON.stringify([{ name: 'Fallback disease' }]),
+      treatmentSuggestions: JSON.stringify(['Apply fungicide according to the label']),
+      createdAt: new Date('2026-06-02T00:00:00Z'),
+      updatedAt: new Date('2026-06-02T00:00:00Z'),
+      isHealthy: false,
+      notes: null,
+      providerMetadata: JSON.stringify({ normalized: { confidence: 0.81 } })
+    };
+
+    mockFindAllAssessments.mockResolvedValue([record]);
+    mockGetMediaByAssociation.mockResolvedValue([]);
+
+    const historyRes = makeResponse();
+    await enhancedPlantController.getHistory(
+      { user: { id: 'user-1' }, query: { type: 'plant_health' } } as any,
+      historyRes
+    );
+
+    expect(historyRes.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      records: [
+        expect.objectContaining({
+          id: 'analysis-json-1',
+          result: expect.objectContaining({
+            diseases: [
+              expect.objectContaining({
+                name: 'Late blight',
+                severity: 'high'
+              })
+            ],
+            treatmentSuggestions: ['Apply fungicide according to the label'],
+            confidence: 0.81
+          })
+        })
+      ]
+    }));
+  });
+
   it('deletes an assessment and its media association', async () => {
     const { enhancedPlantController } = await import('../../../src/controllers/enhanced-plant.controller');
     const destroy = jest.fn().mockResolvedValue(undefined);

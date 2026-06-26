@@ -26,6 +26,26 @@ const getSmartYieldCalculator = (): SmartYieldCalculatorService => {
   return smartYieldCalculator;
 };
 
+function parseJsonColumn<T = unknown>(value: unknown): T | unknown {
+  if (typeof value !== 'string') return value;
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return value;
+  }
+}
+
+function jsonObjectColumn(value: unknown): Record<string, any> {
+  const parsed = parseJsonColumn<Record<string, any>>(value);
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, any> : {};
+}
+
+function jsonArrayColumn<T = unknown>(value: unknown): T[] {
+  const parsed = parseJsonColumn<T[]>(value);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 // Configure multer for memory storage (better for Gemini integration)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -912,20 +932,27 @@ export class EnhancedPlantController {
   }
 
   private formatPlantHealthRecord(record: any, media: any) {
+    const healthAssessmentResult = jsonObjectColumn(record.healthAssessmentResult);
+    const diseases = jsonArrayColumn(healthAssessmentResult.diseases).length > 0
+      ? jsonArrayColumn(healthAssessmentResult.diseases)
+      : jsonArrayColumn(record.diseases);
+    const treatmentSuggestions =
+      healthAssessmentResult.treatmentSuggestions ||
+      healthAssessmentResult.treatmentPriority ||
+      parseJsonColumn(record.treatmentSuggestions) ||
+      {};
+    const providerMetadata = jsonObjectColumn(record.providerMetadata);
+
     const result = {
-      ...(record.healthAssessmentResult || {}),
-      diseases: record.healthAssessmentResult?.diseases || record.diseases || [],
-      treatmentSuggestions:
-        record.healthAssessmentResult?.treatmentSuggestions ||
-        record.healthAssessmentResult?.treatmentPriority ||
-        record.treatmentSuggestions ||
-        {},
+      ...healthAssessmentResult,
+      diseases,
+      treatmentSuggestions,
       analysisId: record.id,
-      providerMetadata: record.providerMetadata,
+      providerMetadata,
       confidence:
-        record.providerMetadata?.normalized?.confidence ??
-        record.healthAssessmentResult?.confidence ??
-        record.healthAssessmentResult?.healthStatus?.confidence
+        providerMetadata.normalized?.confidence ??
+        healthAssessmentResult.confidence ??
+        healthAssessmentResult.healthStatus?.confidence
     };
 
     return {
@@ -936,7 +963,7 @@ export class EnhancedPlantController {
       updatedAt: record.updatedAt,
       isHealthy: record.isHealthy,
       notes: record.notes,
-      providerMetadata: record.providerMetadata,
+      providerMetadata,
       media
     };
   }
