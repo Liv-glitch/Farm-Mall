@@ -3,7 +3,7 @@ import { logInfo, logError } from '../../utils/logger';
 
 export interface GeminiConfig {
   apiKey: string;
-  model?: 'gemini-3.1-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
+  model?: 'gemini-2.5-flash-lite' | 'gemini-3.1-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
   temperature?: number;
   topK?: number;
   topP?: number;
@@ -45,7 +45,7 @@ export abstract class BaseGeminiService {
 
   constructor(config: GeminiConfig) {
     this.config = config;
-    this.modelName = config.model || 'gemini-2.5-flash';
+    this.modelName = config.model || 'gemini-2.5-flash-lite';
     
     if (!config.apiKey) {
       throw new Error('Gemini API key is required');
@@ -99,6 +99,7 @@ export abstract class BaseGeminiService {
       const response = await this.genAI.models.generateContent({
         model: this.modelName,
         contents: contents,
+        config: this.getGenerationConfig(),
       });
 
       const processingTime = Date.now() - startTime;
@@ -197,6 +198,7 @@ export abstract class BaseGeminiService {
             }
           }
         ],
+        config: this.getGenerationConfig(),
       });
 
       const processingTime = Date.now() - startTime;
@@ -280,6 +282,7 @@ export abstract class BaseGeminiService {
       const response = await this.genAI.models.generateContent({
         model: this.modelName,
         contents: prompt,
+        config: this.getGenerationConfig(),
       });
 
       const processingTime = Date.now() - startTime;
@@ -352,5 +355,14 @@ export abstract class BaseGeminiService {
         error: error.message
       };
     }
+  }
+
+  private getGenerationConfig() {
+    return {
+      temperature: this.config.temperature,
+      topK: this.config.topK,
+      topP: this.config.topP,
+      maxOutputTokens: this.config.maxOutputTokens
+    };
   }
 }

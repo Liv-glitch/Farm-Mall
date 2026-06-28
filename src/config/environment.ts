@@ -39,10 +39,14 @@ interface EnvironmentConfig {
   WEATHER_API_KEY?: string;
   PLANTID_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  USE_HUGGINGFACE: boolean;
   HF_API_TOKEN?: string;
+  HF_INFERENCE_BASE_URL: string;
+  HF_POTATO_ENDPOINT_URL?: string;
   HF_POTATO_MODEL_ID: string;
   HF_POTATO_MIN_CONFIDENCE: number;
   HF_POTATO_HIGH_CONFIDENCE: number;
+  HF_POTATO_TIMEOUT_MS: number;
 
   // AWS S3
   AWS_S3_BUCKET?: string;
@@ -144,10 +148,14 @@ const validateEnvironment = (): EnvironmentConfig => {
     WEATHER_API_KEY: process.env.WEATHER_API_KEY,
     PLANTID_API_KEY: process.env.PLANTID_API_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    USE_HUGGINGFACE: parseBool(process.env.USE_HUGGINGFACE, false),
     HF_API_TOKEN: process.env.HF_API_TOKEN,
-    HF_POTATO_MODEL_ID: process.env.HF_POTATO_MODEL_ID || '24f2004275/potato-disease-classifier',
+    HF_INFERENCE_BASE_URL: process.env.HF_INFERENCE_BASE_URL || 'https://router.huggingface.co/hf-inference/models',
+    HF_POTATO_ENDPOINT_URL: process.env.HF_POTATO_ENDPOINT_URL,
+    HF_POTATO_MODEL_ID: process.env.HF_POTATO_MODEL_ID || 'linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification',
     HF_POTATO_MIN_CONFIDENCE: parseFloat(process.env.HF_POTATO_MIN_CONFIDENCE || '0.70'),
     HF_POTATO_HIGH_CONFIDENCE: parseFloat(process.env.HF_POTATO_HIGH_CONFIDENCE || '0.80'),
+    HF_POTATO_TIMEOUT_MS: parseInt(process.env.HF_POTATO_TIMEOUT_MS || '10000', 10),
 
     // AWS S3
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,

@@ -83,9 +83,13 @@ describe('PotatoDiseaseDetectionService', () => {
   beforeEach(() => {
     process.env = {
       ...originalEnv,
+      USE_HUGGINGFACE: 'true',
       HF_API_TOKEN: 'hf-token',
+      HF_INFERENCE_BASE_URL: '',
+      HF_POTATO_ENDPOINT_URL: '',
       HF_POTATO_MODEL_ID: 'test/potato-model',
       HF_POTATO_MIN_CONFIDENCE: '0.70',
+      HF_POTATO_TIMEOUT_MS: '10000',
       GEMINI_API_KEY: 'gemini-key',
       GEMINI_MODEL: '',
       GEMINI_FALLBACK_MODEL: ''
@@ -97,6 +101,30 @@ describe('PotatoDiseaseDetectionService', () => {
     process.env = { ...originalEnv };
     jest.restoreAllMocks();
     jest.resetModules();
+  });
+
+  it('uses Gemini directly when Hugging Face is not explicitly enabled', async () => {
+    process.env.USE_HUGGINGFACE = '';
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth.mockResolvedValue({
+      success: true,
+      data: geminiResult,
+      modelVersion: 'gemini-test',
+      processingTime: 31
+    });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('gemini');
+    expect(result.providerMetadata.reason).toBe('huggingface_disabled');
+    expect(result.providerMetadata.hfMetadata).toMatchObject({
+      enabled: false,
+      skipped: true,
+      skipReason: 'USE_HUGGINGFACE is not enabled.'
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
   });
 
   it('returns rule-set diagnosis for a known Hugging Face disease at 71% confidence without Gemini', async () => {
@@ -112,6 +140,66 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.provider).toBe('huggingface');
     expect(result.confidence).toBe(0.71);
     expect(result.data?.diseases?.[0]?.name).toBe('Early blight');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://router.huggingface.co/hf-inference/models/test/potato-model',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer hf-token',
+          'Content-Type': 'image/jpeg'
+        }),
+        body: expect.any(ArrayBuffer),
+        signal: expect.any(AbortSignal)
+      })
+    );
+    expect(result.providerMetadata.endpoint).toBe('https://router.huggingface.co/hf-inference/models/test/potato-model');
+    expect(result.providerMetadata.timeoutMs).toBe(10000);
+    expect(mockAssessPlantHealth).not.toHaveBeenCalled();
+  });
+
+  it('honors a custom Hugging Face inference base URL', async () => {
+    process.env.HF_INFERENCE_BASE_URL = 'https://example.test/custom-router/';
+    process.env.HF_POTATO_TIMEOUT_MS = '2500';
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => [{ label: 'Potato Late Blight', score: 0.83 }]
+    });
+
+    const { potatoDiseaseDetectionService } = await loadService();
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('huggingface');
+    expect(result.providerMetadata.endpoint).toBe('https://example.test/custom-router/test/potato-model');
+    expect(result.providerMetadata.timeoutMs).toBe(2500);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://example.test/custom-router/test/potato-model',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal)
+      })
+    );
+    expect(mockAssessPlantHealth).not.toHaveBeenCalled();
+  });
+
+  it('uses a dedicated Hugging Face potato endpoint URL when configured', async () => {
+    process.env.HF_POTATO_ENDPOINT_URL = 'https://potato-disease.example.endpoints.huggingface.cloud';
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => [{ label: 'Potato Early Blight', score: 0.86 }]
+    });
+
+    const { potatoDiseaseDetectionService } = await loadService();
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('huggingface');
+    expect(result.providerMetadata.endpoint).toBe('https://potato-disease.example.endpoints.huggingface.cloud');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://potato-disease.example.endpoints.huggingface.cloud',
+      expect.objectContaining({
+        method: 'POST'
+      })
+    );
     expect(mockAssessPlantHealth).not.toHaveBeenCalled();
   });
 
@@ -174,6 +262,33 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.providerMetadata.hfError.message).toBe('HF unavailable');
   });
 
+  it('adds a configuration hint when the router provider does not support the model', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      json: async () => ({ error: 'Model not supported by provider hf-inference' })
+    });
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth.mockResolvedValue({
+      success: true,
+      data: geminiResult,
+      modelVersion: 'gemini-test',
+      processingTime: 55
+    });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('gemini');
+    expect(result.providerMetadata.hfError).toMatchObject({
+      status: 400,
+      payload: { error: 'Model not supported by provider hf-inference' },
+      hint: expect.stringContaining('HF_POTATO_ENDPOINT_URL')
+    });
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
+  });
+
   it('uses Gemini fallback by default when GEMINI_API_KEY exists and USE_GEMINI is unset', async () => {
     delete process.env.USE_GEMINI;
     (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
@@ -191,94 +306,94 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.provider).toBe('gemini');
     expect(result.providerMetadata.geminiEnabled).toBe(true);
     expect(result.providerMetadata.geminiAttemptedModels).toEqual([
-      'gemini-2.5-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash'
     ]);
     expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
     expect(mockPlantHealthServiceConstructor).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-2.5-flash'
+      model: 'gemini-2.5-flash-lite'
     }));
   });
 
-  it('uses the configured primary Gemini model before the Flash-Lite fallback model', async () => {
-    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
-    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+  it('uses the configured primary Gemini model before the configured fallback model', async () => {
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash-lite';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash';
     (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
     const { potatoDiseaseDetectionService } = await loadService();
     mockAssessPlantHealth.mockResolvedValue({
       success: true,
       data: geminiResult,
-      modelVersion: 'gemini-2.5-flash',
+      modelVersion: 'gemini-2.5-flash-lite',
       processingTime: 61
     });
 
     const result = await potatoDiseaseDetectionService.diagnose(makeFile());
 
     expect(result.success).toBe(true);
-    expect(result.model).toBe('gemini-2.5-flash');
+    expect(result.model).toBe('gemini-2.5-flash-lite');
     expect(result.providerMetadata.geminiErrors).toEqual([]);
     expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
     expect(mockPlantHealthServiceConstructor).toHaveBeenCalledTimes(1);
     expect(mockPlantHealthServiceConstructor).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-2.5-flash'
+      model: 'gemini-2.5-flash-lite'
     }));
   });
 
-  it('tries Gemini Flash-Lite when the primary Gemini model fails', async () => {
-    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
-    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+  it('tries Gemini Flash when the primary Flash-Lite model fails', async () => {
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash-lite';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash';
     (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
     const { potatoDiseaseDetectionService } = await loadService();
     mockAssessPlantHealth
       .mockResolvedValueOnce({
         success: false,
         error: 'Gemini model overloaded',
-        modelVersion: 'gemini-2.5-flash',
+        modelVersion: 'gemini-2.5-flash-lite',
         processingTime: 22
       })
       .mockResolvedValueOnce({
         success: true,
         data: geminiResult,
-        modelVersion: 'gemini-3.1-flash-lite',
+        modelVersion: 'gemini-2.5-flash',
         processingTime: 44
       });
 
     const result = await potatoDiseaseDetectionService.diagnose(makeFile());
 
     expect(result.success).toBe(true);
-    expect(result.model).toBe('gemini-3.1-flash-lite');
+    expect(result.model).toBe('gemini-2.5-flash');
     expect(result.providerMetadata.geminiAttemptedModels).toEqual([
-      'gemini-2.5-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash'
     ]);
     expect(result.providerMetadata.geminiErrors).toEqual([
-      { model: 'gemini-2.5-flash', error: 'Gemini model overloaded' }
+      { model: 'gemini-2.5-flash-lite', error: 'Gemini model overloaded' }
     ]);
     expect(mockAssessPlantHealth).toHaveBeenCalledTimes(2);
     expect(mockPlantHealthServiceConstructor).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      model: 'gemini-2.5-flash'
+      model: 'gemini-2.5-flash-lite'
     }));
     expect(mockPlantHealthServiceConstructor).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      model: 'gemini-3.1-flash-lite'
+      model: 'gemini-2.5-flash'
     }));
   });
 
   it('returns both Gemini model errors when primary and fallback fail', async () => {
-    process.env.GEMINI_MODEL = 'gemini-2.5-flash';
-    process.env.GEMINI_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+    process.env.GEMINI_MODEL = 'gemini-2.5-flash-lite';
+    process.env.GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash';
     (global.fetch as jest.Mock).mockRejectedValue(new Error('HF unavailable'));
     const { potatoDiseaseDetectionService } = await loadService();
     mockAssessPlantHealth
       .mockResolvedValueOnce({
         success: false,
         error: 'Primary overloaded',
-        modelVersion: 'gemini-2.5-flash',
+        modelVersion: 'gemini-2.5-flash-lite',
         processingTime: 22
       })
       .mockResolvedValueOnce({
         success: false,
         error: 'Fallback unavailable',
-        modelVersion: 'gemini-3.1-flash-lite',
+        modelVersion: 'gemini-2.5-flash',
         processingTime: 44
       });
 
@@ -287,12 +402,12 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('Hugging Face failed');
     expect(result.providerMetadata.geminiAttemptedModels).toEqual([
-      'gemini-2.5-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash'
     ]);
     expect(result.providerMetadata.geminiErrors).toEqual([
-      { model: 'gemini-2.5-flash', error: 'Primary overloaded' },
-      { model: 'gemini-3.1-flash-lite', error: 'Fallback unavailable' }
+      { model: 'gemini-2.5-flash-lite', error: 'Primary overloaded' },
+      { model: 'gemini-2.5-flash', error: 'Fallback unavailable' }
     ]);
     expect(mockAssessPlantHealth).toHaveBeenCalledTimes(2);
   });
@@ -312,15 +427,37 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(mockAssessPlantHealth).not.toHaveBeenCalled();
   });
 
-  it('preserves the underlying Hugging Face fetch failure cause', async () => {
+  it('falls back to Gemini when HF_API_TOKEN is not configured', async () => {
+    process.env.HF_API_TOKEN = '';
+    const { potatoDiseaseDetectionService } = await loadService();
+    mockAssessPlantHealth.mockResolvedValue({
+      success: true,
+      data: geminiResult,
+      modelVersion: 'gemini-test',
+      processingTime: 37
+    });
+
+    const result = await potatoDiseaseDetectionService.diagnose(makeFile());
+
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('gemini');
+    expect(result.providerMetadata.hfError).toMatchObject({
+      message: 'HF_API_TOKEN not configured',
+      status: 'missing_configuration'
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockAssessPlantHealth).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves the underlying Hugging Face router fetch failure cause', async () => {
     process.env.USE_GEMINI = 'false';
     const fetchError: any = new Error('fetch failed');
     fetchError.cause = {
-      message: 'getaddrinfo ENOTFOUND api-inference.huggingface.co',
+      message: 'getaddrinfo ENOTFOUND router.huggingface.co',
       code: 'ENOTFOUND',
       errno: -3008,
       syscall: 'getaddrinfo',
-      hostname: 'api-inference.huggingface.co'
+      hostname: 'router.huggingface.co'
     };
     (global.fetch as jest.Mock).mockRejectedValue(fetchError);
 
@@ -332,7 +469,7 @@ describe('PotatoDiseaseDetectionService', () => {
     expect(result.providerMetadata.hfError.cause).toMatchObject({
       code: 'ENOTFOUND',
       syscall: 'getaddrinfo',
-      hostname: 'api-inference.huggingface.co'
+      hostname: 'router.huggingface.co'
     });
     expect(mockAssessPlantHealth).not.toHaveBeenCalled();
   });

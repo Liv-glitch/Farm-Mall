@@ -5,8 +5,6 @@ import { PlantHealthService, PlantHealthResponse } from './gemini/plant-health.s
 type PotatoDiseaseKey = 'healthy' | 'early_blight' | 'late_blight' | 'unknown';
 type DiagnosisProvider = 'huggingface' | 'gemini';
 
-const TEMP_DISABLE_HUGGINGFACE_POTATO_DIAGNOSIS = true;
-
 interface HuggingFacePrediction {
   label: string;
   score: number;
@@ -271,8 +269,8 @@ export class PotatoDiseaseDetectionService {
 
   private getGeminiModelChain(): string[] {
     return [
-      process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.1-flash-lite'
+      process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
+      process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.5-flash'
     ].filter((model, index, models) => model && models.indexOf(model) === index);
   }
 
@@ -284,6 +282,7 @@ export class PotatoDiseaseDetectionService {
     if (error?.name) serialized.name = error.name;
     if (error?.status) serialized.status = error.status;
     if (error?.payload) serialized.payload = error.payload;
+    if (error?.hint) serialized.hint = error.hint;
 
     const cause = error?.cause;
     if (cause) {
@@ -309,18 +308,21 @@ export class PotatoDiseaseDetectionService {
     const startedAt = Date.now();
     const hfMetadata: Record<string, any> = {
       model: env.HF_POTATO_MODEL_ID,
+      endpoint: this.buildHuggingFaceUrl(),
       minConfidence: env.HF_POTATO_MIN_CONFIDENCE,
       highConfidence: env.HF_POTATO_HIGH_CONFIDENCE,
-      configured: !!env.HF_API_TOKEN
+      timeoutMs: env.HF_POTATO_TIMEOUT_MS,
+      configured: !!env.HF_API_TOKEN,
+      enabled: env.USE_HUGGINGFACE
     };
 
-    if (TEMP_DISABLE_HUGGINGFACE_POTATO_DIAGNOSIS) {
+    if (!env.USE_HUGGINGFACE) {
       const geminiDiagnosis = await this.diagnoseWithGemini(file, options, {
-        reason: 'huggingface_temporarily_disabled',
+        reason: 'huggingface_disabled',
         hfMetadata: {
           ...hfMetadata,
           skipped: true,
-          skipReason: 'Hugging Face potato diagnosis is temporarily disabled.'
+          skipReason: 'USE_HUGGINGFACE is not enabled.'
         }
       });
 
@@ -335,11 +337,11 @@ export class PotatoDiseaseDetectionService {
       }
 
       return this.buildFailureResult(
-        'Gemini diagnosis was unavailable while Hugging Face is temporarily disabled.',
+        'Gemini diagnosis was unavailable while Hugging Face was disabled.',
         startedAt,
         {
           ...hfMetadata,
-          fallbackReason: 'huggingface_temporarily_disabled',
+          fallbackReason: 'huggingface_disabled',
           hfSkipped: true,
           geminiError: geminiDiagnosis.error,
           geminiAttemptedModels: geminiDiagnosis.providerMetadata?.geminiAttemptedModels,
@@ -441,16 +443,21 @@ export class PotatoDiseaseDetectionService {
       throw error;
     }
 
+    const imageBody = file.buffer.buffer.slice(
+      file.buffer.byteOffset,
+      file.buffer.byteOffset + file.buffer.byteLength
+    );
+
     const response = await fetch(
-      `https://api-inference.huggingface.co/models/${env.HF_POTATO_MODEL_ID}`,
+      this.buildHuggingFaceUrl(),
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${env.HF_API_TOKEN}`,
           'Content-Type': file.mimetype || 'application/octet-stream'
         },
-        body: file.buffer,
-        signal: AbortSignal.timeout(30000)
+        body: imageBody,
+        signal: AbortSignal.timeout(env.HF_POTATO_TIMEOUT_MS)
       }
     );
 
@@ -461,6 +468,13 @@ export class PotatoDiseaseDetectionService {
       const error: any = new Error(`Hugging Face API error ${response.status}: ${message}`);
       error.status = response.status;
       error.payload = payload;
+      if (
+        response.status === 400 &&
+        typeof message === 'string' &&
+        message.toLowerCase().includes('not supported by provider')
+      ) {
+        error.hint = 'This Hugging Face model is not supported by the configured router provider. Choose a router-supported image-classification model or deploy this model as a dedicated Hugging Face Inference Endpoint and set HF_POTATO_ENDPOINT_URL.';
+      }
       throw error;
     }
 
@@ -478,6 +492,14 @@ export class PotatoDiseaseDetectionService {
         score: item.score > 1 ? item.score / 100 : item.score
       }))
       .sort((a, b) => b.score - a.score);
+  }
+
+  private buildHuggingFaceUrl(): string {
+    if (env.HF_POTATO_ENDPOINT_URL) {
+      return env.HF_POTATO_ENDPOINT_URL;
+    }
+
+    return `${env.HF_INFERENCE_BASE_URL.replace(/\/+$/g, '')}/${env.HF_POTATO_MODEL_ID}`;
   }
 
   private normalizePrediction(predictions: HuggingFacePrediction[]): { key: PotatoDiseaseKey; confidence: number; label?: string } {
@@ -636,12 +658,12 @@ export class PotatoDiseaseDetectionService {
     return {
       success: false,
       provider: 'gemini',
-      model: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash',
+      model: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash-lite',
       providerMetadata: {
         ...metadata,
         geminiConfigured: !!env.GEMINI_API_KEY,
         geminiEnabled: true,
-        geminiModel: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash',
+        geminiModel: geminiModels[geminiModels.length - 1] || 'gemini-2.5-flash-lite',
         geminiAttemptedModels: geminiModels,
         geminiErrors
       },
@@ -657,7 +679,7 @@ export class PotatoDiseaseDetectionService {
         apiKey: env.GEMINI_API_KEY!,
         model: model as any,
         temperature: parseFloat(process.env.GEMINI_TEMPERATURE || '0.25'),
-        maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '8192')
+        maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '3072')
       }));
     }
 

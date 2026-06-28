@@ -13,11 +13,11 @@ export class GeminiWrapperService {
     if (this.isEnabled) {
       const config: GeminiConfig = {
         apiKey: process.env.GEMINI_API_KEY!,
-        model: (process.env.GEMINI_MODEL as any) || 'gemini-2.5-flash',
+        model: (process.env.GEMINI_MODEL as any) || 'gemini-2.5-flash-lite',
         temperature: parseFloat(process.env.GEMINI_TEMPERATURE || '0.3'),
         topK: parseInt(process.env.GEMINI_TOP_K || '40'),
         topP: parseFloat(process.env.GEMINI_TOP_P || '0.95'),
-        maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '8192')
+        maxOutputTokens: parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '3072')
       };
       
       this.integratedService = new IntegratedAnalysisService(config);
@@ -295,7 +295,7 @@ export class GeminiWrapperService {
     return {
       enabled: this.isEnabled,
       provider: 'gemini',
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
       configured: !!process.env.GEMINI_API_KEY,
       features: {
         plant_identification: this.isEnabled,
