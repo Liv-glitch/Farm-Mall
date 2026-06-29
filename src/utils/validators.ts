@@ -69,18 +69,28 @@ export const updateProfileSchema = Joi.object({
 // Production cycle validation schemas
 export const createProductionCycleSchema = Joi.object({
   cropVarietyId: idSchema,
+  farmId: idSchema.optional(),
   landSizeAcres: Joi.number().min(0.1).max(10000).precision(2).required(),
   farmLocation: Joi.string().max(255).optional(),
+  farmCounty: Joi.string().max(100).optional(),
+  farmSubcounty: Joi.string().max(100).optional(),
+  farmLocationName: Joi.string().max(255).optional(),
   farmLocationLat: Joi.number().min(-90).max(90).optional(),
   farmLocationLng: Joi.number().min(-180).max(180).optional(),
   farmBoundaryCoordinates: Joi.array().items(boundaryPointSchema).min(3).optional(),
   plantingDate: Joi.date().optional(),
+  estimatedHarvestDate: Joi.date().optional(),
+  expectedYield: Joi.number().min(0).precision(2).allow(null).optional(),
+  expectedPricePerKg: Joi.number().min(0).precision(2).allow(null).optional(),
 });
 
 export const updateProductionCycleSchema = Joi.object({
   cropVarietyId: idSchema.optional(),
   landSizeAcres: Joi.number().min(0.1).max(10000).precision(2).optional(),
   farmLocation: Joi.string().max(255).optional(),
+  farmCounty: Joi.string().max(100).optional(),
+  farmSubcounty: Joi.string().max(100).optional(),
+  farmLocationName: Joi.string().max(255).optional(),
   farmLocationLat: Joi.number().min(-90).max(90).optional(),
   farmLocationLng: Joi.number().min(-180).max(180).optional(),
   farmBoundaryCoordinates: Joi.array().items(boundaryPointSchema).min(3).optional(),
@@ -89,6 +99,10 @@ export const updateProductionCycleSchema = Joi.object({
   actualHarvestDate: Joi.date().max('now').optional(),
   status: Joi.string().valid('planning', 'active', 'harvested', 'archived').optional(),
   totalYieldKg: Joi.number().min(0).precision(2).optional(),
+  expectedYield: Joi.number().min(0).precision(2).allow(null).optional(),
+  expectedPricePerKg: Joi.number().min(0).precision(2).allow(null).optional(),
+  actualYield: Joi.number().min(0).precision(2).optional(),
+  actualPricePerKg: Joi.number().min(0).precision(2).optional(),
 });
 
 // Activity validation schemas
