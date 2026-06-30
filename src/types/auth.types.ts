@@ -46,6 +46,11 @@ export interface AuthResponse {
   tokens: AuthTokens;
 }
 
+export interface RegisterResponse {
+  user: Omit<User, 'passwordHash'>;
+  emailVerificationRequired: boolean;
+}
+
 export interface JWTPayload {
   userId: string;
   email?: string;
@@ -63,7 +68,7 @@ export interface RefreshTokenPayload {
 }
 
 export interface PasswordResetRequest {
-  identifier: string; // email or phone number
+  email: string;
 }
 
 export interface PasswordResetConfirm {
@@ -78,6 +83,15 @@ export interface ChangePasswordRequest {
 
 export interface VerifyEmailRequest {
   token: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResendOtpRequest {
+  email: string;
 }
 
 export interface VerifyPhoneRequest {

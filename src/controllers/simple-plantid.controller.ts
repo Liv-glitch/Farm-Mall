@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
 import { PlantIdentificationModel } from '../models/PlantIdentification.model';
@@ -33,7 +33,7 @@ const upload = multer({
 });
 
 export class SimplePlantIdController {
-  public uploadMiddleware = upload.single('image1');
+  public uploadMiddleware: RequestHandler = upload.single('image1');
 
   // Simple Plant.id identification - matches your Postman request exactly
   public async identify(req: Request, res: Response): Promise<void> {

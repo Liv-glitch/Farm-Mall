@@ -175,7 +175,8 @@ export abstract class BaseGeminiService {
 
       // Upload file using File API as shown in docs
       // Convert Buffer to Blob for file upload
-      const blob = new Blob([documentBuffer], { type: mimeType });
+      const documentBytes = new Uint8Array(documentBuffer);
+      const blob = new Blob([documentBytes], { type: mimeType });
       const uploadedFile = await this.genAI.files.upload({
         file: blob,
         config: { mimeType }

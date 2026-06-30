@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { PestAnalysisService } from '../services/pestAnalysis.service';
 import { PestAnalysisRequest } from '../types/ai.types';
 import { HTTP_STATUS, ERROR_CODES } from '../utils/constants';
@@ -45,7 +45,7 @@ export class AIController {
   }
 
   // Middleware for handling file uploads
-  public uploadMiddleware = upload.single('image');
+  public uploadMiddleware: RequestHandler = upload.single('image');
 
   // Analyze pest and diseases from uploaded image
   public async analyzePestFromImage(req: Request, res: Response): Promise<void> {

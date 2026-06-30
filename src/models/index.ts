@@ -17,6 +17,8 @@ import { PreproductionStepModel, initializePreproductionStepModel } from './Prep
 import { PreproductionTaskModel, initializePreproductionTaskModel } from './PreproductionTask.model';
 import { EventModel } from './Event.model';
 import { CycleReportModel } from './CycleReport.model';
+import { PasswordResetTokenModel, initializePasswordResetTokenModel } from './PasswordResetToken.model';
+import { EmailVerificationOtpModel, initializeEmailVerificationOtpModel } from './EmailVerificationOtp.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -38,6 +40,8 @@ export function initializeModels(sequelize: Sequelize): void {
   initializePreproductionPlanModel(sequelize);
   initializePreproductionStepModel(sequelize);
   initializePreproductionTaskModel(sequelize);
+  initializePasswordResetTokenModel(sequelize);
+  initializeEmailVerificationOtpModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -140,6 +144,14 @@ function setupAssociations(): void {
     User: UserModel,
     ProductionCycle: ProductionCycleModel,
   });
+
+  PasswordResetTokenModel.associate({
+    User: UserModel,
+  });
+
+  EmailVerificationOtpModel.associate({
+    User: UserModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -162,6 +174,8 @@ export {
   PreproductionTaskModel,
   EventModel,
   CycleReportModel,
+  PasswordResetTokenModel,
+  EmailVerificationOtpModel,
 };
 
 // Export types
@@ -177,3 +191,5 @@ export * from './PreproductionStep.model';
 export * from './PreproductionTask.model';
 export * from './Event.model';
 export * from './CycleReport.model';
+export * from './PasswordResetToken.model';
+export * from './EmailVerificationOtp.model';

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
 import multer from 'multer';
@@ -32,7 +32,7 @@ const upload = multer({
 });
 
 export class PlantIdHealthController {
-  public uploadMiddleware = upload.single('image');
+  public uploadMiddleware: RequestHandler = upload.single('image');
 
   public async proxyHealthAssessment(req: Request, res: Response): Promise<void> {
     try {

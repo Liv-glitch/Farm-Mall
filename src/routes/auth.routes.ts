@@ -1,9 +1,41 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { createRateLimit } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 const authController = new AuthController();
+
+const normalizeEmail = (value: unknown): string =>
+  typeof value === 'string' ? value.trim().toLowerCase() : 'unknown';
+
+const forgotPasswordRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 5,
+  message: 'Too many password reset requests, please try again later',
+  keyGenerator: (req) => `forgot-password:${req.ip}:${normalizeEmail(req.body.email)}`,
+});
+
+const resetPasswordRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 10,
+  message: 'Too many password reset attempts, please try again later',
+  keyGenerator: (req) => `reset-password:${req.ip}`,
+});
+
+const verifyOtpRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 10,
+  message: 'Too many verification attempts, please try again later',
+  keyGenerator: (req) => `verify-otp:${req.ip}:${normalizeEmail(req.body.email)}`,
+});
+
+const resendOtpRateLimit = createRateLimit({
+  windowMs: 60 * 1000,
+  maxRequests: 1,
+  message: 'Please wait before requesting another verification code',
+  keyGenerator: (req) => `resend-otp:${req.ip}:${normalizeEmail(req.body.email)}`,
+});
 
 /**
  * @swagger
@@ -407,8 +439,10 @@ router.put('/profile', authenticate, authController.updateProfile.bind(authContr
  */
 router.post('/change-password', authenticate, authController.changePassword.bind(authController) as any);
 
-router.post('/forgot-password', authController.requestPasswordReset.bind(authController));
-router.post('/reset-password', authController.resetPassword.bind(authController));
+router.post('/forgot-password', forgotPasswordRateLimit, authController.requestPasswordReset.bind(authController));
+router.post('/reset-password', resetPasswordRateLimit, authController.resetPassword.bind(authController));
+router.post('/verify-otp', verifyOtpRateLimit, authController.verifyOtp.bind(authController));
+router.post('/resend-otp', resendOtpRateLimit, authController.resendOtp.bind(authController));
 router.post('/verify-email', authController.verifyEmail.bind(authController));
 router.post('/verify-phone', authController.verifyPhone.bind(authController));
 

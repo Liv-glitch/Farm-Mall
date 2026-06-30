@@ -1,17 +1,21 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { env } from '../config/environment';
+import { sequelize } from '../config/database';
 import { redisClient } from '../config/redis';
-import { UserModel } from '../models';
+import { EmailVerificationOtpModel, PasswordResetTokenModel, UserModel } from '../models';
 import { FarmModel } from '../models/Farm.model';
 import { ProductionCycleModel } from '../models/ProductionCycle.model';
 import { ActivityModel } from '../models/Activity.model';
 import { FarmCollaboratorModel } from '../models/FarmCollaborator.model';
+import { emailService } from './email.service';
 import {
   RegisterRequest,
   LoginRequest,
   AuthResponse,
+  RegisterResponse,
   JWTPayload,
   RefreshTokenPayload,
   ChangePasswordRequest,
@@ -21,15 +25,27 @@ import { ERROR_CODES } from '../utils/constants';
 import logger, { logError, logInfo } from '../utils/logger';
 import { Op } from 'sequelize';
 
+const PASSWORD_RESET_SUCCESS_MESSAGE = 'If an account exists for this email, a reset link has been sent.';
+const OTP_RESEND_SUCCESS_MESSAGE = 'If an unverified account exists for this email, a verification code has been sent.';
+const PASSWORD_RESET_EXPIRY_MS = 15 * 60 * 1000;
+const EMAIL_OTP_EXPIRY_MS = 10 * 60 * 1000;
+const MAX_OTP_ATTEMPTS = 5;
+
 export class AuthService {
   // Register new user
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
+  async register(userData: RegisterRequest): Promise<RegisterResponse> {
     try {
+      if (!userData.email) {
+        throw new Error(ERROR_CODES.INVALID_EMAIL_FORMAT);
+      }
+
+      const normalizedEmail = userData.email.toLowerCase();
+
       // Check if user already exists (optimized single query)
       const existingUser = await UserModel.findOne({
         where: {
           [Op.or]: [
-            ...(userData.email ? [{ email: userData.email.toLowerCase() }] : []),
+            { email: normalizedEmail },
             ...(userData.phoneNumber ? [{ phoneNumber: userData.phoneNumber }] : [])
           ]
         }
@@ -49,7 +65,7 @@ export class AuthService {
         });
         
         // Check which field conflicts and throw appropriate error
-        if (existingUser.email === userData.email?.toLowerCase()) {
+        if (existingUser.email === normalizedEmail) {
           throw new Error(ERROR_CODES.EMAIL_ALREADY_EXISTS);
         }
         if (existingUser.phoneNumber === userData.phoneNumber) {
@@ -60,29 +76,27 @@ export class AuthService {
       // Hash password
       const passwordHash = await this.hashPassword(userData.password);
 
-      // Create user
-      const user = await UserModel.create({
-        ...userData,
-        email: userData.email?.toLowerCase(),
-        role: 'user',
-        passwordHash,
-        subscriptionType: 'free',
-        emailVerified: false,
-        phoneVerified: false,
+      const user = await sequelize.transaction(async (transaction) => {
+        const createdUser = await UserModel.create({
+          ...userData,
+          email: normalizedEmail,
+          role: 'user',
+          passwordHash,
+          subscriptionType: 'free',
+          emailVerified: false,
+          phoneVerified: false,
+        }, { transaction });
+
+        await FarmModel.create({
+          ownerId: createdUser.id,
+          name: `${userData.fullName}'s Farm`,
+          location: `${userData.county}, ${userData.subCounty}`,
+        }, { transaction });
+
+        return createdUser;
       });
 
-      // Create default farm for the user
-      await FarmModel.create({
-        ownerId: user.id,
-        name: `${userData.fullName}'s Farm`,
-        location: `${userData.county}, ${userData.subCounty}`,
-      });
-
-      // Generate tokens
-      const tokens = await this.generateTokens(user);
-
-      // Cache user session
-      await this.cacheUserSession(user.id, tokens.refreshToken);
+      await this.createAndSendVerificationOtp(user);
 
       logInfo('User registered successfully', { userId: user.id, email: userData.email });
 
@@ -91,7 +105,7 @@ export class AuthService {
       
       return {
         user: userResponse,
-        tokens,
+        emailVerificationRequired: true,
       };
     } catch (error: any) {
       console.error('Detailed registration error:', {
@@ -162,6 +176,10 @@ export class AuthService {
         throw new Error(ERROR_CODES.INVALID_CREDENTIALS);
       }
 
+      if (user.email && !user.emailVerified) {
+        throw new Error(ERROR_CODES.EMAIL_NOT_VERIFIED);
+      }
+
       // Generate new tokens
       const tokens = await this.generateTokens(user);
 
@@ -216,6 +234,10 @@ export class AuthService {
       const user = await UserModel.findByPk(payload.userId);
       if (!user) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
+      }
+
+      if (user.email && !user.emailVerified) {
+        throw new Error(ERROR_CODES.EMAIL_NOT_VERIFIED);
       }
 
       // Generate new tokens
@@ -307,48 +329,48 @@ export class AuthService {
   }
 
   // Request password reset
-  async requestPasswordReset(requestData: PasswordResetRequest): Promise<void> {
+  async requestPasswordReset(requestData: PasswordResetRequest): Promise<string> {
     try {
-      // Find user
+      const email = requestData.email.toLowerCase();
       const user = await UserModel.findOne({
-        where: {
-          ...(requestData.identifier.includes('@')
-            ? { email: requestData.identifier.toLowerCase() }
-            : { phoneNumber: requestData.identifier }),
-        },
+        where: { email },
       });
 
       if (!user) {
-        // Don't reveal if user exists or not
-        logInfo('Password reset requested for non-existent user', {
-          identifier: requestData.identifier,
-        });
-        return;
+        logInfo('Password reset requested for non-existent email');
+        return PASSWORD_RESET_SUCCESS_MESSAGE;
       }
 
-      // Generate reset token
-      const resetToken = uuidv4();
-      // const resetTokenExpiry = new Date(Date.now() + TIME.HOUR); // 1 hour expiry
+      const rawToken = this.generateRawToken();
+      const tokenHash = this.hashOpaqueToken(rawToken);
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
 
-      // Cache reset token (handle Redis failures gracefully)
-      try {
-        await redisClient.set(
-          `password_reset:${resetToken}`,
-          user.id,
-          3600 // 1 hour in seconds
+      await sequelize.transaction(async (transaction) => {
+        await PasswordResetTokenModel.update(
+          { usedAt: new Date() },
+          {
+            where: {
+              userId: user.id,
+              usedAt: null,
+            },
+            transaction,
+          }
         );
-      } catch (redisError) {
-        logError('Failed to cache password reset token', redisError as Error, { userId: user.id });
-        // For password reset, Redis is critical - we need to throw an error if we can't cache the token
-        throw new Error('Unable to process password reset request at this time');
-      }
 
-      // TODO: Send reset email/SMS
-      // await emailService.sendPasswordResetEmail(user, resetToken);
+        await PasswordResetTokenModel.create({
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        }, { transaction });
+      });
+
+      const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
+      await emailService.sendPasswordResetEmail(email, resetUrl);
 
       logInfo('Password reset requested', { userId: user.id });
+      return PASSWORD_RESET_SUCCESS_MESSAGE;
     } catch (error) {
-      logError('Password reset request failed', error as Error, requestData);
+      logError('Password reset request failed', error as Error);
       throw error;
     }
   }
@@ -356,33 +378,152 @@ export class AuthService {
   // Reset password with token
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
-      // Verify reset token
-      const userId = await redisClient.get(`password_reset:${token}`);
-      if (!userId) {
+      const tokenHash = this.hashOpaqueToken(token);
+      const resetToken = await PasswordResetTokenModel.findOne({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: {
+            [Op.gt]: new Date(),
+          },
+        },
+      });
+
+      if (!resetToken) {
         throw new Error(ERROR_CODES.PASSWORD_RESET_TOKEN_INVALID);
       }
 
-      // Get user
-      const user = await UserModel.findByPk(userId);
+      const user = await UserModel.findByPk(resetToken.userId);
       if (!user) {
         throw new Error(ERROR_CODES.USER_NOT_FOUND);
       }
 
-      // Hash new password
       const passwordHash = await this.hashPassword(newPassword);
+      const now = new Date();
 
-      // Update password
-      await user.update({ passwordHash });
-
-      // Delete reset token
-      await redisClient.del(`password_reset:${token}`);
+      await sequelize.transaction(async (transaction) => {
+        await user.update({ passwordHash }, { transaction });
+        await resetToken.update({ usedAt: now }, { transaction });
+        await PasswordResetTokenModel.update(
+          { usedAt: now },
+          {
+            where: {
+              userId: user.id,
+              usedAt: null,
+            },
+            transaction,
+          }
+        );
+      });
 
       // Invalidate all user sessions
-      await this.invalidateAllUserSessions(userId);
+      await this.invalidateAllUserSessions(user.id);
 
-      logInfo('Password reset successfully', { userId });
+      if (user.email) {
+        await emailService.sendPasswordChangedEmail(user.email);
+      }
+
+      logInfo('Password reset successfully', { userId: user.id });
     } catch (error) {
-      logError('Password reset failed', error as Error, { token });
+      logError('Password reset failed', error as Error);
+      throw error;
+    }
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<AuthResponse> {
+    try {
+      const normalizedEmail = email.toLowerCase();
+      const user = await UserModel.findOne({ where: { email: normalizedEmail } });
+      if (!user) {
+        throw new Error(ERROR_CODES.VERIFICATION_CODE_INVALID);
+      }
+
+      if (user.emailVerified) {
+        const tokens = await this.generateTokens(user);
+        await this.cacheUserSession(user.id, tokens.refreshToken);
+        const userResponse = user.toJSON() as any;
+        delete userResponse.passwordHash;
+        return { user: userResponse, tokens };
+      }
+
+      const otpRecord = await EmailVerificationOtpModel.findOne({
+        where: {
+          userId: user.id,
+          usedAt: null,
+          expiresAt: {
+            [Op.gt]: new Date(),
+          },
+        },
+        order: [['createdAt', 'DESC']],
+      });
+
+      if (!otpRecord) {
+        throw new Error(ERROR_CODES.VERIFICATION_CODE_EXPIRED);
+      }
+
+      if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+        await otpRecord.update({ usedAt: new Date() });
+        throw new Error(ERROR_CODES.VERIFICATION_CODE_INVALID);
+      }
+
+      const submittedOtpHash = this.hashOpaqueToken(otp);
+      if (submittedOtpHash !== otpRecord.otpHash) {
+        const attempts = otpRecord.attempts + 1;
+        await otpRecord.update({
+          attempts,
+          usedAt: attempts >= MAX_OTP_ATTEMPTS ? new Date() : otpRecord.usedAt,
+        });
+        throw new Error(ERROR_CODES.VERIFICATION_CODE_INVALID);
+      }
+
+      const now = new Date();
+      await sequelize.transaction(async (transaction) => {
+        await user.update({ emailVerified: true }, { transaction });
+        await EmailVerificationOtpModel.update(
+          { usedAt: now },
+          {
+            where: {
+              userId: user.id,
+              usedAt: null,
+            },
+            transaction,
+          }
+        );
+      });
+
+      const tokens = await this.generateTokens(user);
+      await this.cacheUserSession(user.id, tokens.refreshToken);
+
+      logInfo('Email verified successfully', { userId: user.id });
+
+      const userResponse = user.toJSON() as any;
+      delete userResponse.passwordHash;
+
+      return {
+        user: userResponse,
+        tokens,
+      };
+    } catch (error) {
+      logError('OTP verification failed', error as Error);
+      throw error;
+    }
+  }
+
+  async resendVerificationOtp(email: string): Promise<string> {
+    try {
+      const normalizedEmail = email.toLowerCase();
+      const user = await UserModel.findOne({ where: { email: normalizedEmail } });
+
+      if (!user || user.emailVerified) {
+        return OTP_RESEND_SUCCESS_MESSAGE;
+      }
+
+      await this.createAndSendVerificationOtp(user);
+      logInfo('Verification OTP resent', { userId: user.id });
+
+      return OTP_RESEND_SUCCESS_MESSAGE;
+    } catch (error) {
+      logError('Resend verification OTP failed', error as Error);
       throw error;
     }
   }
@@ -410,7 +551,7 @@ export class AuthService {
 
       logInfo('Email verified successfully', { userId });
     } catch (error) {
-      logError('Email verification failed', error as Error, { token });
+      logError('Email verification failed', error as Error);
       throw error;
     }
   }
@@ -444,6 +585,49 @@ export class AuthService {
       logError('Phone verification failed', error as Error, { phoneNumber });
       throw error;
     }
+  }
+
+  private async createAndSendVerificationOtp(user: UserModel): Promise<void> {
+    if (!user.email) {
+      throw new Error(ERROR_CODES.INVALID_EMAIL_FORMAT);
+    }
+
+    const otp = this.generateNumericOtp();
+    const otpHash = this.hashOpaqueToken(otp);
+    const expiresAt = new Date(Date.now() + EMAIL_OTP_EXPIRY_MS);
+
+    await sequelize.transaction(async (transaction) => {
+      await EmailVerificationOtpModel.update(
+        { usedAt: new Date() },
+        {
+          where: {
+            userId: user.id,
+            usedAt: null,
+          },
+          transaction,
+        }
+      );
+
+      await EmailVerificationOtpModel.create({
+        userId: user.id,
+        otpHash,
+        expiresAt,
+      }, { transaction });
+    });
+
+    await emailService.sendVerificationOtpEmail(user.email, otp);
+  }
+
+  private generateRawToken(): string {
+    return randomBytes(32).toString('hex');
+  }
+
+  private generateNumericOtp(): string {
+    return randomInt(0, 1000000).toString().padStart(6, '0');
+  }
+
+  private hashOpaqueToken(value: string): string {
+    return createHash('sha256').update(value).digest('hex');
   }
 
   // Hash password
@@ -518,13 +702,12 @@ export class AuthService {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
           await redisClient.set(`blacklist:${token}`, 'blacklisted', ttl);
-          logInfo('Token blacklisted', { tokenLength: token.length });
+          logInfo('Token blacklisted');
         }
       }
     } catch (error) {
       logger.warn('Failed to blacklist token - continuing without Redis blacklisting', { 
-        error, 
-        token: token.substring(0, 20) 
+        error,
       });
       // Continue without Redis blacklisting - auth will still work
     }

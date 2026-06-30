@@ -18,6 +18,12 @@ const REDIS_KEYS = {
   RECENT_SEARCHES: 'recent_searches'
 };
 
+const redactRedisKey = (key: string): string => {
+  if (key.startsWith('blacklist:')) return 'blacklist:[redacted]';
+  if (key.startsWith('password_reset:')) return 'password_reset:[redacted]';
+  return key;
+};
+
 class RedisClient {
   private client: RedisClientType;
   private isConnected: boolean = false;
@@ -164,19 +170,19 @@ class RedisClient {
   async set(key: string, value: string, expireInSeconds?: number): Promise<void> {
     try {
       if (!this.isConnected) {
-        logInfo('Redis not connected, skipping SET operation', { key });
+        logInfo('Redis not connected, skipping SET operation', { key: redactRedisKey(key) });
         return;
       }
       
       if (expireInSeconds) {
         await this.client.setEx(key, expireInSeconds, value);
-        logInfo('Redis SET with expiry', { key, expireInSeconds });
+        logInfo('Redis SET with expiry', { key: redactRedisKey(key), expireInSeconds });
       } else {
         await this.client.set(key, value);
-        logInfo('Redis SET', { key });
+        logInfo('Redis SET', { key: redactRedisKey(key) });
       }
     } catch (error) {
-      logError('Redis SET error', error as Error, { key });
+      logError('Redis SET error', error as Error, { key: redactRedisKey(key) });
       // Don't throw error, just log it to prevent server crashes
       this.isConnected = false;
     }
@@ -185,15 +191,15 @@ class RedisClient {
   async get(key: string): Promise<string | null> {
     try {
       if (!this.isConnected) {
-        logInfo('Redis not connected, returning null for GET operation', { key });
+        logInfo('Redis not connected, returning null for GET operation', { key: redactRedisKey(key) });
         return null;
       }
       
       const value = await this.client.get(key);
-      logInfo('Redis GET', { key, exists: value !== null });
+      logInfo('Redis GET', { key: redactRedisKey(key), exists: value !== null });
       return value;
     } catch (error) {
-      logError('Redis GET error', error as Error, { key });
+      logError('Redis GET error', error as Error, { key: redactRedisKey(key) });
       this.isConnected = false;
       return null; // Return null instead of throwing
     }
@@ -202,15 +208,15 @@ class RedisClient {
   async del(key: string): Promise<number> {
     try {
       if (!this.isConnected) {
-        logInfo('Redis not connected, skipping DEL operation', { key });
+        logInfo('Redis not connected, skipping DEL operation', { key: redactRedisKey(key) });
         return 0;
       }
       
       const result = await this.client.del(key);
-      logInfo('Redis DEL', { key, deleted: result > 0 });
+      logInfo('Redis DEL', { key: redactRedisKey(key), deleted: result > 0 });
       return result;
     } catch (error) {
-      logError('Redis DEL error', error as Error, { key });
+      logError('Redis DEL error', error as Error, { key: redactRedisKey(key) });
       this.isConnected = false;
       return 0; // Return 0 instead of throwing
     }
@@ -219,15 +225,15 @@ class RedisClient {
   async exists(key: string): Promise<number> {
     try {
       if (!this.isConnected) {
-        logInfo('Redis not connected, returning 0 for EXISTS operation', { key });
+        logInfo('Redis not connected, returning 0 for EXISTS operation', { key: redactRedisKey(key) });
         return 0;
       }
       
       const result = await this.client.exists(key);
-      logInfo('Redis EXISTS', { key, exists: result > 0 });
+      logInfo('Redis EXISTS', { key: redactRedisKey(key), exists: result > 0 });
       return result;
     } catch (error) {
-      logError('Redis EXISTS error', error as Error, { key });
+      logError('Redis EXISTS error', error as Error, { key: redactRedisKey(key) });
       this.isConnected = false;
       return 0; // Return 0 instead of throwing
     }
@@ -236,15 +242,15 @@ class RedisClient {
   async expire(key: string, seconds: number): Promise<boolean> {
     try {
       if (!this.isConnected) {
-        logInfo('Redis not connected, skipping EXPIRE operation', { key, seconds });
+        logInfo('Redis not connected, skipping EXPIRE operation', { key: redactRedisKey(key), seconds });
         return false;
       }
       
       const result = await this.client.expire(key, seconds);
-      logInfo('Redis EXPIRE', { key, seconds, success: result });
+      logInfo('Redis EXPIRE', { key: redactRedisKey(key), seconds, success: result });
       return result;
     } catch (error) {
-      logError('Redis EXPIRE error', error as Error, { key, seconds });
+      logError('Redis EXPIRE error', error as Error, { key: redactRedisKey(key), seconds });
       this.isConnected = false;
       return false; // Return false instead of throwing
     }
@@ -274,13 +280,13 @@ class RedisClient {
   async blacklistToken(token: string, expireInSeconds: number): Promise<void> {
     const key = `blacklist:${token}`;
     await this.set(key, 'blacklisted', expireInSeconds);
-    logInfo('Token blacklisted', { tokenKey: key, expireInSeconds });
+    logInfo('Token blacklisted', { tokenKey: redactRedisKey(key), expireInSeconds });
   }
 
   async isTokenBlacklisted(token: string): Promise<boolean> {
     const key = `blacklist:${token}`;
     const exists = await this.exists(key);
-    logInfo('Token blacklist check', { tokenKey: key, isBlacklisted: exists === 1 });
+    logInfo('Token blacklist check', { tokenKey: redactRedisKey(key), isBlacklisted: exists === 1 });
     return exists === 1;
   }
 

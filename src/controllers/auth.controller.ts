@@ -1,6 +1,14 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { validateRegisterRequest, validateLoginRequest, validateChangePasswordRequest } from '../utils/validators';
+import {
+  validateChangePasswordRequest,
+  validateConfirmResetPasswordRequest,
+  validateLoginRequest,
+  validatePasswordResetRequest,
+  validateRegisterRequest,
+  validateResendOtpRequest,
+  validateVerifyOtpRequest,
+} from '../utils/validators';
 import { HTTP_STATUS, ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
 import { env } from '../config/environment';
@@ -11,6 +19,7 @@ import {
   PasswordResetRequest,
   VerifyEmailRequest,
   VerifyPhoneRequest,
+  VerifyOtpRequest,
   User
 } from '../types/auth.types';
 
@@ -18,6 +27,16 @@ import {
 interface AuthenticatedRequest extends Request {
   user: User;
 }
+
+const redactAuthBody = (body: any): any => {
+  const redacted = { ...body };
+  if ('password' in redacted) redacted.password = '[REDACTED]';
+  if ('newPassword' in redacted) redacted.newPassword = '[REDACTED]';
+  if ('currentPassword' in redacted) redacted.currentPassword = '[REDACTED]';
+  if ('token' in redacted) redacted.token = '[REDACTED]';
+  if ('otp' in redacted) redacted.otp = '[REDACTED]';
+  return redacted;
+};
 
 export class AuthController {
   private authService: AuthService;
@@ -33,13 +52,13 @@ export class AuthController {
       if (!validationResult.isValid) {
         console.error('Registration validation failed:', {
           errors: validationResult.errors,
-          requestBody: req.body,
+          requestBody: redactAuthBody(req.body),
           endpoint: '/api/v1/auth/register'
         });
         
         logError('Registration validation failed', new Error('Validation failed'), {
           errors: validationResult.errors,
-          requestBody: req.body,
+          requestBody: redactAuthBody(req.body),
           endpoint: '/api/v1/auth/register',
           userAgent: req.get('User-Agent'),
           ip: req.ip
@@ -60,13 +79,19 @@ export class AuthController {
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
-        message: 'User registered successfully',
+        message: result.emailVerificationRequired
+          ? 'User registered successfully. Please verify your email.'
+          : 'User registered successfully',
         data: result,
       });
     } catch (error: any) {
-      console.error('Detailed registration error:', error);
+      console.error('Detailed registration error:', {
+        error: error.message,
+        stack: error.stack,
+        requestBody: redactAuthBody(req.body),
+      });
       logError('Registration failed', error, {
-        ...req.body,
+        ...redactAuthBody(req.body),
         error: error.message,
         stack: error.stack
       });
@@ -89,6 +114,15 @@ export class AuthController {
         return;
       }
 
+      if (error.message === ERROR_CODES.INVALID_EMAIL_FORMAT) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Email is required for account verification',
+          code: ERROR_CODES.INVALID_EMAIL_FORMAT,
+        });
+        return;
+      }
+
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: error.message || 'Internal server error',
@@ -104,13 +138,13 @@ export class AuthController {
       if (!validationResult.isValid) {
         console.error('Login validation failed:', {
           errors: validationResult.errors,
-          requestBody: req.body,
+          requestBody: redactAuthBody(req.body),
           endpoint: '/api/v1/auth/login'
         });
         
         logError('Login validation failed', new Error('Validation failed'), {
           errors: validationResult.errors,
-          requestBody: req.body,
+          requestBody: redactAuthBody(req.body),
           endpoint: '/api/v1/auth/login',
           userAgent: req.get('User-Agent'),
           ip: req.ip
@@ -159,6 +193,15 @@ export class AuthController {
           success: false,
           message: 'Invalid credentials',
           code: ERROR_CODES.INVALID_CREDENTIALS,
+        });
+        return;
+      }
+
+      if (error.message === ERROR_CODES.EMAIL_NOT_VERIFIED) {
+        res.status(HTTP_STATUS.FORBIDDEN).json({
+          success: false,
+          message: 'Please verify your email before logging in',
+          code: ERROR_CODES.EMAIL_NOT_VERIFIED,
         });
         return;
       }
@@ -294,34 +337,25 @@ export class AuthController {
   // Request password reset
   async requestPasswordReset(req: Request, res: Response): Promise<void> {
     try {
-      const { identifier }: PasswordResetRequest = req.body;
-
-      if (!identifier) {
+      const validationResult = validatePasswordResetRequest(req.body);
+      if (!validationResult.isValid) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Email or phone number is required',
-          code: ERROR_CODES.MISSING_REQUIRED_FIELD,
+          message: 'Validation failed',
+          errors: validationResult.errors,
         });
         return;
       }
 
-      await this.authService.requestPasswordReset({ identifier });
+      const { email }: PasswordResetRequest = req.body;
+      const message = await this.authService.requestPasswordReset({ email });
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: 'Password reset instructions sent',
+        message,
       });
     } catch (error: any) {
-      logError('Password reset request failed', error, { identifier: req.body.identifier });
-
-      if (error.message === ERROR_CODES.USER_NOT_FOUND) {
-        // Don't reveal if user exists for security
-        res.status(HTTP_STATUS.OK).json({
-          success: true,
-          message: 'Password reset instructions sent',
-        });
-        return;
-      }
+      logError('Password reset request failed', error);
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
@@ -334,17 +368,17 @@ export class AuthController {
   // Reset password
   async resetPassword(req: Request, res: Response): Promise<void> {
     try {
-      const { token, newPassword } = req.body;
-
-      if (!token || !newPassword) {
+      const validationResult = validateConfirmResetPasswordRequest(req.body);
+      if (!validationResult.isValid) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Token and new password are required',
-          code: ERROR_CODES.MISSING_REQUIRED_FIELD,
+          message: 'Validation failed',
+          errors: validationResult.errors,
         });
         return;
       }
 
+      const { token, newPassword } = req.body;
       await this.authService.resetPassword(token, newPassword);
 
       res.status(HTTP_STATUS.OK).json({
@@ -362,6 +396,79 @@ export class AuthController {
         });
         return;
       }
+
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error',
+        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async verifyOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const validationResult = validateVerifyOtpRequest(req.body);
+      if (!validationResult.isValid) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Validation failed',
+          errors: validationResult.errors,
+        });
+        return;
+      }
+
+      const { email, otp }: VerifyOtpRequest = req.body;
+      const result = await this.authService.verifyOtp(email, otp);
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Email verified successfully',
+        data: result,
+      });
+    } catch (error: any) {
+      logError('OTP verification failed', error);
+
+      if (
+        error.message === ERROR_CODES.VERIFICATION_CODE_INVALID ||
+        error.message === ERROR_CODES.VERIFICATION_CODE_EXPIRED
+      ) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid or expired verification code',
+          code: error.message,
+        });
+        return;
+      }
+
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error',
+        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async resendOtp(req: Request, res: Response): Promise<void> {
+    try {
+      const validationResult = validateResendOtpRequest(req.body);
+      if (!validationResult.isValid) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Validation failed',
+          errors: validationResult.errors,
+        });
+        return;
+      }
+
+      const { email } = req.body;
+      const message = await this.authService.resendVerificationOtp(email);
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message,
+      });
+    } catch (error: any) {
+      logError('Resend OTP failed', error);
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,

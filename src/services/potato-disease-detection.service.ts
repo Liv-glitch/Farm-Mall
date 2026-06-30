@@ -443,10 +443,7 @@ export class PotatoDiseaseDetectionService {
       throw error;
     }
 
-    const imageBody = file.buffer.buffer.slice(
-      file.buffer.byteOffset,
-      file.buffer.byteOffset + file.buffer.byteLength
-    );
+    const imageBody = new Uint8Array(file.buffer);
 
     const response = await fetch(
       this.buildHuggingFaceUrl(),

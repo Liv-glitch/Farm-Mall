@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { env } from '../config/environment';
 import { logInfo, logError } from '../utils/logger';
 import { geminiWrapper } from '../services/gemini/gemini-wrapper.service';
@@ -61,8 +61,8 @@ const upload = multer({
 });
 
 export class EnhancedPlantController {
-  public uploadMiddleware = upload.single('image1');
-  public uploadSoilMiddleware = upload.single('document');
+  public uploadMiddleware: RequestHandler = upload.single('image1');
+  public uploadSoilMiddleware: RequestHandler = upload.single('document');
 
   // Helper function to download image from URL and create a File-like object
   private async downloadImageFromUrl(imageUrl: string): Promise<Express.Multer.File | null> {

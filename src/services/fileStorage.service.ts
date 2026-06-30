@@ -215,7 +215,7 @@ export class FileStorageService {
     }
   }
 
-  async listFiles(prefix?: string) {
+  async listFiles(prefix?: string): Promise<any[]> {
     try {
       const { data, error } = await this.supabase.storage
         .from(this.bucketName)

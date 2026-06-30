@@ -18,14 +18,14 @@ const boundaryPointSchema = Joi.object({
 // Authentication validation schemas
 export const registerSchema = Joi.object({
   fullName: Joi.string().min(2).max(255).required(),
-  email: emailSchema,
+  email: Joi.string().email().required(),
   phoneNumber: phoneSchema,
   password: passwordSchema,
   county: Joi.string().min(2).max(100).required(),
   subCounty: Joi.string().min(2).max(100).required(),
   locationLat: Joi.number().min(-90).max(90).optional(),
   locationLng: Joi.number().min(-180).max(180).optional(),
-}).or('email', 'phoneNumber');
+});
 
 export const loginSchema = Joi.object({
   identifier: Joi.string().required(),
@@ -38,12 +38,21 @@ export const changePasswordSchema = Joi.object({
 });
 
 export const resetPasswordSchema = Joi.object({
-  identifier: Joi.string().required(),
+  email: Joi.string().email().required(),
 });
 
 export const confirmResetPasswordSchema = Joi.object({
   token: Joi.string().required(),
   newPassword: passwordSchema,
+});
+
+export const verifyOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string().length(6).pattern(/^\d+$/).required(),
+});
+
+export const resendOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
 });
 
 export const verifyEmailSchema = Joi.object({
@@ -385,6 +394,18 @@ export const validatePasswordResetRequest = (data: any): ValidationResult => {
   return validateWithSchema(resetPasswordSchema, data);
 };
 
+export const validateConfirmResetPasswordRequest = (data: any): ValidationResult => {
+  return validateWithSchema(confirmResetPasswordSchema, data);
+};
+
+export const validateVerifyOtpRequest = (data: any): ValidationResult => {
+  return validateWithSchema(verifyOtpSchema, data);
+};
+
+export const validateResendOtpRequest = (data: any): ValidationResult => {
+  return validateWithSchema(resendOtpSchema, data);
+};
+
 export const validateVerifyEmailRequest = (data: any): ValidationResult => {
   return validateWithSchema(verifyEmailSchema, data);
 };
@@ -471,6 +492,9 @@ export default {
   validateLoginRequest,
   validateChangePasswordRequest,
   validatePasswordResetRequest,
+  validateConfirmResetPasswordRequest,
+  validateVerifyOtpRequest,
+  validateResendOtpRequest,
   validateVerifyEmailRequest,
   validateVerifyPhoneRequest,
 }; 

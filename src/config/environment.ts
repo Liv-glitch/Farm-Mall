@@ -80,6 +80,10 @@ interface EnvironmentConfig {
   SMTP_PORT: number | undefined;
   SMTP_USER?: string;
   SMTP_PASS?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
+  RESEND_FROM_NAME: string;
+  FRONTEND_URL: string;
 
   // Security & Performance
   BCRYPT_SALT_ROUNDS: number;
@@ -189,6 +193,10 @@ const validateEnvironment = (): EnvironmentConfig => {
     SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined,
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    RESEND_FROM_NAME: process.env.RESEND_FROM_NAME || 'Farm Mall',
+    FRONTEND_URL: (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, ''),
 
     // Security & Performance
     BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),
@@ -214,6 +222,8 @@ const validateEnvironment = (): EnvironmentConfig => {
     if (config.ENABLE_UPLOADS) {
       requiredVars.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
     }
+
+    requiredVars.push('RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'FRONTEND_URL');
   }
 
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
