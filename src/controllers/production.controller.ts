@@ -234,6 +234,48 @@ export class ProductionController {
     }
   }
 
+  async getCycleReports(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const reports = await productionService.getCycleReports(userId);
+
+      res.json({
+        success: true,
+        data: reports
+      });
+    } catch (error) {
+      const err = error as Error;
+      logError('Failed to get cycle reports via API', err, { userId: req.user?.id });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve cycle reports',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+  }
+
+  async getCycleReport(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { reportId } = req.params;
+      const report = await productionService.getCycleReport(userId, reportId);
+
+      res.json({
+        success: true,
+        data: report
+      });
+    } catch (error) {
+      const err = error as Error;
+      logError('Failed to get cycle report via API', err, { userId: req.user?.id, reportId: req.params.reportId });
+      const statusCode = err.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: err.message || 'Failed to retrieve cycle report',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+  }
+
   // Get all user activities
   async getActivities(req: Request, res: Response): Promise<void> {
     try {

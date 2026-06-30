@@ -257,3 +257,20 @@ export interface ProductionAnalytics {
     successRate: number;
   };
 } 
+
+export type CycleReportType = 'activity' | 'financial';
+
+export interface CycleReportSummary {
+  id: string;
+  productionCycleId: string;
+  type: CycleReportType;
+  snapshotVersion: number;
+  generatedAt: Date;
+  cropLabel: string;
+  farmLabel: string;
+  harvestDate?: Date | string | null;
+}
+
+export interface CycleReportDetail extends CycleReportSummary {
+  snapshotData: Record<string, unknown>;
+}

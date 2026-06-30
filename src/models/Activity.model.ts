@@ -108,7 +108,18 @@ ActivityModel.init(
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isIn: [['planting', 'fertilizing', 'weeding', 'pest_control', 'irrigation', 'harvesting', 'soil_preparation', 'other']],
+        isIn: [[
+          'planting',
+          'fertilizing',
+          'fertilization',
+          'weeding',
+          'pest_control',
+          'disease_control',
+          'irrigation',
+          'harvesting',
+          'soil_preparation',
+          'other',
+        ]],
       },
     },
     description: {

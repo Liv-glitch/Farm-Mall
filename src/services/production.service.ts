@@ -4,13 +4,16 @@ import { ActivityModel } from '../models/Activity.model';
 import { UserModel } from '../models/User.model';
 import { FarmModel } from '../models/Farm.model';
 import { FarmCollaboratorModel } from '../models/FarmCollaborator.model';
+import { CycleReportModel, CycleReportType } from '../models/CycleReport.model';
 import { 
   ProductionCycle, 
   Activity, 
   CreateProductionCycleRequest,
   CreateActivityRequest,
   UpdateProductionCycleRequest,
-  UpdateActivityRequest 
+  UpdateActivityRequest,
+  CycleReportDetail,
+  CycleReportSummary
 } from '../types/production.types';
 import { ERROR_CODES } from '../utils/constants';
 import { logError, logInfo } from '../utils/logger';
@@ -44,7 +47,223 @@ function parseJsonColumn<T = unknown>(value: unknown): T | unknown {
   }
 }
 
+function toFiniteNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toIsoDate(value: unknown): string | null {
+  if (!value) return null;
+  const date = new Date(value as any);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function daysBetween(start: unknown, end: unknown): number | null {
+  const startDate = start ? new Date(start as any) : null;
+  const endDate = end ? new Date(end as any) : null;
+
+  if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function normalizeActivityType(type: unknown): unknown {
+  if (type === 'fertilization') return 'fertilizing';
+  if (type === 'disease_control') return 'pest_control';
+  return type;
+}
+
 export class ProductionService {
+  private normalizeActivityInputs(inputs: unknown): Array<Record<string, unknown>> {
+    const parsed = parseJsonColumn(inputs);
+    return Array.isArray(parsed) ? parsed.map((input) => ({ ...(input as Record<string, unknown>) })) : [];
+  }
+
+  private buildActivityRows(activities: any[], includeFinancials: boolean): Array<Record<string, unknown>> {
+    const sortedActivities = [...activities].sort(
+      (a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+    );
+
+    return sortedActivities.map((activity, index) => {
+      const previousActivity = index > 0 ? sortedActivities[index - 1] : null;
+      const activityInputs = this.normalizeActivityInputs(activity.inputs);
+      const row: Record<string, unknown> = {
+        id: activity.id,
+        type: activity.type,
+        description: activity.description || activity.type,
+        status: activity.status,
+        scheduledDate: toIsoDate(activity.scheduledDate),
+        completedDate: toIsoDate(activity.completedDate),
+        durationDays: daysBetween(activity.scheduledDate, activity.completedDate),
+        daysSincePreviousActivity: previousActivity
+          ? daysBetween(previousActivity.completedDate || previousActivity.scheduledDate, activity.completedDate || activity.scheduledDate)
+          : null,
+        laborHours: toFiniteNumber(activity.laborHours),
+        laborType: activity.laborType || null,
+        notes: activity.notes || null,
+      };
+
+      if (includeFinancials) {
+        row.cost = toFiniteNumber(activity.cost) || 0;
+        row.inputs = activityInputs.map((input) => ({
+          name: input.name || '',
+          quantity: toFiniteNumber(input.quantity) || 0,
+          unit: input.unit || '',
+          cost: toFiniteNumber(input.cost) || 0,
+          brand: input.brand || null,
+          supplier: input.supplier || null,
+        }));
+      } else {
+        row.inputs = activityInputs.map((input) => ({
+          name: input.name || '',
+          quantity: toFiniteNumber(input.quantity) || 0,
+          unit: input.unit || '',
+        }));
+      }
+
+      return row;
+    });
+  }
+
+  private buildReportSnapshot(cycleData: any, type: CycleReportType): Record<string, unknown> {
+    const activities = Array.isArray(cycleData.activities) ? cycleData.activities : [];
+    const includeFinancials = type === 'financial';
+    const actualYield = toFiniteNumber(cycleData.actualYield);
+    const actualPricePerKg = toFiniteNumber(cycleData.actualPricePerKg);
+    const actualRevenue =
+      actualYield !== null && actualYield > 0 && actualPricePerKg !== null && actualPricePerKg > 0
+        ? actualYield * actualPricePerKg
+        : null;
+    const activityTotal = activities.reduce((sum: number, activity: any) => sum + (toFiniteNumber(activity.cost) || 0), 0);
+    const inputTotal = activities.reduce((sum: number, activity: any) => {
+      return (
+        sum +
+        this.normalizeActivityInputs(activity.inputs).reduce(
+          (inputSum, input) => inputSum + (toFiniteNumber(input.cost) || 0),
+          0
+        )
+      );
+    }, 0);
+    const totalCost = activityTotal + inputTotal;
+
+    const baseSnapshot: Record<string, unknown> = {
+      reportType: type,
+      generatedAt: new Date().toISOString(),
+      cycle: {
+        id: cycleData.id,
+        cropVariety: cycleData.cropVariety?.name || 'Production cycle',
+        cropType: cycleData.cropVariety?.cropType || null,
+        farmName: cycleData.farm?.name || null,
+        farmLocation:
+          cycleData.farmLocation ||
+          [cycleData.farmLocationName, cycleData.farmSubcounty, cycleData.farmCounty].filter(Boolean).join(', ') ||
+          cycleData.farm?.location ||
+          null,
+        county: cycleData.farmCounty || null,
+        subcounty: cycleData.farmSubcounty || null,
+        landSizeAcres: toFiniteNumber(cycleData.landSizeAcres),
+        plantingDate: toIsoDate(cycleData.plantingDate),
+        estimatedHarvestDate: toIsoDate(cycleData.estimatedHarvestDate),
+        actualHarvestDate: toIsoDate(cycleData.actualHarvestDate),
+        status: cycleData.status,
+      },
+      activities: this.buildActivityRows(activities, includeFinancials),
+      activitySummary: {
+        totalActivities: activities.length,
+        completedActivities: activities.filter((activity: any) => activity.status === 'completed').length,
+        cycleDurationDays: daysBetween(cycleData.plantingDate, cycleData.actualHarvestDate || cycleData.estimatedHarvestDate),
+      },
+    };
+
+    if (includeFinancials) {
+      baseSnapshot.financialSummary = {
+        activityCostTotal: activityTotal,
+        inputCostTotal: inputTotal,
+        totalCost,
+        actualYield,
+        actualPricePerKg,
+        actualRevenue,
+        profit: actualRevenue === null ? null : actualRevenue - totalCost,
+      };
+    }
+
+    return baseSnapshot;
+  }
+
+  private getReportLabels(reportData: any): Pick<CycleReportSummary, 'cropLabel' | 'farmLabel' | 'harvestDate'> {
+    const snapshot = parseJsonColumn(reportData.snapshotData) as any;
+    return {
+      cropLabel:
+        snapshot?.cycle?.cropVariety ||
+        reportData.productionCycle?.cropVariety?.name ||
+        'Production cycle',
+      farmLabel:
+        snapshot?.cycle?.farmLocation ||
+        reportData.productionCycle?.farmLocation ||
+        reportData.productionCycle?.farm?.location ||
+        'Farm location',
+      harvestDate: snapshot?.cycle?.actualHarvestDate || reportData.productionCycle?.actualHarvestDate || null,
+    };
+  }
+
+  private toReportSummary(report: CycleReportModel): CycleReportSummary {
+    const data = report.toJSON() as any;
+    const labels = this.getReportLabels(data);
+
+    return {
+      id: data.id,
+      productionCycleId: data.productionCycleId,
+      type: data.type,
+      snapshotVersion: data.snapshotVersion,
+      generatedAt: data.generatedAt,
+      ...labels,
+    };
+  }
+
+  private async generateCycleReportsIfMissing(userId: string, cycleId: string): Promise<void> {
+    const cycle = await ProductionCycleModel.findOne({
+      where: { id: cycleId, userId },
+      include: [
+        {
+          model: CropVarietyModel,
+          as: 'cropVariety',
+        },
+        {
+          model: ActivityModel,
+          as: 'activities',
+        },
+        {
+          model: FarmModel,
+          as: 'farm',
+        },
+      ],
+    });
+
+    if (!cycle || cycle.status !== 'harvested') return;
+
+    const cycleData = cycle.toJSON() as any;
+    await Promise.all(
+      (['activity', 'financial'] as CycleReportType[]).map(async (type) => {
+        const existingReport = await CycleReportModel.findOne({
+          where: { productionCycleId: cycleId, type },
+        });
+
+        if (existingReport) return;
+
+        await CycleReportModel.create({
+          userId,
+          productionCycleId: cycleId,
+          type,
+          snapshotVersion: 1,
+          snapshotData: this.buildReportSnapshot(cycleData, type),
+          generatedAt: new Date(),
+        });
+      })
+    );
+  }
+
   private normalizeBoundaryCoordinates(value: unknown): Array<{ lat: number; lng: number }> | undefined {
     if (value === undefined || value === null || value === '') return undefined;
 
@@ -420,6 +639,8 @@ export class ProductionService {
         throw new Error(ERROR_CODES.UNAUTHORIZED);
       }
 
+      const previousStatus = cycle.status;
+
       // Validate status transitions only if status is being updated
       if (updateData.status && updateData.status !== cycle.status) {
         const validTransitions: Record<string, string[]> = {
@@ -438,10 +659,87 @@ export class ProductionService {
       const normalizedUpdateData = this.normalizeCycleLocationData(updateData);
       await cycle.update(normalizedUpdateData);
 
+      if (previousStatus !== 'harvested' && cycle.status === 'harvested') {
+        await this.generateCycleReportsIfMissing(cycle.userId, cycleId);
+      }
+
       logInfo('Production cycle updated', { userId, cycleId, updateData: normalizedUpdateData });
       return cycle.toJSON();
     } catch (error) {
       logError('Failed to update production cycle', error as Error, { userId, cycleId });
+      throw error;
+    }
+  }
+
+  async getCycleReports(userId: string): Promise<CycleReportSummary[]> {
+    try {
+      const reports = await CycleReportModel.findAll({
+        where: { userId },
+        include: [
+          {
+            model: ProductionCycleModel,
+            as: 'productionCycle',
+            include: [
+              {
+                model: CropVarietyModel,
+                as: 'cropVariety',
+                attributes: ['id', 'name', 'cropType'],
+              },
+              {
+                model: FarmModel,
+                as: 'farm',
+                attributes: ['id', 'name', 'location'],
+              },
+            ],
+          },
+        ],
+        order: [['generatedAt', 'DESC']],
+      });
+
+      return reports.map((report) => this.toReportSummary(report));
+    } catch (error) {
+      logError('Failed to get cycle reports', error as Error, { userId });
+      throw error;
+    }
+  }
+
+  async getCycleReport(userId: string, reportId: string): Promise<CycleReportDetail> {
+    try {
+      const report = await CycleReportModel.findOne({
+        where: { id: reportId, userId },
+        include: [
+          {
+            model: ProductionCycleModel,
+            as: 'productionCycle',
+            include: [
+              {
+                model: CropVarietyModel,
+                as: 'cropVariety',
+                attributes: ['id', 'name', 'cropType'],
+              },
+              {
+                model: FarmModel,
+                as: 'farm',
+                attributes: ['id', 'name', 'location'],
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!report) {
+        throw new Error('Report not found');
+      }
+
+      const summary = this.toReportSummary(report);
+      const data = report.toJSON() as any;
+
+      return {
+        ...summary,
+        snapshotData: parseJsonColumn<Record<string, unknown>>(data.snapshotData) as Record<string, unknown>,
+      };
+    } catch (error) {
+      logError('Failed to get cycle report', error as Error, { userId, reportId });
       throw error;
     }
   }
@@ -574,8 +872,13 @@ export class ProductionService {
         throw new Error(ERROR_CODES.PRODUCTION_CYCLE_NOT_FOUND);
       }
 
-      const activity = await ActivityModel.create({
+      const normalizedActivityData = {
         ...activityData,
+        type: normalizeActivityType(activityData.type) as string,
+      };
+
+      const activity = await ActivityModel.create({
+        ...normalizedActivityData,
         productionCycleId: cycleId,
         userId,
         status: 'in_progress',
@@ -588,7 +891,7 @@ export class ProductionService {
         userId, 
         cycleId, 
         activityId: activity.id,
-        type: activityData.type 
+        type: normalizedActivityData.type 
       });
 
       return activity.toJSON();
@@ -615,9 +918,14 @@ export class ProductionService {
 
       // TODO: Update cycle cost when models are properly set up
 
-      await activity.update(updateData);
+      const normalizedUpdateData = {
+        ...updateData,
+        ...(updateData.type ? { type: normalizeActivityType(updateData.type) as string } : {}),
+      };
 
-      logInfo('Activity updated', { userId, activityId, updateData });
+      await activity.update(normalizedUpdateData);
+
+      logInfo('Activity updated', { userId, activityId, updateData: normalizedUpdateData });
       return activity.toJSON();
     } catch (error) {
       logError('Failed to update activity', error as Error, { userId, activityId });

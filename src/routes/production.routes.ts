@@ -130,7 +130,7 @@ const router = Router();
  *           format: uuid
  *         type:
  *           type: string
- *           enum: [soil_preparation, planting, fertilizing, weeding, pest_control, irrigation, harvesting]
+ *           enum: [soil_preparation, planting, fertilizing, fertilization, weeding, pest_control, disease_control, irrigation, harvesting]
  *           example: "planting"
  *         description:
  *           type: string
@@ -176,7 +176,7 @@ const router = Router();
  *       properties:
  *         type:
  *           type: string
- *           enum: [soil_preparation, planting, fertilizing, weeding, pest_control, irrigation, harvesting]
+ *           enum: [soil_preparation, planting, fertilizing, fertilization, weeding, pest_control, disease_control, irrigation, harvesting]
  *         description:
  *           type: string
  *         scheduledDate:
@@ -395,6 +395,9 @@ router.get('/dashboard/stats', productionController.getDashboardStats.bind(produ
 router.get('/cycles', productionController.getProductionCycles.bind(productionController));
 router.post('/cycles', productionController.createProductionCycle.bind(productionController));
 
+router.get('/reports', productionController.getCycleReports.bind(productionController));
+router.get('/reports/:reportId', productionController.getCycleReport.bind(productionController));
+
 /**
  * @swagger
  * /api/v1/production/cycles/{cycleId}:
@@ -519,7 +522,7 @@ router.delete('/cycles/:cycleId', productionController.deleteProductionCycle.bin
  *         name: type
  *         schema:
  *           type: string
- *           enum: [soil_preparation, planting, fertilizing, weeding, pest_control, irrigation, harvesting]
+ *           enum: [soil_preparation, planting, fertilizing, fertilization, weeding, pest_control, disease_control, irrigation, harvesting]
  *         description: Filter by activity type
  *       - in: query
  *         name: limit

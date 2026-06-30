@@ -62,6 +62,13 @@ export class ProductionCycleModel extends Model<ProductionCycleInterface, Produc
       foreignKey: 'productionCycleId',
       as: 'pestAnalyses',
     });
+
+    if (models.CycleReport) {
+      ProductionCycleModel.hasMany(models.CycleReport, {
+        foreignKey: 'productionCycleId',
+        as: 'reports',
+      });
+    }
   }
 
   // Instance methods

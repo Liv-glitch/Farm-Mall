@@ -16,6 +16,7 @@ import { PreproductionPlanModel, initializePreproductionPlanModel } from './Prep
 import { PreproductionStepModel, initializePreproductionStepModel } from './PreproductionStep.model';
 import { PreproductionTaskModel, initializePreproductionTaskModel } from './PreproductionTask.model';
 import { EventModel } from './Event.model';
+import { CycleReportModel } from './CycleReport.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -63,7 +64,8 @@ function setupAssociations(): void {
     CropVariety: CropVarietyModel,
     Activity: ActivityModel,
     PestAnalysis: PestAnalysisModel,
-    Farm: FarmModel
+    Farm: FarmModel,
+    CycleReport: CycleReportModel,
   });
 
   CropVarietyModel.associate({
@@ -133,6 +135,11 @@ function setupAssociations(): void {
   EventModel.associate({
     User: UserModel,
   });
+
+  CycleReportModel.associate({
+    User: UserModel,
+    ProductionCycle: ProductionCycleModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -154,6 +161,7 @@ export {
   PreproductionStepModel,
   PreproductionTaskModel,
   EventModel,
+  CycleReportModel,
 };
 
 // Export types
@@ -168,3 +176,4 @@ export * from './PreproductionPlan.model';
 export * from './PreproductionStep.model';
 export * from './PreproductionTask.model';
 export * from './Event.model';
+export * from './CycleReport.model';

@@ -145,7 +145,7 @@ CREATE TABLE `activities` (
   `id` CHAR(36) NOT NULL,
   `user_id` CHAR(36) NULL,
   `production_cycle_id` CHAR(36) NOT NULL,
-  `type` ENUM('planting','fertilizing','weeding','pest_control','irrigation','harvesting','soil_preparation','other') NOT NULL,
+  `type` ENUM('planting','fertilizing','fertilization','weeding','pest_control','disease_control','irrigation','harvesting','soil_preparation','other') NOT NULL,
   `description` TEXT NULL,
   `scheduled_date` DATETIME NOT NULL,
   `completed_date` DATETIME NULL,
