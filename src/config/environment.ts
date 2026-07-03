@@ -68,6 +68,11 @@ interface EnvironmentConfig {
   // Bot Authentication
   BOT_API_KEY?: string;
 
+  // Buyers marketplace integration
+  MARKETPLACE_MAIN_API_BASE_URL: string;
+  MARKETPLACE_MAIN_API_KEY?: string;
+  MARKETPLACE_CALLBACK_TOKEN?: string;
+
   // Admin bootstrap
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD?: string;
@@ -181,6 +186,11 @@ const validateEnvironment = (): EnvironmentConfig => {
     // Bot Authentication
     BOT_API_KEY: process.env.BOT_API_KEY,
 
+    // Buyers marketplace integration
+    MARKETPLACE_MAIN_API_BASE_URL: (process.env.MARKETPLACE_MAIN_API_BASE_URL || 'https://hcfcpqlcawbpqtruttsi.supabase.co/functions/v1').replace(/\/+$/, ''),
+    MARKETPLACE_MAIN_API_KEY: process.env.MARKETPLACE_MAIN_API_KEY,
+    MARKETPLACE_CALLBACK_TOKEN: process.env.MARKETPLACE_CALLBACK_TOKEN,
+
     // Admin bootstrap
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
@@ -223,6 +233,7 @@ const validateEnvironment = (): EnvironmentConfig => {
       requiredVars.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
     }
 
+    requiredVars.push('MARKETPLACE_MAIN_API_KEY');
     requiredVars.push('RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'FRONTEND_URL');
   }
 

@@ -19,6 +19,8 @@ import { EventModel } from './Event.model';
 import { CycleReportModel } from './CycleReport.model';
 import { PasswordResetTokenModel, initializePasswordResetTokenModel } from './PasswordResetToken.model';
 import { EmailVerificationOtpModel, initializeEmailVerificationOtpModel } from './EmailVerificationOtp.model';
+import { MarketplaceIntegrationModel, initializeMarketplaceIntegrationModel } from './MarketplaceIntegration.model';
+import { MarketplaceCallbackEventModel, initializeMarketplaceCallbackEventModel } from './MarketplaceCallbackEvent.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -42,6 +44,8 @@ export function initializeModels(sequelize: Sequelize): void {
   initializePreproductionTaskModel(sequelize);
   initializePasswordResetTokenModel(sequelize);
   initializeEmailVerificationOtpModel(sequelize);
+  initializeMarketplaceIntegrationModel(sequelize);
+  initializeMarketplaceCallbackEventModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -152,6 +156,15 @@ function setupAssociations(): void {
   EmailVerificationOtpModel.associate({
     User: UserModel,
   });
+
+  MarketplaceIntegrationModel.associate({
+    User: UserModel,
+    Farm: FarmModel,
+  });
+
+  MarketplaceCallbackEventModel.associate({
+    MarketplaceIntegration: MarketplaceIntegrationModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -176,6 +189,8 @@ export {
   CycleReportModel,
   PasswordResetTokenModel,
   EmailVerificationOtpModel,
+  MarketplaceIntegrationModel,
+  MarketplaceCallbackEventModel,
 };
 
 // Export types
@@ -193,3 +208,5 @@ export * from './Event.model';
 export * from './CycleReport.model';
 export * from './PasswordResetToken.model';
 export * from './EmailVerificationOtp.model';
+export * from './MarketplaceIntegration.model';
+export * from './MarketplaceCallbackEvent.model';
