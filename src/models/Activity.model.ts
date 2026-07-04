@@ -10,6 +10,7 @@ export class ActivityModel extends Model<Activity, ActivityCreationAttributes> i
   public userId?: string;
   public productionCycleId!: string;
   public type!: string;
+  public cropStage?: string | null;
   public description?: string;
   public scheduledDate!: Date;
   public completedDate?: Date;
@@ -121,6 +122,11 @@ ActivityModel.init(
           'other',
         ]],
       },
+    },
+    cropStage: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'crop_stage',
     },
     description: {
       type: DataTypes.TEXT,

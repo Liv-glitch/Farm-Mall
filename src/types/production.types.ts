@@ -54,6 +54,7 @@ export interface Activity {
   productionCycleId: string;
   type: string;
   activityType?: string; // legacy field
+  cropStage?: string | null;
   description?: string;
   scheduledDate: Date;
   activityDate?: Date; // legacy field
@@ -67,6 +68,7 @@ export interface Activity {
     quantity: number;
     unit: string;
     cost: number;
+    reusedExistingStock?: boolean;
   }>;
   notes?: string;
   weather?: {
@@ -132,6 +134,7 @@ export interface UpdateProductionCycleRequest {
 export interface CreateActivityRequest {
   type: string;
   activityType?: string; // legacy field
+  cropStage?: string;
   description?: string;
   scheduledDate: Date;
   activityDate?: Date; // legacy field
@@ -144,6 +147,7 @@ export interface CreateActivityRequest {
     quantity: number;
     unit: string;
     cost: number;
+    reusedExistingStock?: boolean;
   }>;
   notes?: string;
 }
@@ -160,6 +164,7 @@ export interface CreateActivityInputRequest {
 export interface UpdateActivityRequest {
   type?: string;
   activityType?: string; // legacy field
+  cropStage?: string | null;
   description?: string;
   scheduledDate?: Date;
   activityDate?: Date; // legacy field

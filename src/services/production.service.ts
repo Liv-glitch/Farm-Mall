@@ -92,6 +92,7 @@ export class ProductionService {
       const row: Record<string, unknown> = {
         id: activity.id,
         type: activity.type,
+        cropStage: activity.cropStage || null,
         description: activity.description || activity.type,
         status: activity.status,
         scheduledDate: toIsoDate(activity.scheduledDate),
@@ -222,7 +223,7 @@ export class ProductionService {
     };
   }
 
-  private async generateCycleReportsIfMissing(userId: string, cycleId: string): Promise<void> {
+  private async generateCycleReportsIfMissing(userId: string, cycleId: string, refreshFinancial = false): Promise<void> {
     const cycle = await ProductionCycleModel.findOne({
       where: { id: cycleId, userId },
       include: [
@@ -250,7 +251,16 @@ export class ProductionService {
           where: { productionCycleId: cycleId, type },
         });
 
-        if (existingReport) return;
+        if (existingReport) {
+          if (refreshFinancial && type === 'financial') {
+            await existingReport.update({
+              snapshotVersion: existingReport.snapshotVersion + 1,
+              snapshotData: this.buildReportSnapshot(cycleData, type),
+              generatedAt: new Date(),
+            });
+          }
+          return;
+        }
 
         await CycleReportModel.create({
           userId,
@@ -492,7 +502,7 @@ export class ProductionService {
           {
             model: ActivityModel,
             as: 'activities',
-            attributes: ['id', 'type', 'cost', 'scheduledDate', 'completedDate']
+            attributes: ['id', 'type', 'cropStage', 'description', 'cost', 'scheduledDate', 'completedDate', 'status', 'laborType', 'inputs', 'notes']
           },
           {
             model: FarmModel,
@@ -661,6 +671,11 @@ export class ProductionService {
 
       if (previousStatus !== 'harvested' && cycle.status === 'harvested') {
         await this.generateCycleReportsIfMissing(cycle.userId, cycleId);
+      } else if (
+        cycle.status === 'harvested' &&
+        (updateData.actualYield !== undefined || updateData.actualPricePerKg !== undefined || updateData.actualHarvestDate !== undefined)
+      ) {
+        await this.generateCycleReportsIfMissing(cycle.userId, cycleId, true);
       }
 
       logInfo('Production cycle updated', { userId, cycleId, updateData: normalizedUpdateData });
