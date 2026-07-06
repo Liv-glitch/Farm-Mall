@@ -17,6 +17,7 @@ import {
 } from '../types/buyers.types';
 
 const registrationSchema = Joi.object<BuyersRegistrationRequest>({
+  production_cycle_id: Joi.string().trim().max(64).optional(),
   full_name: Joi.string().trim().min(2).max(255).required(),
   phone_number: Joi.string().trim().min(7).max(20).required(),
   email: Joi.string().trim().email().required(),
@@ -60,28 +61,37 @@ export class BuyersMarketplaceService {
   }
 
   async getDashboard(userId: string) {
-    const [integration, defaults] = await Promise.all([
-      this.getIntegration(userId),
+    const [integrations, defaults] = await Promise.all([
+      this.getIntegrations(userId),
       this.getRegistrationDefaults(userId),
     ]);
+    const registeredIntegrations = integrations.filter((integration) => integration.marketplaceFarmerId);
+    const primaryIntegration = integrations[0] || null;
 
-    if (!integration?.marketplaceFarmerId) {
+    if (registeredIntegrations.length === 0) {
       return {
         registered: false,
-        integration: integration ? this.serializeIntegration(integration) : null,
+        integration: primaryIntegration ? this.serializeIntegration(primaryIntegration) : null,
+        integrations: integrations.map((integration) => this.serializeIntegration(integration)),
         defaults,
         bookings: [],
       };
     }
 
-    const farmer = await this.fetchFarmer(integration.marketplaceFarmerId);
-    await this.updateIntegrationFromFarmer(integration, farmer);
+    const farmers = await Promise.all(
+      registeredIntegrations.map(async (integration) => {
+        const farmer = await this.fetchFarmer(integration.marketplaceFarmerId!);
+        await this.updateIntegrationFromFarmer(integration, farmer);
+        return farmer;
+      })
+    );
     const bookings = await this.getBookings(userId, 'all');
 
     return {
       registered: true,
-      integration: this.serializeIntegration(integration),
-      farmer,
+      integration: this.serializeIntegration(registeredIntegrations[0]),
+      integrations: integrations.map((integration) => this.serializeIntegration(integration)),
+      farmer: farmers[0] || null,
       defaults,
       bookings,
     };
@@ -97,11 +107,26 @@ export class BuyersMarketplaceService {
       );
     }
 
-    const defaults = await this.getRegistrationDefaults(userId);
+    const cycle = await this.resolveRegistrationCycle(userId, validation.value.production_cycle_id);
+    const existing = cycle
+      ? await MarketplaceIntegrationModel.findOne({ where: { productionCycleId: cycle.id } })
+      : null;
+    if (existing) {
+      throw new BuyersMarketplaceError('This production cycle is already listed on the buyers marketplace', 409, 'cycle_already_listed');
+    }
+
+    const defaults = await this.getRegistrationDefaults(userId, cycle?.id);
     const payload = {
       external_platform_ref: defaults.external_platform_ref,
       callback_url: defaults.callback_url,
-      ...validation.value,
+      full_name: validation.value.full_name,
+      phone_number: validation.value.phone_number,
+      email: validation.value.email,
+      county: validation.value.county,
+      ward: validation.value.ward,
+      specific_location: validation.value.specific_location,
+      potato_variety: validation.value.potato_variety,
+      acreage_planted: validation.value.acreage_planted,
       planting_date: this.toDateOnly(validation.value.planting_date),
     };
 
@@ -113,7 +138,8 @@ export class BuyersMarketplaceService {
 
     const responseData = response?.data || response;
     const integration = await this.upsertIntegration(userId, {
-      farmId: await this.resolveDefaultFarmId(userId),
+      farmId: cycle?.farmId || await this.resolveDefaultFarmId(userId),
+      productionCycleId: cycle?.id || null,
       marketplaceFarmerId: responseData?.farmer_id || null,
       externalPlatformRef: payload.external_platform_ref,
       registrationStatus: responseData?.registration_status || 'pending',
@@ -132,27 +158,32 @@ export class BuyersMarketplaceService {
     };
   }
 
-  async getBookings(userId: string, status = 'all'): Promise<MarketplaceBooking[]> {
-    const integration = await this.requireRegisteredIntegration(userId);
-    const response = await this.marketplaceRequest<any>({
-      method: 'GET',
-      url: '/main-platform-farmer-bookings',
-      params: {
-        farmer_id: integration.marketplaceFarmerId,
-        status,
-      },
-    });
+  async getBookings(userId: string, status = 'all', farmerId?: string): Promise<MarketplaceBooking[]> {
+    const integrations = await this.requireRegisteredIntegrations(userId, farmerId);
+    const bookingGroups = await Promise.all(
+      integrations.map(async (integration) => {
+        const response = await this.marketplaceRequest<any>({
+          method: 'GET',
+          url: '/main-platform-farmer-bookings',
+          params: {
+            farmer_id: integration.marketplaceFarmerId,
+            status,
+          },
+        });
 
-    const bookings = this.extractArray(response).map((booking) => this.sanitizeBooking(booking));
+        return this.extractArray(response).map((booking) => this.sanitizeBooking(booking, integration));
+      })
+    );
+    const bookings = bookingGroups.flat();
     return bookings.sort(this.sortBookings);
   }
 
-  async decideBooking(userId: string, bookingRef: string, decision: MarketplaceDecision) {
+  async decideBooking(userId: string, bookingRef: string, decision: MarketplaceDecision, farmerId?: string) {
     if (!['approve', 'reject'].includes(decision)) {
       throw new BuyersMarketplaceError('Decision must be approve or reject', 400, 'invalid_decision');
     }
 
-    const integration = await this.requireRegisteredIntegration(userId);
+    const integration = await this.requireRegisteredIntegration(userId, farmerId);
     const response = await this.marketplaceRequest<any>({
       method: 'POST',
       url: '/main-platform-confirm-booking',
@@ -226,23 +257,81 @@ export class BuyersMarketplaceService {
     return MarketplaceIntegrationModel.findOne({ where: { userId } });
   }
 
-  private async requireRegisteredIntegration(userId: string) {
-    const integration = await this.getIntegration(userId);
-    if (!integration?.marketplaceFarmerId) {
+  private async getIntegrations(userId: string) {
+    return MarketplaceIntegrationModel.findAll({
+      where: { userId },
+      include: [{
+        model: ProductionCycleModel,
+        as: 'productionCycle',
+        include: [{ model: CropVarietyModel, as: 'cropVariety' }],
+      }],
+      order: [['createdAt', 'DESC']],
+    });
+  }
+
+  private async requireRegisteredIntegration(userId: string, farmerId?: string) {
+    if (farmerId) {
+      const integration = await MarketplaceIntegrationModel.findOne({ where: { userId, marketplaceFarmerId: farmerId } });
+      if (!integration?.marketplaceFarmerId) {
+        throw new BuyersMarketplaceError('Marketplace listing is not registered for this farmer', 404, 'not_registered');
+      }
+      return integration;
+    }
+
+    const integrations = await this.requireRegisteredIntegrations(userId);
+    if (integrations.length !== 1) {
+      throw new BuyersMarketplaceError('Please specify which marketplace listing this booking belongs to', 400, 'listing_required');
+    }
+    return integrations[0];
+  }
+
+  private async requireRegisteredIntegrations(userId: string, farmerId?: string) {
+    const integrations = farmerId
+      ? await MarketplaceIntegrationModel.findAll({ where: { userId, marketplaceFarmerId: farmerId } })
+      : await this.getIntegrations(userId);
+    const registered = integrations.filter((integration) => integration.marketplaceFarmerId);
+    if (registered.length === 0) {
       throw new BuyersMarketplaceError('Farmer is not registered on the buyers marketplace', 404, 'not_registered');
     }
-    return integration;
+    return registered;
+  }
+
+  private async resolveRegistrationCycle(userId: string, productionCycleId?: string) {
+    if (productionCycleId) {
+      const cycle = await ProductionCycleModel.findOne({
+        where: { id: productionCycleId, userId },
+        include: [{ model: CropVarietyModel, as: 'cropVariety' }],
+      });
+      if (!cycle) {
+        throw new BuyersMarketplaceError('Production cycle not found', 404, 'cycle_not_found');
+      }
+      return cycle;
+    }
+
+    const cycle = await ProductionCycleModel.findOne({
+      where: { userId, status: { [Op.in]: ['active', 'planning'] } },
+      include: [{ model: CropVarietyModel, as: 'cropVariety' }],
+      order: [
+        ['status', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+
+    return cycle;
   }
 
   private async upsertIntegration(userId: string, data: {
     farmId?: string | null;
+    productionCycleId?: string | null;
     marketplaceFarmerId?: string | null;
     externalPlatformRef: string;
     registrationStatus: string;
     listingStatus: string;
     rawPayload: Record<string, unknown>;
   }) {
-    const existing = await this.getIntegration(userId);
+    const existing = data.productionCycleId
+      ? await MarketplaceIntegrationModel.findOne({ where: { productionCycleId: data.productionCycleId } })
+      : await this.getIntegration(userId);
     if (existing) {
       await existing.update({
         ...data,
@@ -258,18 +347,23 @@ export class BuyersMarketplaceService {
     });
   }
 
-  private async getRegistrationDefaults(userId: string): Promise<BuyersRegistrationDefaults> {
+  private async getRegistrationDefaults(userId: string, productionCycleId?: string): Promise<BuyersRegistrationDefaults> {
     const [user, farm, cycle] = await Promise.all([
       UserModel.findByPk(userId),
       FarmModel.findOne({ where: { ownerId: userId }, order: [['createdAt', 'ASC']] }),
-      ProductionCycleModel.findOne({
-        where: { userId, status: { [Op.in]: ['active', 'planning'] } },
-        include: [{ model: CropVarietyModel, as: 'cropVariety' }],
-        order: [
-          ['status', 'ASC'],
-          ['createdAt', 'DESC'],
-        ],
-      }),
+      productionCycleId
+        ? ProductionCycleModel.findOne({
+          where: { id: productionCycleId, userId },
+          include: [{ model: CropVarietyModel, as: 'cropVariety' }],
+        })
+        : ProductionCycleModel.findOne({
+          where: { userId, status: { [Op.in]: ['active', 'planning'] } },
+          include: [{ model: CropVarietyModel, as: 'cropVariety' }],
+          order: [
+            ['status', 'ASC'],
+            ['createdAt', 'DESC'],
+          ],
+        }),
     ]);
 
     if (!user) {
@@ -281,13 +375,13 @@ export class BuyersMarketplaceService {
     const location = cycleData?.farmLocationName || cycleData?.farmLocation || farmData?.location || '';
 
     return {
-      external_platform_ref: `farmmall-user:${user.id}`,
+      external_platform_ref: cycleData?.id ? `farmmall-cycle:${cycleData.id}` : `farmmall-user:${user.id}`,
       callback_url: `${env.API_PUBLIC_URL.replace(/\/+$/, '')}/api/${env.API_VERSION}/buyers/callback`,
       full_name: user.fullName || '',
       phone_number: user.phoneNumber || '',
       email: user.email || '',
-      county: user.county || cycleData?.farmCounty || '',
-      ward: user.subCounty || cycleData?.farmSubcounty || '',
+      county: cycleData?.farmCounty || user.county || '',
+      ward: cycleData?.farmSubcounty || user.subCounty || '',
       specific_location: location,
       potato_variety: cycleData?.cropVariety?.name || '',
       acreage_planted: Number(cycleData?.landSizeAcres || farmData?.sizeAcres || 0),
@@ -362,12 +456,19 @@ export class BuyersMarketplaceService {
     return [];
   }
 
-  private sanitizeBooking(booking: any): MarketplaceBooking {
+  private sanitizeBooking(booking: any, integration?: MarketplaceIntegrationModel): MarketplaceBooking {
     const shouldRevealContact = booking?.booking_status === 'confirmed';
     const buyer = booking?.buyer || {};
+    const cycleData = integration?.productionCycle?.toJSON
+      ? integration.productionCycle.toJSON()
+      : integration?.productionCycle;
+    const listingLocation = [cycleData?.farmLocationName, cycleData?.farmSubcounty, cycleData?.farmCounty]
+      .filter(Boolean)
+      .join(', ') || cycleData?.farmLocation || null;
 
     return {
       ...booking,
+      farmer_id: booking?.farmer_id || integration?.marketplaceFarmerId,
       buyer: {
         company_name: buyer.company_name,
         county: buyer.county,
@@ -375,6 +476,14 @@ export class BuyersMarketplaceService {
         email: shouldRevealContact ? buyer.email : null,
       },
       buyer_contact_hidden: !shouldRevealContact,
+      listing: integration ? {
+        integration_id: integration.id,
+        production_cycle_id: integration.productionCycleId || null,
+        marketplace_farmer_id: integration.marketplaceFarmerId || null,
+        crop_variety: cycleData?.cropVariety?.name || null,
+        acreage_planted: cycleData?.landSizeAcres ? Number(cycleData.landSizeAcres) : null,
+        location: listingLocation,
+      } : undefined,
     };
   }
 
@@ -390,6 +499,7 @@ export class BuyersMarketplaceService {
       id: integration.id,
       userId: integration.userId,
       farmId: integration.farmId,
+      productionCycleId: integration.productionCycleId,
       marketplaceFarmerId: integration.marketplaceFarmerId,
       externalPlatformRef: integration.externalPlatformRef,
       registrationStatus: integration.registrationStatus,
@@ -398,6 +508,24 @@ export class BuyersMarketplaceService {
       lastCallbackEvent: integration.lastCallbackEvent,
       createdAt: integration.createdAt,
       updatedAt: integration.updatedAt,
+      productionCycle: this.serializeProductionCycle(integration.productionCycle),
+    };
+  }
+
+  private serializeProductionCycle(cycle?: any) {
+    if (!cycle) return null;
+    const data = typeof cycle.toJSON === 'function' ? cycle.toJSON() : cycle;
+    return {
+      id: data.id,
+      farmId: data.farmId,
+      cropVarietyName: data.cropVariety?.name || null,
+      landSizeAcres: data.landSizeAcres != null ? Number(data.landSizeAcres) : null,
+      farmLocation: data.farmLocation || null,
+      farmCounty: data.farmCounty || null,
+      farmSubcounty: data.farmSubcounty || null,
+      farmLocationName: data.farmLocationName || null,
+      plantingDate: this.toDateOnly(data.plantingDate || ''),
+      status: data.status,
     };
   }
 

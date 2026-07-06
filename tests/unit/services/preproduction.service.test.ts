@@ -25,41 +25,41 @@ describe('PREPRODUCTION_TEMPLATE', () => {
     expect(findTask('Soil Testing').serviceLinks).toEqual([
       {
         label: 'Access Soil Testing Services here',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=soil-testing',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=soil-testing',
       },
     ]);
     expect(findTask('First Plowing').serviceLinks).toEqual([
       {
         label: 'Access tractor or ox-plowing services',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
       },
     ]);
     expect(findTask('Second Plowing').serviceLinks).toEqual([
       {
         label: 'Access plowing services',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
       },
     ]);
     expect(findTask('Harrowing').serviceLinks).toEqual([
       {
         label: 'Access harrowing services',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
       },
     ]);
     expect(findTask('Organic Manure Application').serviceLinks).toEqual([
       {
         label: 'Purchase manure through Farm Mall',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=fertilizers',
       },
     ]);
     expect(findTask('Soil Fertility Management').serviceLinks).toEqual([
       {
         label: 'Purchase recommended fertilizers',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=fertilizers',
       },
       {
         label: 'Access agronomy support',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=advisory',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=advisory',
       },
     ]);
   });
@@ -85,11 +85,11 @@ describe('PREPRODUCTION_TEMPLATE', () => {
       'Apply based on soil test results.',
     ]);
     expect(jsonArrayColumn<{ label: string; href: string }>(
-      '[{"label":"Access Soil Testing Services here","href":"https://farmflow-platform.onrender.com/marketplace?category=soil-testing"}]'
+      '[{"label":"Access Soil Testing Services here","href":"https://inputs.farmmall.co.ke/marketplace?category=soil-testing"}]'
     )).toEqual([
       {
         label: 'Access Soil Testing Services here',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=soil-testing',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=soil-testing',
       },
     ]);
   });
@@ -124,7 +124,7 @@ describe('PREPRODUCTION_TEMPLATE', () => {
               importance: 'Test the soil.',
               recommendations: '["Use clean sampling tools."]',
               serviceLinks:
-                '[{"label":"Access Soil Testing Services here","href":"https://farmflow-platform.onrender.com/marketplace?category=soil-testing"}]',
+                '[{"label":"Access Soil Testing Services here","href":"https://inputs.farmmall.co.ke/marketplace?category=soil-testing"}]',
               whatYouNeed: null,
               whatYouNeedLink: null,
               expertTip: null,
@@ -144,7 +144,7 @@ describe('PREPRODUCTION_TEMPLATE', () => {
     expect(serialized.steps[0].tasks[0].serviceLinks).toEqual([
       {
         label: 'Access Soil Testing Services here',
-        href: 'https://farmflow-platform.onrender.com/marketplace?category=soil-testing',
+        href: 'https://inputs.farmmall.co.ke/marketplace?category=soil-testing',
       },
     ]);
   });

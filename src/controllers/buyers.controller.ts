@@ -43,7 +43,8 @@ export class BuyersController {
     try {
       const { bookingRef } = req.params;
       const decision = req.body?.decision as MarketplaceDecision;
-      const data = await buyersMarketplaceService.decideBooking(req.user!.id, bookingRef, decision);
+      const farmerId = typeof req.body?.farmer_id === 'string' ? req.body.farmer_id : undefined;
+      const data = await buyersMarketplaceService.decideBooking(req.user!.id, bookingRef, decision, farmerId);
       res.json({
         success: true,
         message: decision === 'approve' ? 'Booking approved' : 'Booking rejected',

@@ -160,6 +160,7 @@ function setupAssociations(): void {
   MarketplaceIntegrationModel.associate({
     User: UserModel,
     Farm: FarmModel,
+    ProductionCycle: ProductionCycleModel,
   });
 
   MarketplaceCallbackEventModel.associate({

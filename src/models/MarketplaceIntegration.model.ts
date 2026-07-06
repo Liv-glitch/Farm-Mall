@@ -4,6 +4,7 @@ export interface MarketplaceIntegrationAttributes {
   id: string;
   userId: string;
   farmId?: string | null;
+  productionCycleId?: string | null;
   marketplaceFarmerId?: string | null;
   externalPlatformRef: string;
   registrationStatus: string;
@@ -20,6 +21,7 @@ type MarketplaceIntegrationCreationAttributes = Optional<
   MarketplaceIntegrationAttributes,
   | 'id'
   | 'farmId'
+  | 'productionCycleId'
   | 'marketplaceFarmerId'
   | 'registrationStatus'
   | 'listingStatus'
@@ -37,6 +39,7 @@ export class MarketplaceIntegrationModel
   public id!: string;
   public userId!: string;
   public farmId?: string | null;
+  public productionCycleId?: string | null;
   public marketplaceFarmerId?: string | null;
   public externalPlatformRef!: string;
   public registrationStatus!: string;
@@ -50,6 +53,7 @@ export class MarketplaceIntegrationModel
 
   public readonly user?: any;
   public readonly farm?: any;
+  public readonly productionCycle?: any;
 
   public static associate(models: any): void {
     MarketplaceIntegrationModel.belongsTo(models.User, {
@@ -61,6 +65,13 @@ export class MarketplaceIntegrationModel
       foreignKey: 'farmId',
       as: 'farm',
     });
+
+    if (models.ProductionCycle) {
+      MarketplaceIntegrationModel.belongsTo(models.ProductionCycle, {
+        foreignKey: 'productionCycleId',
+        as: 'productionCycle',
+      });
+    }
   }
 }
 
@@ -87,6 +98,15 @@ export function initializeMarketplaceIntegrationModel(sequelize: Sequelize) {
         field: 'farm_id',
         references: {
           model: 'farms',
+          key: 'id',
+        },
+      },
+      productionCycleId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'production_cycle_id',
+        references: {
+          model: 'production_cycles',
           key: 'id',
         },
       },
@@ -151,7 +171,8 @@ export function initializeMarketplaceIntegrationModel(sequelize: Sequelize) {
       underscored: true,
       timestamps: true,
       indexes: [
-        { name: 'marketplace_integrations_user_id_idx', unique: true, fields: ['user_id'] },
+        { name: 'marketplace_integrations_user_id_idx', fields: ['user_id'] },
+        { name: 'marketplace_integrations_production_cycle_id_idx', unique: true, fields: ['production_cycle_id'] },
         { name: 'marketplace_integrations_external_ref_idx', unique: true, fields: ['external_platform_ref'] },
         { name: 'marketplace_integrations_farmer_id_idx', fields: ['marketplace_farmer_id'] },
       ],

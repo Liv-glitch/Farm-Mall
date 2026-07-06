@@ -2,6 +2,7 @@ export type MarketplaceBookingStatus = 'pending_approval' | 'approved' | 'confir
 export type MarketplaceDecision = 'approve' | 'reject';
 
 export interface BuyersRegistrationRequest {
+  production_cycle_id?: string;
   full_name: string;
   phone_number: string;
   email: string;
@@ -38,4 +39,12 @@ export interface MarketplaceBooking {
   received_confirmed_at?: string | null;
   buyer?: MarketplaceBookingBuyer;
   buyer_contact_hidden?: boolean;
+  listing?: {
+    integration_id: string;
+    production_cycle_id?: string | null;
+    marketplace_farmer_id?: string | null;
+    crop_variety?: string | null;
+    acreage_planted?: number | null;
+    location?: string | null;
+  };
 }

@@ -91,7 +91,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Access Soil Testing Services here',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=soil-testing',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=soil-testing',
           },
         ],
       },
@@ -116,7 +116,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Access tractor or ox-plowing services',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
           },
         ],
       },
@@ -128,7 +128,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Access plowing services',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
           },
         ],
       },
@@ -140,7 +140,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Access harrowing services',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=mechanization',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=mechanization',
           },
         ],
       },
@@ -152,7 +152,7 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Purchase manure through Farm Mall',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=fertilizers',
           },
         ],
       },
@@ -171,11 +171,11 @@ export const PREPRODUCTION_TEMPLATE: StepTemplate[] = [
         serviceLinks: [
           {
             label: 'Purchase recommended fertilizers',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=fertilizers',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=fertilizers',
           },
           {
             label: 'Access agronomy support',
-            href: 'https://farmflow-platform.onrender.com/marketplace?category=advisory',
+            href: 'https://inputs.farmmall.co.ke/marketplace?category=advisory',
           },
         ],
       },
