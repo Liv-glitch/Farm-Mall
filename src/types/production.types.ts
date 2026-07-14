@@ -184,6 +184,22 @@ export interface CostCalculationRequest {
     county: string;
     subCounty: string;
   };
+  selectedInputs?: Partial<Record<CalculatorInputCategory, CalculatorSelectedInput>>;
+}
+
+export type CalculatorInputCategory = 'seeds' | 'fertilizer' | 'pesticides';
+
+export interface CalculatorSelectedInput {
+  listingId: string;
+  name: string;
+  price: number;
+  unit?: string | null;
+  sellerName?: string | null;
+}
+
+export interface CalculatorInputPriceSource extends CalculatorSelectedInput {
+  category: CalculatorInputCategory;
+  appliedCost: number;
 }
 
 export interface CostCalculationResponse {
@@ -203,6 +219,7 @@ export interface CostCalculationResponse {
     pesticides: number;
     other: number;
   };
+  marketplacePriceSources?: Partial<Record<CalculatorInputCategory, CalculatorInputPriceSource>>;
   recommendations: string[];
 }
 

@@ -4,6 +4,7 @@ import { CropVarietyModel } from '../models/CropVariety.model';
 import { CostCalculationRequest, HarvestPredictionRequest } from '../types/production.types';
 import { logError, logInfo } from '../utils/logger';
 import { costCalculationSchema, harvestPredictionSchema } from '../utils/validators';
+import { inputsMarketplaceService } from '../services/inputsMarketplace.service';
 
 const calculatorService = new CalculatorService();
 
@@ -157,75 +158,35 @@ export class CalculatorController {
     }
   }
 
-  // Get current input prices (simplified)
+  // Get current input prices from the inputs marketplace
   async getInputPrices(req: Request, res: Response): Promise<void> {
     try {
-      const { location, cropType } = req.query;
+      const cropVarietyId = typeof req.query.cropVarietyId === 'string' ? req.query.cropVarietyId : undefined;
+      const cropType = typeof req.query.cropType === 'string' ? req.query.cropType : undefined;
+      const county = typeof req.query.county === 'string' ? req.query.county : undefined;
+      const landSizeAcres = req.query.landSizeAcres ? Number(req.query.landSizeAcres) : undefined;
+      const seedSize = Number(req.query.seedSize) === 2 ? 2 : 1;
+      const cropVariety = cropVarietyId ? await CropVarietyModel.findByPk(cropVarietyId) : null;
 
-      // This is a simplified implementation
-      // In a real system, you'd fetch from a pricing API or database
-      const inputPrices = {
-        seeds: {
-          potato: { pricePerBag: 4500, currency: 'KES', unit: '50kg bag' },
-          maize: { pricePerBag: 3500, currency: 'KES', unit: '25kg bag' },
-          beans: { pricePerBag: 8000, currency: 'KES', unit: '90kg bag' },
-          tomato: { pricePerPacket: 1500, currency: 'KES', unit: '1000 seeds' },
-          onion: { pricePerPacket: 8000, currency: 'KES', unit: '500g' },
-          cabbage: { pricePerPacket: 2800, currency: 'KES', unit: '1000 seeds' },
-          carrot: { pricePerPacket: 1200, currency: 'KES', unit: '250g' }
-        },
-        fertilizers: {
-          DAP: { pricePerBag: 5000, currency: 'KES', unit: '50kg bag' },
-          CAN: { pricePerBag: 4200, currency: 'KES', unit: '50kg bag' },
-          NPK: { pricePerBag: 4800, currency: 'KES', unit: '50kg bag' },
-          Urea: { pricePerBag: 4500, currency: 'KES', unit: '50kg bag' }
-        },
-        pesticides: {
-          fungicide: { pricePerLiter: 1800, currency: 'KES', unit: 'liter' },
-          insecticide: { pricePerLiter: 2200, currency: 'KES', unit: 'liter' },
-          herbicide: { pricePerLiter: 1500, currency: 'KES', unit: 'liter' }
-        },
-        labor: {
-          skilled: { pricePerDay: 800, currency: 'KES', unit: 'person/day' },
-          unskilled: { pricePerDay: 500, currency: 'KES', unit: 'person/day' },
-          tractor: { pricePerHour: 1500, currency: 'KES', unit: 'hour' }
-        }
-      };
-
-      // Apply location-based adjustments if provided
-      let adjustedPrices = inputPrices;
-      if (location) {
-        const locationData = JSON.parse(location as string);
-        const multiplier = this.getLocationPriceMultiplier(locationData);
-        
-        // Apply multiplier to all prices (simplified)
-        adjustedPrices = this.adjustPricesForLocation(inputPrices, multiplier);
-      }
-
-      // Filter by crop type if specified
-      let filteredPrices: any = adjustedPrices;
-      if (cropType && adjustedPrices.seeds[cropType as keyof typeof adjustedPrices.seeds]) {
-        const cropSeed = adjustedPrices.seeds[cropType as keyof typeof adjustedPrices.seeds];
-        filteredPrices = {
-          ...adjustedPrices,
-          seeds: { [cropType as string]: cropSeed }
-        };
-      }
+      const result = await inputsMarketplaceService.getCalculatorListings({
+        cropVarietyName: cropVariety?.name,
+        cropType: cropType || cropVariety?.cropType,
+        county,
+        landSizeAcres: Number.isNaN(landSizeAcres) ? undefined : landSizeAcres,
+        seedSize,
+      });
 
       logInfo('Input prices retrieved via API', { 
         userId: req.user?.id,
-        location: location || 'general',
-        cropType: cropType || 'all'
+        source: result.source,
+        cropVarietyId,
+        cropType: cropType || cropVariety?.cropType || 'all',
+        county: county || 'all'
       });
 
       res.json({
         success: true,
-        data: {
-          prices: filteredPrices,
-          lastUpdated: new Date().toISOString(),
-          location: location || 'Kenya (General)',
-          currency: 'KES'
-        }
+        data: result
       });
     } catch (error) {
       const err = error as Error;
@@ -310,49 +271,6 @@ export class CalculatorController {
     }
   }
 
-  // Helper methods
-  private getLocationPriceMultiplier(location: { county?: string; subCounty?: string }): number {
-    const highCostCounties = ['Nairobi', 'Mombasa', 'Kisumu'];
-    const mediumCostCounties = ['Nakuru', 'Kiambu', 'Machakos'];
-
-    if (location.county && highCostCounties.includes(location.county)) {
-      return 1.2; // 20% higher costs
-    } else if (location.county && mediumCostCounties.includes(location.county)) {
-      return 1.1; // 10% higher costs
-    }
-
-    return 1.0; // Standard costs
-  }
-
-  private adjustPricesForLocation(prices: any, multiplier: number): any {
-    // Deep clone and adjust prices
-    const adjusted = JSON.parse(JSON.stringify(prices));
-    
-    // Apply multiplier to all numeric price values
-    Object.keys(adjusted).forEach(category => {
-      if (typeof adjusted[category] === 'object') {
-        Object.keys(adjusted[category]).forEach(item => {
-          if (adjusted[category][item].pricePerBag) {
-            adjusted[category][item].pricePerBag = Math.round(adjusted[category][item].pricePerBag * multiplier);
-          }
-          if (adjusted[category][item].pricePerPacket) {
-            adjusted[category][item].pricePerPacket = Math.round(adjusted[category][item].pricePerPacket * multiplier);
-          }
-          if (adjusted[category][item].pricePerLiter) {
-            adjusted[category][item].pricePerLiter = Math.round(adjusted[category][item].pricePerLiter * multiplier);
-          }
-          if (adjusted[category][item].pricePerDay) {
-            adjusted[category][item].pricePerDay = Math.round(adjusted[category][item].pricePerDay * multiplier);
-          }
-          if (adjusted[category][item].pricePerHour) {
-            adjusted[category][item].pricePerHour = Math.round(adjusted[category][item].pricePerHour * multiplier);
-          }
-        });
-      }
-    });
-
-    return adjusted;
-  }
 }
 
 export const calculatorController = new CalculatorController(); 

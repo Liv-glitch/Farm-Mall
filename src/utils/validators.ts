@@ -152,6 +152,29 @@ export const costCalculationSchema = Joi.object({
     county: Joi.string().min(2).max(100).required(),
     subCounty: Joi.string().min(2).max(100).required(),
   }).optional(),
+  selectedInputs: Joi.object({
+    seeds: Joi.object({
+      listingId: Joi.string().trim().max(128).required(),
+      name: Joi.string().trim().max(255).required(),
+      price: Joi.number().min(0).required(),
+      unit: Joi.string().trim().max(100).allow('', null).optional(),
+      sellerName: Joi.string().trim().max(255).allow('', null).optional(),
+    }).optional(),
+    fertilizer: Joi.object({
+      listingId: Joi.string().trim().max(128).required(),
+      name: Joi.string().trim().max(255).required(),
+      price: Joi.number().min(0).required(),
+      unit: Joi.string().trim().max(100).allow('', null).optional(),
+      sellerName: Joi.string().trim().max(255).allow('', null).optional(),
+    }).optional(),
+    pesticides: Joi.object({
+      listingId: Joi.string().trim().max(128).required(),
+      name: Joi.string().trim().max(255).required(),
+      price: Joi.number().min(0).required(),
+      unit: Joi.string().trim().max(100).allow('', null).optional(),
+      sellerName: Joi.string().trim().max(255).allow('', null).optional(),
+    }).optional(),
+  }).optional(),
 });
 
 export const harvestPredictionSchema = Joi.object({

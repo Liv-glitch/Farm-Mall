@@ -21,6 +21,7 @@ import { PasswordResetTokenModel, initializePasswordResetTokenModel } from './Pa
 import { EmailVerificationOtpModel, initializeEmailVerificationOtpModel } from './EmailVerificationOtp.model';
 import { MarketplaceIntegrationModel, initializeMarketplaceIntegrationModel } from './MarketplaceIntegration.model';
 import { MarketplaceCallbackEventModel, initializeMarketplaceCallbackEventModel } from './MarketplaceCallbackEvent.model';
+import { SsoCodeModel, initializeSsoCodeModel } from './SsoCode.model';
 
 // Initialize all models with the sequelize instance
 export function initializeModels(sequelize: Sequelize): void {
@@ -46,6 +47,7 @@ export function initializeModels(sequelize: Sequelize): void {
   initializeEmailVerificationOtpModel(sequelize);
   initializeMarketplaceIntegrationModel(sequelize);
   initializeMarketplaceCallbackEventModel(sequelize);
+  initializeSsoCodeModel(sequelize);
   
   // Other models are already initialized in their respective files
   // through their .init() calls at the bottom
@@ -166,6 +168,10 @@ function setupAssociations(): void {
   MarketplaceCallbackEventModel.associate({
     MarketplaceIntegration: MarketplaceIntegrationModel,
   });
+
+  SsoCodeModel.associate({
+    User: UserModel,
+  });
 }
 
 // Export models for use throughout the application
@@ -192,6 +198,7 @@ export {
   EmailVerificationOtpModel,
   MarketplaceIntegrationModel,
   MarketplaceCallbackEventModel,
+  SsoCodeModel,
 };
 
 // Export types
@@ -211,3 +218,4 @@ export * from './PasswordResetToken.model';
 export * from './EmailVerificationOtp.model';
 export * from './MarketplaceIntegration.model';
 export * from './MarketplaceCallbackEvent.model';
+export * from './SsoCode.model';

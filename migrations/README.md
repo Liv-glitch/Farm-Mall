@@ -12,6 +12,7 @@ The FarmMall schema for Namecheap cPanel is managed as plain **`.sql` files** th
   - `0011-create-buyers-marketplace-integration.sql`
   - `0013-marketplace-integrations-per-cycle.sql`
   - `0014-update-input-marketplace-urls.sql`
+  - `0015-create-sso-codes.sql`
 
 Use a zero-padded numeric prefix so files sort in apply order. Each file should be self-contained (`ALTER TABLE …`, `CREATE TABLE …`, etc.) and safe to run once on a database that already has every earlier file applied. There is no automatic tracking — keep note of which files a given database has had applied (a simple convention: the newest filename you imported).
 

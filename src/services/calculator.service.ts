@@ -1,4 +1,6 @@
 import {
+  CalculatorInputCategory,
+  CalculatorInputPriceSource,
   CostCalculationRequest,
   CostCalculationResponse,
   HarvestPredictionRequest,
@@ -43,6 +45,42 @@ export class CalculatorService {
         other: Math.round(otherCosts * locationMultiplier),
       };
 
+      const marketplacePriceSources: Partial<Record<CalculatorInputCategory, CalculatorInputPriceSource>> = {};
+      const selectedInputs = request.selectedInputs || {};
+
+      if (selectedInputs.seeds) {
+        const appliedCost = Math.round(selectedInputs.seeds.price * seedRequirement.bags);
+        costBreakdown.seeds = appliedCost;
+        marketplacePriceSources.seeds = {
+          ...selectedInputs.seeds,
+          category: 'seeds',
+          appliedCost,
+        };
+        seedRequirement.totalCost = appliedCost;
+      }
+
+      if (selectedInputs.fertilizer) {
+        const fertilizerUnits = this.calculateFertilizerUnits(request.landSizeAcres);
+        const appliedCost = Math.round(selectedInputs.fertilizer.price * fertilizerUnits);
+        costBreakdown.fertilizer = appliedCost;
+        marketplacePriceSources.fertilizer = {
+          ...selectedInputs.fertilizer,
+          category: 'fertilizer',
+          appliedCost,
+        };
+      }
+
+      if (selectedInputs.pesticides) {
+        const pesticideUnits = this.calculatePesticideUnits(request.landSizeAcres);
+        const appliedCost = Math.round(selectedInputs.pesticides.price * pesticideUnits);
+        costBreakdown.pesticides = appliedCost;
+        marketplacePriceSources.pesticides = {
+          ...selectedInputs.pesticides,
+          category: 'pesticides',
+          appliedCost,
+        };
+      }
+
       const estimatedTotalCost = Object.values(costBreakdown).reduce(
         (sum, cost) => sum + cost,
         0
@@ -63,6 +101,7 @@ export class CalculatorService {
         seedRequirement,
         estimatedTotalCost,
         costBreakdown,
+        marketplacePriceSources: Object.keys(marketplacePriceSources).length > 0 ? marketplacePriceSources : undefined,
         recommendations,
       };
 
@@ -186,6 +225,10 @@ export class CalculatorService {
     return costPerAcre * landSizeAcres;
   }
 
+  private calculateFertilizerUnits(landSizeAcres: number): number {
+    return Math.ceil(landSizeAcres * 4);
+  }
+
   // Calculate pesticide costs per acre
   private calculatePesticideCosts(landSizeAcres: number): number {
     // Typical pesticide requirement per acre
@@ -199,6 +242,10 @@ export class CalculatorService {
       (herbicideLiters * COST_ESTIMATES.PESTICIDE_COSTS.HERBICIDE);
 
     return costPerAcre * landSizeAcres;
+  }
+
+  private calculatePesticideUnits(landSizeAcres: number): number {
+    return Math.ceil(landSizeAcres * 4);
   }
 
   // Calculate other costs per acre

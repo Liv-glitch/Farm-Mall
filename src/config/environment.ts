@@ -72,6 +72,11 @@ interface EnvironmentConfig {
   MARKETPLACE_MAIN_API_BASE_URL: string;
   MARKETPLACE_MAIN_API_KEY?: string;
   MARKETPLACE_CALLBACK_TOKEN?: string;
+  INPUTS_MARKETPLACE_BASE_URL: string;
+  INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_URL?: string;
+  INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_API_KEY?: string;
+  INPUTS_MARKETPLACE_SSO_API_KEY?: string;
+  INPUTS_MARKETPLACE_SSO_CODE_TTL_SECONDS: number;
 
   // Admin bootstrap
   ADMIN_EMAIL?: string;
@@ -190,6 +195,11 @@ const validateEnvironment = (): EnvironmentConfig => {
     MARKETPLACE_MAIN_API_BASE_URL: (process.env.MARKETPLACE_MAIN_API_BASE_URL || 'https://hcfcpqlcawbpqtruttsi.supabase.co/functions/v1').replace(/\/+$/, ''),
     MARKETPLACE_MAIN_API_KEY: process.env.MARKETPLACE_MAIN_API_KEY,
     MARKETPLACE_CALLBACK_TOKEN: process.env.MARKETPLACE_CALLBACK_TOKEN,
+    INPUTS_MARKETPLACE_BASE_URL: (process.env.INPUTS_MARKETPLACE_BASE_URL || 'https://inputs.farmmall.co.ke').replace(/\/+$/, ''),
+    INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_URL: process.env.INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_URL,
+    INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_API_KEY: process.env.INPUTS_MARKETPLACE_EXTERNAL_LISTINGS_API_KEY,
+    INPUTS_MARKETPLACE_SSO_API_KEY: process.env.INPUTS_MARKETPLACE_SSO_API_KEY,
+    INPUTS_MARKETPLACE_SSO_CODE_TTL_SECONDS: parseInt(process.env.INPUTS_MARKETPLACE_SSO_CODE_TTL_SECONDS || '300', 10),
 
     // Admin bootstrap
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
@@ -234,6 +244,7 @@ const validateEnvironment = (): EnvironmentConfig => {
     }
 
     requiredVars.push('MARKETPLACE_MAIN_API_KEY');
+    requiredVars.push('INPUTS_MARKETPLACE_SSO_API_KEY');
     requiredVars.push('RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'FRONTEND_URL');
   }
 

@@ -13,6 +13,7 @@ import enhancedPlantRoutes from './enhanced-plant.routes';
 import preproductionRoutes from './preproduction.routes';
 import eventRoutes from './event.routes';
 import buyersRoutes from './buyers.routes';
+import ssoRoutes from './sso.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -55,6 +56,7 @@ router.use('/enhanced-plant', enhancedPlantRoutes);
 router.use('/preproduction', preproductionRoutes);
 router.use('/events', eventRoutes);
 router.use('/buyers', buyersRoutes);
+router.use('/sso', ssoRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -87,7 +89,8 @@ router.get('/', (_, res) => {
       media: '/media',
       'enhanced-plant': '/enhanced-plant',
       events: '/events',
-      buyers: '/buyers'
+      buyers: '/buyers',
+      sso: '/sso'
     }
   });
 });
