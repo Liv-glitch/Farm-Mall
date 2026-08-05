@@ -19,8 +19,7 @@ import { calculateDiseaseRisk } from './disease-risk.calculator';
 import { calculateYieldEstimate } from './yield-estimate.calculator';
 import { calculateVarietyRanking, VarietyCandidate } from './variety-ranking.calculator';
 import { calculatePriceForecast } from './price-forecast.calculator';
-import { calculateProfitability } from './profitability.calculator';
-import { CONFIDENCE_CAPTIONS, addDays, formatDateLong, formatKes, round1 } from './helpers';
+import { CONFIDENCE_CAPTIONS, addDays, formatDateLong, round1 } from './helpers';
 import { logError, logInfo } from '../../utils/logger';
 
 const FORECAST_HORIZON_DAYS = 10;
@@ -149,21 +148,10 @@ export class DecisionReportService {
     const priceBand = getPriceBandForMonth(harvestDate.getMonth() + 1);
     const priceForecast = calculatePriceForecast({ harvestDate, priceBand });
 
-    // --- Prediction 7: Profitability ----------------------------------------
-    const productionCostPerAcre = primaryVariety.getTotalProductionCost(1, 1);
-    const profitability = calculateProfitability({
-      yieldPerAcreTonnes: yieldEstimate.yieldPerAcreTonnes,
-      yieldRangeMinTonnes: yieldEstimate.rangeMinTonnes,
-      yieldRangeMaxTonnes: yieldEstimate.rangeMaxTonnes,
-      minPricePerBag: priceForecast.minPricePerBag,
-      maxPricePerBag: priceForecast.maxPricePerBag,
-      productionCostPerAcre,
-    });
-
     const predictions: PredictionBlock[] = [
       {
         index: 1,
-        total: 7,
+        total: 6,
         type: 'location_suitability',
         title: 'Location suitability',
         confidence: locationSuitability.confidence,
@@ -177,7 +165,7 @@ export class DecisionReportService {
       },
       {
         index: 2,
-        total: 7,
+        total: 6,
         type: 'planting_window',
         title: 'Optimal planting window',
         confidence: plantingWindow.confidence,
@@ -191,7 +179,7 @@ export class DecisionReportService {
       },
       {
         index: 3,
-        total: 7,
+        total: 6,
         type: 'disease_risk',
         title: 'Disease risk',
         confidence: diseaseRisk.confidence,
@@ -206,7 +194,7 @@ export class DecisionReportService {
       },
       {
         index: 4,
-        total: 7,
+        total: 6,
         type: 'yield_estimate',
         title: 'Expected yield',
         confidence: yieldEstimate.confidence,
@@ -220,7 +208,7 @@ export class DecisionReportService {
       },
       {
         index: 5,
-        total: 7,
+        total: 6,
         type: 'variety_ranking',
         title: 'Variety recommendation',
         confidence: varietyRanking.confidence,
@@ -233,7 +221,7 @@ export class DecisionReportService {
       },
       {
         index: 6,
-        total: 7,
+        total: 6,
         type: 'price_forecast',
         title: 'Potato prices at harvest',
         confidence: priceForecast.confidence,
@@ -244,21 +232,6 @@ export class DecisionReportService {
         valueHeadline: `KES ${priceForecast.minPricePerBag.toLocaleString()}\u2013${priceForecast.maxPricePerBag.toLocaleString()}`,
         valueVariant: 'small',
         valueSubLabel: `per 90kg bag, estimated ${priceForecast.harvestMonthLabel}`,
-      },
-      {
-        index: 7,
-        total: 7,
-        type: 'profitability',
-        title: 'Profitability',
-        confidence: profitability.confidence,
-        confidenceCaption: CONFIDENCE_CAPTIONS[profitability.confidence],
-        assessment: profitability.assessment,
-        breakdown: profitability.breakdown,
-        breakdownLabel: 'How we calculated this estimate',
-        valueHeadline: formatKes(profitability.netProfitPerAcre),
-        valueVariant: 'small',
-        valueSubLabel: 'estimated net profit / acre',
-        rangeLabel: `Range: ${formatKes(profitability.rangeMinPerAcre)} \u2013 ${formatKes(profitability.rangeMaxPerAcre)}`,
       },
     ];
 

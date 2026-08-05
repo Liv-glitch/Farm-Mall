@@ -38,8 +38,7 @@ export type PredictionType =
   | 'disease_risk'
   | 'yield_estimate'
   | 'variety_ranking'
-  | 'price_forecast'
-  | 'profitability';
+  | 'price_forecast';
 
 export interface DiseaseRiskRow {
   name: string;

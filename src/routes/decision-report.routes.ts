@@ -71,7 +71,7 @@ router.use(authenticate);
  * /api/v1/decision-reports/generate:
  *   post:
  *     summary: Generate a Farm Decision Report
- *     description: Runs a deterministic scoring engine across 7 prediction areas (location suitability, planting window, disease risk, yield, variety ranking, price forecast, profitability) and returns a complete, print-ready HTML report. Nothing is persisted.
+ *     description: Runs a deterministic scoring engine across 6 prediction areas (location suitability, planting window, disease risk, yield, variety ranking, price forecast) and returns a complete, print-ready HTML report. Nothing is persisted.
  *     tags: [Decision Reports]
  *     security:
  *       - bearerAuth: []

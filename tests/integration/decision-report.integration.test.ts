@@ -67,7 +67,7 @@ describe('Decision Report Integration', () => {
       const { html } = response.body.data;
       expect(typeof html).toBe('string');
 
-      // Structural markers: title, all 7 prediction cards, logo, print button.
+      // Structural markers: title, all 6 prediction cards, logo, print button.
       expect(html).toContain('Season predictions');
       expect(html).toContain('Location suitability');
       expect(html).toContain('Optimal planting window');
@@ -75,9 +75,10 @@ describe('Decision Report Integration', () => {
       expect(html).toContain('Expected yield');
       expect(html).toContain('Variety recommendation');
       expect(html).toContain('Potato prices at harvest');
-      expect(html).toContain('Profitability');
-      expect(html).toContain('Prediction 1 of 7');
-      expect(html).toContain('Prediction 7 of 7');
+      expect(html).toContain('Prediction 1 of 6');
+      expect(html).toContain('Prediction 6 of 6');
+      expect(html).not.toContain('Profitability');
+      expect(html).not.toContain('Prediction 7 of 7');
       expect(html).toContain('<img src=');
       expect(html).toContain('Print / Save as PDF');
       expect(html).toContain('Shangi');
