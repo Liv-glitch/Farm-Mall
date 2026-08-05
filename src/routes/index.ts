@@ -14,6 +14,7 @@ import preproductionRoutes from './preproduction.routes';
 import eventRoutes from './event.routes';
 import buyersRoutes from './buyers.routes';
 import ssoRoutes from './sso.routes';
+import decisionReportRoutes from './decision-report.routes';
 import redisClient from '../config/redis';
 
 const router = Router();
@@ -57,6 +58,7 @@ router.use('/preproduction', preproductionRoutes);
 router.use('/events', eventRoutes);
 router.use('/buyers', buyersRoutes);
 router.use('/sso', ssoRoutes);
+router.use('/decision-reports', decisionReportRoutes);
 
 // API info route
 router.get('/', (_, res) => {
@@ -73,7 +75,8 @@ router.get('/', (_, res) => {
       'Premium subscription features',
       'Farm collaboration and team management',
       'Soil test analysis and recommendations',
-      'Enterprise media management with variants and AI analysis'
+      'Enterprise media management with variants and AI analysis',
+      'Farm decision reports (printable, on-demand season predictions)'
     ],
     documentation: '/api-docs',
     endpoints: {
@@ -90,7 +93,8 @@ router.get('/', (_, res) => {
       'enhanced-plant': '/enhanced-plant',
       events: '/events',
       buyers: '/buyers',
-      sso: '/sso'
+      sso: '/sso',
+      'decision-reports': '/decision-reports'
     }
   });
 });

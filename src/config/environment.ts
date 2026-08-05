@@ -95,6 +95,9 @@ interface EnvironmentConfig {
   RESEND_FROM_NAME: string;
   FRONTEND_URL: string;
 
+  // Farm Decision Report
+  FARM_MALL_LOGO_URL?: string;
+
   // Security & Performance
   BCRYPT_SALT_ROUNDS: number;
   RATE_LIMIT_WINDOW_MS: number;
@@ -217,6 +220,9 @@ const validateEnvironment = (): EnvironmentConfig => {
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     RESEND_FROM_NAME: process.env.RESEND_FROM_NAME || 'Farm Mall',
     FRONTEND_URL: (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, ''),
+
+    // Farm Decision Report
+    FARM_MALL_LOGO_URL: process.env.FARM_MALL_LOGO_URL,
 
     // Security & Performance
     BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),

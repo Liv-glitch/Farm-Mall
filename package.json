@@ -63,6 +63,7 @@
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.3.1",
+    "ejs": "^6.0.1",
     "exifreader": "^4.31.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
@@ -90,6 +91,7 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
+    "@types/ejs": "^3.1.5",
     "@types/jest": "^29.5.14",
     "@types/supertest": "^2.0.16",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
