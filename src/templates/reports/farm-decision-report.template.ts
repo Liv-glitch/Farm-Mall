@@ -64,7 +64,7 @@ export const FARM_DECISION_REPORT_TEMPLATE = `<!DOCTYPE html>
   .summary-value small{display:block; font-size:11.5px; font-weight:400; color:var(--ink-soft); margin-top:2px;}
   .summary-highlight{background:var(--paper-brand);}
 
-  .pred-card{border:1px solid var(--line); border-left:4px solid var(--olive-dark); margin-top:16px; page-break-inside:avoid;}
+  .pred-card{border:1.5px solid var(--olive-dark); margin-top:16px; page-break-inside:avoid;}
   .pred-head{display:flex; justify-content:space-between; align-items:flex-start; background:var(--paper-brand); padding:10px 20px; border-bottom:1px solid var(--line);}
   .pred-num{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--soil); letter-spacing:.06em;}
   .pred-head h3{font-size:15.5px; margin-top:2px; color:var(--olive-dark);}
@@ -75,7 +75,7 @@ export const FARM_DECISION_REPORT_TEMPLATE = `<!DOCTYPE html>
   .conf-low{background:var(--conf-low-bg); color:var(--conf-low-fg); border-color:var(--conf-low-bd);}
   .conf-caption{font-size:10px; color:var(--ink-soft);}
 
-  .assessment{margin:16px 20px 0; padding:11px 16px; background:#FFFBE9; border-left:3px solid var(--gold);}
+  .assessment{margin:16px 20px 0; padding:11px 16px; background:#FFFBE9; border:1px solid var(--line);}
   .assessment .why-label{margin-bottom:3px;}
   .assessment p{margin:0; font-size:13px; color:var(--ink);}
 
